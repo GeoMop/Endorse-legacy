@@ -1,0 +1,6 @@
+[submodule "gmsh-tools"]
+	path = gmsh-tools
+	url = git@github.com:GeoMop/gmsh-tools.git
+[submodule "MLMC"]
+	path = MLMC
+	url = git@github.com:GeoMop/MLMC.git
