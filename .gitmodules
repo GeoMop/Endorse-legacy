@@ -4,3 +4,6 @@
 [submodule "MLMC"]
 	path = MLMC
 	url = git@github.com:GeoMop/MLMC.git
+[submodule "PyBS"]
+	path = PyBS
+	url = git@github.com:GeoMop/PyBS.git
