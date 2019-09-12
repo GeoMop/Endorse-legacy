@@ -1,0 +1,155 @@
+# The flow executable and arguments to use.
+# JB: ABSOLUTE PATH
+flow_executable:
+  - /home/jb/workspace/flow123d_JB/bin/fterm
+  - --no-term
+  - rel
+  - run
+finish_sleep: 0
+metacentrum: false
+gmsh_executable: /home/jb/bin/gmsh4
+# reuse existing sample directories and existing results
+# None - clean dir
+# False - keep dir, rerun process.py
+# True - reuse existing results
+#reuse_samples: true
+
+# Charon:
+#flow_executable:
+#  # release
+#   - /storage/liberec3-tul/home/jan_brezina/workspace/flow123d/bin/flow123d
+#  # debug
+#  #- /storage/liberec3-tul/home/jan_brezina/workspace/flow-dbg/flow123d/bin/flow123d
+#metacentrum: true
+
+mc_samples: 10
+
+copy_files: []
+
+
+geometry:
+  # square side (meters)
+  fractures_box: [100, 100]
+  domain_box: [100, 100]
+  #fractures_box: [140, 140]
+  #domain_box: [140, 140]
+  #fractures_box: [1000, 1000]
+  #domain_box: [1000, 1000]
+  #n_frac_limit: 1000
+  n_frac_limit: null
+  pow_law_sample_range: [10, 1000]
+  #pow_law_sample_range: [0.56, 140]
+  #pow_law_sample_range: [4, 1000]
+
+  #pow_law_size_range: [0.05, 500]
+  pow_law_size_range: [0.1, 1000]
+  pow_law_size_exp: 2.8   # 3d exponent
+  p_32: 2
+  # realistic value is about 0.5,
+  # p_32==64 continuous for exp 3.2
+  # p_32==4 almost continuous for exp 2.8
+  # One of possible reasons: SKB use disc radius for the fracture size. So
+  #
+  # 1331 fractures, exp 2.8, 2d-1d -> 65k elements; 
+  fracture_mesh_step: 10
+
+  # Uniform distribution of the fracture centers near the existing surfaces
+  # in order to enhance connectivity.
+  #connected_position_distr: true
+
+  #fracture_stats:
+      ## SKB data
+      #-   name: NS
+          #trend: 292
+          #plunge: 1
+          #concentration: 17.8
+          #power: 2.5
+          #r_min: 0.038
+          #r_max: 564
+          #p_32: 0.073
+      #-   name: NE
+          #trend: 326
+          #plunge: 2
+          #concentration: 14.3
+          #power: 2.7
+          #r_min: 0.038
+          #r_max: 564
+          #p_32: 0.319
+      #-   name: NW
+          #trend: 60
+          #plunge: 6
+          #concentration: 12.9
+          #power: 3.1
+          #r_min: 0.038
+          #r_max: 564
+          #p_32: 0.107
+      #-   name: EW
+          #trend: 15
+          #plunge: 2
+          #concentration: 14.0
+          #power: 3.1
+          #r_min: 0.038
+          #r_max: 564
+          #p_32: 0.088
+      #-   name: HZ
+          #trend: 5
+          #plunge: 86
+          #concentration: 15.2
+          #power: 2.38
+          #r_min: 0.038
+          #r_max: 564
+          #p_32: 0.543
+
+          
+  # deep data <400m
+#  fracture_stats:
+#      # SKB data
+#      -   name: NS
+#          trend: 292
+#          plunge: 1
+#          concentration: 17.8
+#          power: 2.5
+#          r_min: 0.038
+#          r_max: 564
+#          p_32: 0.094
+#      -   name: NE
+#          trend: 326
+#          plunge: 2
+#          concentration: 14.3
+#          power: 2.7
+#          r_min: 0.038
+#          r_max: 564
+#          p_32: 0.163
+#      -   name: NW
+#          trend: 60
+#          plunge: 6
+#          concentration: 12.9
+#          power: 3.1
+#          r_min: 0.038
+#          r_max: 564
+#          p_32: 0.098
+#      -   name: EW
+#          trend: 15
+#          plunge: 2
+#          concentration: 14.0
+#          power: 3.1
+#          r_min: 0.038
+#          r_max: 564
+#          p_32: 0.039
+#      -   name: HZ
+#          trend: 5
+#          plunge: 86
+#          concentration: 15.2
+#          power: 2.38
+#          r_min: 0.038
+#          r_max: 564
+#          p_32: 0.141
+
+
+
+# base of the mesh file name
+mesh_name: random_fractures
+
+
+dfn_flow_params:
+  mesh: None
