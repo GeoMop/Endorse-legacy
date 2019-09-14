@@ -1,0 +1,39 @@
+flow123d_version: 3.1.0
+problem: !Coupling_Sequential
+  description: Darcy flow through a fractured square domain. Two staedy states for X and Y pressure gradient BC are computed.
+  mesh:
+    mesh_file: <mesh_file>
+  flow_equation: !Flow_Darcy_MH
+    nonlinear_solver:
+      linear_solver: !Petsc
+        a_tol: 1.0e-07
+    input_fields:
+      - region: ALL
+        conductivity: 1.0
+        anisotropy: !FieldFE  # loaded from HM simulation
+          mesh_data_file: <fields_file>
+          field_name: conductivity_tensor
+          default_value: 1e-15
+
+      - time: 0
+        region: .BOUNDARY
+        bc_type: dirichlet
+        bc_pressure: !FieldFormula
+          value: x
+
+      - time: 1
+        region: .BOUNDARY
+        bc_type: dirichlet
+        bc_pressure: !FieldFormula
+          value: y
+
+    output:
+      fields:
+        - pressure_p0
+        - velocity_p0
+    output_stream:
+      file: dual_por.pvd
+      format: !vtk
+        variant: binary
+    balance:
+      cumulative: true

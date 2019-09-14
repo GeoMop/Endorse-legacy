@@ -41,7 +41,7 @@ class ShapeInfo:
 
     def __init__(self, shape, reg=None):
         self.shape = shape
-        if reg is None:
+        if reg is None or reg.id==0:
             self.free = False
             self.i_reg = 0
         else:
@@ -71,13 +71,33 @@ class Geometry2d:
         - find rivers and assign given regions to corresponding elements (JB, Jakub)
     """
     def __init__(self, basename, regions):
-        self.regions = list(regions.values())
-        for i, reg in enumerate(self.regions):
-            reg.id = i
+        self.regions = regions
         self.basename = basename
         self.all_shapes = []
         self.max_step = 0.0
         self.min_step = np.inf
+        self.plane_surface = None
+        self.shift_to_uv = None
+        self.mat_to_uv = None
+
+    def make_plane(self, points):
+        min_xy = np.array([np.inf, np.inf])
+        max_xy = -min_xy
+        for pt in points:
+            min_xy = np.minimum(min_xy, pt)
+            max_xy = np.maximum(max_xy, pt)
+        self.plane_surface, corners = bw.Approx.plane([
+            [min_xy[0], min_xy[1], 0.0],
+            [max_xy[0], min_xy[1], 0.0],
+            [min_xy[0], max_xy[1], 0.0]
+        ])
+        self.shift_to_uv = - np.array(min_xy[0], min_xy[1])
+        diff = max_xy - min_xy
+        mat = np.array([
+                [diff[0], 0],
+                [0, diff[1]]
+        ])
+        self.mat_to_uv = np.linalg.inv(mat)
 
 
     def add_compoud(self, decomp):
@@ -92,24 +112,33 @@ class Geometry2d:
             )
             for id, node in decomp.points.items()
         }
+        if self.plane_surface is None:
+            self.make_plane([pt.xy for pt in decomp.points.values()])
 
 
-        edges = {
-            id: ShapeInfo(
-                bw.Edge([vertices[pt.id].shape for pt in segment.vtxs]),
-                reg=segment.attr
-            )
-            for id, segment in decomp.segments.items()
-        }
 
-        xy_plane, corners = bw.Approx.plane([[0,0,0], [1,0,0], [0,1,0]])
+        edges = {}
+        for id, segment in decomp.segments.items():
+            edge = bw.Edge([vertices[pt.id].shape for pt in segment.vtxs])
+            vtxs = [pt.xy for pt in segment.vtxs]
+            uv_points = [self.mat_to_uv @ (v + self.shift_to_uv) for v in vtxs]
+            vtxs_xyz=[(v[0], v[1], 0.0) for v in vtxs]
+            curve_uv = bw.Approx.line_2d(uv_points)
+            curve_xyz = bw.Approx.line_3d(vtxs_xyz)
+            edge.attach_to_2d_curve((0.0, 1.0), curve_uv, self.plane_surface)
+            edge.attach_to_3d_curve((0.0, 1.0), curve_xyz)
+            edges[id] = ShapeInfo(edge, reg=segment.attr)
+
+
         faces = {}
         for id, poly in decomp.polygons.items():
+            if poly.is_outer_polygon():
+                continue
             #segment_ids, surface_id = poly      # segment_id > n_segments .. reversed edge
             wires = [self._make_bw_wire(edges, poly.outer_wire)]
             for hole in poly.outer_wire.childs:
                 wires.append(self._make_bw_wire(edges, hole).m())
-            face = bw.Face(wires, surface=xy_plane)
+            face = bw.Face(wires, surface=self.plane_surface)
             faces[id] = ShapeInfo(face, reg=poly.attr)
         self.all_shapes.extend(vertices.values())
         self.all_shapes.extend(edges.values())
@@ -336,7 +365,7 @@ class Geometry2d:
             tags[0] = physical_id
             new_elements[id] = (el_type, tags, nodes)
         self.mesh.elements = new_elements
-        self.msh_file = self.filename_base + ".msh"
+        self.msh_file = self.basename + ".msh"
         with open(self.msh_file, "w") as f:
             self.mesh.write_ascii(f)
         return self.mesh

@@ -26,11 +26,15 @@ mc_samples: 10
 
 copy_files: []
 
+bulk_conductivity: 1e-10
+aperture_per_size: 1e-4
+n_probe_directions: 8
+
 
 geometry:
   # square side (meters)
-  fractures_box: [100, 100]
-  domain_box: [100, 100]
+  fractures_box: [200, 200]
+  domain_box: [200, 200]
   #fractures_box: [140, 140]
   #domain_box: [140, 140]
   #fractures_box: [1000, 1000]
