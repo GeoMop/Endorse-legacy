@@ -70,7 +70,7 @@ class Geometry2d:
         - scale the mesh nodes verticaly to fit original interfaces (JB, Jakub)
         - find rivers and assign given regions to corresponding elements (JB, Jakub)
     """
-    def __init__(self, basename, regions):
+    def __init__(self, basename, regions, corners = None):
         self.regions = regions
         self.basename = basename
         self.all_shapes = []
@@ -79,6 +79,9 @@ class Geometry2d:
         self.plane_surface = None
         self.shift_to_uv = None
         self.mat_to_uv = None
+
+        if corners is not None:
+            self.make_plane(corners)
 
     def make_plane(self, points):
         min_xy = np.array([np.inf, np.inf])
@@ -362,6 +365,7 @@ class Geometry2d:
                 assert self.mesh.physical[region.name][0] == physical_id
             else:
                 self.mesh.physical[region.name] = (physical_id, dim)
+            assert (region.name[0] == '.') == (region.boundary)
             tags[0] = physical_id
             new_elements[id] = (el_type, tags, nodes)
         self.mesh.elements = new_elements

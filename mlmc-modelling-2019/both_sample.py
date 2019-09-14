@@ -5,6 +5,7 @@ import threading
 import subprocess
 import yaml
 import attr
+import collections
 from typing import Any, List, Dict, Tuple
 
 src_path = os.path.dirname(os.path.abspath(__file__))
@@ -89,7 +90,7 @@ class Region:
     mesh_step:float = 0.0
 
     def is_active(self, dim):
-        active = dim >= 0
+        active = self.dim >= 0
         if active:
             assert dim == self.dim, "Can not create shape of dim: {} in region '{}' of dim: {}.".format(dim, self.name, self.dim)
         return active
@@ -100,18 +101,22 @@ class Region:
 @attr.s(auto_attribs=True)
 class FlowProblem:
     basename: str
+    # Basename for files of this flow problem.
     fr_range: Tuple[float, float]
+    # Fracture range to extract from the full list of the generated fractures.
     fractures: List[Any]
+    # The Fractures object with generated fractures.
     config_dict: Dict[str, Any]
+    # global config dictionary.
 
-    regions: List[Region] = []
+    regions: List[Region] = attr.ib(factory=list)
     # List of regions used in the geometry and mesh preparation
-    side_regions: List[Region] = []
+    side_regions: List[Region] = attr.ib(factory=list)
     # separate regions for sides of the outer wire, with fracture subregions and normals
     # used for creating boundary region set and for boundary averaging of the conductivity tensor
-    reg_to_fr: Dict[int, int] = {}
+    reg_to_fr: Dict[int, int] = attr.ib(factory=dict)
     # Maps region id to original fracture id
-    bulk_regions: List[Tuple[int, int]] = {}
+    reg_to_group: List[Tuple[int, int]] = attr.ib(factory=dict)
     # Groups of regions for which the effective conductivity tensor will be computed separately.
     # One group is specified by the tuple of bulk and fracture region ID.
 
@@ -125,53 +130,48 @@ class FlowProblem:
         self.regions.append(reg)
         return reg
 
-
-    def make_fracture_network(self):
-        from geomop.plot_polygons import plot_decomp_segments
-        self.mesh_step = self.fr_range[0]
-
-        # Init regions
-        none_reg = self.add_region('none', dim=-1)
-        bulk_reg = self.add_region('bulk_2d', dim=2, mesh_step=self.mesh_step)
-        self.bulk_regions[bulk_reg.id] = 0
-
+    def init_decomposition(self, outer_polygon, bulk_reg):
+        """
+        Create polygon decomposition and add the outer polygon.
+        :param outer_polygon: [np.array[2], ..] Vertices of the outer polygon.
+        :return: (PolygonDecomposition, side_regions)
+        """
         pd = polygons.PolygonDecomposition(self.mesh_step)
-        # make outer polygon
-        geom = self.config_dict["geometry"]
-        lx, ly = geom["domain_box"]
-        outer_polygon = [[-lx / 2, -ly / 2], [+lx / 2, -ly / 2], [+lx / 2, +ly / 2], [-lx / 2, +ly / 2]]
         last_pt = outer_polygon[-1]
+        side_regions = []
         for i_side, pt in enumerate(outer_polygon):
             reg = self.add_region(".side_{}".format(i_side), dim=1, mesh_step=self.mesh_step, boundary=True)
             reg.sub_reg = self.add_region(".side_fr_{}".format(i_side), dim=0, mesh_step=self.mesh_step, boundary=True)
-            self.side_regions.append(reg)
             diff = np.array(pt) - np.array(last_pt)
             normal = np.array([diff[1], -diff[0]])
             reg.normal =  normal / np.linalg.norm(normal)
+            side_regions.append(reg)
+
             sub_segments = pd.add_line(last_pt, pt)
             for seg in sub_segments:
                 seg.attr = reg
             last_pt = pt
             assert type(sub_segments) == list and len(sub_segments) == 1
-            seg = sub_segments[0]
         assert len(pd.polygons) == 2
         pd.polygons[1].attr = bulk_reg
+        return pd, side_regions
 
-        # extract fracture lines larger then the mesh step
-        self.fracture_lines = self.fractures.get_lines(self.fr_range)
+    def add_fractures(self, pd):
+        from geomop.plot_polygons import plot_decomp_segments
 
-        # single line - to debug effective tensor
-        # self.fracture_lines = {0: [np.array([-20, -50]), np.array([20, 50])]}
         outer_wire = pd.outer_polygon.outer_wire.childs
         assert len(outer_wire) == 1
         outer_wire = next(iter(outer_wire))
+        fracture_regions = []
         for i_fr, (p0, p1) in self.fracture_lines.items():
             reg = self.add_region("fr_{}".format(i_fr), dim=1, mesh_step=self.mesh_step)
             self.reg_to_fr[reg.id] = i_fr
-            self.bulk_regions[reg.id] = 0
+            fracture_regions.append(reg)
             print(i_fr, "fr size:", np.linalg.norm(p1 - p0))
             try:
                 sub_segments = pd.add_line(p0, p1)
+                #if self.basename == 'coarse_ref':
+                #    plot_decomp_segments(pd, [p0, p1])
             except Exception as e:
                 # new_points = [pt for seg in segments for pt in seg.vtxs]
                 # plot_decomp_segments(pd, [p0, p1])
@@ -184,14 +184,15 @@ class FlowProblem:
                 for seg in sub_segments:
                     if seg.attr is None:
                         seg.attr = reg
-                    if seg.wire[0] == seg.wire[1] and seg.wire[0] == outer_wire:
+                    # remove segments poking out of outer polygon
+                    if seg.wire[0] == seg.wire[1] and (seg.wire[0].parent == pd.outer_polygon.outer_wire):
                         points = seg.vtxs
                         pd.delete_segment(seg)
                         for pt in points:
                             if pt.is_free():
                                 pd.remove_free_point(pt.id)
 
-        # assign boundary region to outer polygion points
+        # assign boundary region to outer polygon points
         for seg, side in outer_wire.segments():
             side_reg = seg.attr
             assert hasattr(side_reg, "sub_reg")
@@ -200,14 +201,36 @@ class FlowProblem:
         for shape_list in pd.decomp.shapes:
             for shape in shape_list.values():
                 if shape.attr is None:
-                    shape.attr = none_reg
+                    shape.attr = self.none_reg
 
         # # plot_decomp_segments(pd)
+        return pd, fracture_regions
+
+    def make_fracture_network(self):
+        self.mesh_step = self.fr_range[0]
+
+        # Init regions
+        self.none_reg = self.add_region('none', dim=-1)
+        bulk_reg = self.add_region('bulk_2d', dim=2, mesh_step=self.mesh_step)
+        self.reg_to_group[bulk_reg.id] = 0
+
+        # make outer polygon
+        geom = self.config_dict["geometry"]
+        lx, ly = geom["domain_box"]
+        self.outer_polygon = [[-lx / 2, -ly / 2], [+lx / 2, -ly / 2], [+lx / 2, +ly / 2], [-lx / 2, +ly / 2]]
+        pd, self.side_regions = self.init_decomposition(self.outer_polygon, bulk_reg)
+
+        # extract fracture lines larger then the mesh step
+        self.fracture_lines = self.fractures.get_lines(self.fr_range)
+        pd, fr_regions = self.add_fractures(pd)
+        for reg in fr_regions:
+            self.reg_to_group[reg.id] = 0
         self.decomp = pd
 
     def make_mesh(self):
         import geometry_2d as geom
 
+        self.make_fracture_network()
         gmsh_executable = self.config_dict["gmsh_executable"]
         g2d = geom.Geometry2d("mesh_" + self.basename, self.regions)
         g2d.add_compoud(self.decomp)
@@ -216,12 +239,17 @@ class FlowProblem:
         g2d.call_gmsh(gmsh_executable, step_range)
         self.mesh = g2d.modify_mesh()
 
-    def make_fields(self):
+    def make_fields(self, cond_tensors_2d=None):
         bulk_elements = [eid
                          for eid, (t, tags, nodes) in self.mesh.elements.items()
                          if not self.regions[tags[0]-10000].boundary]
         I_tn = np.eye(3, dtype=float)
         const_conductivity = float(self.config_dict['bulk_conductivity']) * I_tn
+        cond_tensors = collections.defaultdict(lambda: const_conductivity.copy())
+        if cond_tensors_2d is not None:
+            # convert 2d tensors to 3d
+            for eid, c2d in cond_tensors_2d.items():
+                cond_tensors[eid][0:2, 0:2] += c2d
         aperture_per_size = float(self.config_dict['aperture_per_size'])
         n_elem = len(bulk_elements)
         elem_ids = []
@@ -241,7 +269,7 @@ class FlowProblem:
                 cond_tn = cond * I_tn
             else:
                 cs = 1.0
-                cond_tn = const_conductivity
+                cond_tn = cond_tensors[el_id]
 
             i = len(elem_ids)
             elem_ids.append(el_id)
@@ -256,24 +284,54 @@ class FlowProblem:
             self.mesh.write_element_data(fout, elem_ids, 'cross_section', cs_field)
 
 
-    def elementwise_mesh(self, coarse_mesh):
+    def elementwise_mesh(self, coarse_mesh, mesh_step, bounding_polygon):
         import geometry_2d as geom
 
-        self.reg_to_coarse_el = {}  # bulk and fracture region id to coarse element id
-        # g2d = geom.Geometry2d("mesh_" + self.basename, self.regions)
-        # for eid, (tele, tags, nodes) in coarse_mesh.elements.items():
-        #     # create regions
-        #     # outer polygon
-        #     # add fractures
-        #     # add compound, mark regions
-        #
-        # g2d.add_compoud(self.decomp)
-        # g2d.make_brep_geometry()
-        #
-        # step_range = (self.mesh_step * 0.9, self.mesh_step *1.1)
-        # gmsh_executable = self.config_dict["gmsh_executable"]
-        # g2d.call_gmsh(gmsh_executable, step_range)
-        # self.mesh = g2d.modify_mesh()
+        self.mesh_step = mesh_step
+        self.none_reg = self.add_region('none', dim=-1)
+
+        self.reg_to_group = {}  # bulk and fracture region id to coarse element id
+        g2d = geom.Geometry2d("mesh_" + self.basename, self.regions, bounding_polygon)
+        for eid, (tele, tags, nodes) in coarse_mesh.elements.items():
+            if tele != 2:
+                continue
+            prefix = "el_{:03d}_".format(eid)
+            outer_polygon = np.array([coarse_mesh.nodes[nid][:2] for nid in nodes])
+            #edge_sizes = np.linalg.norm(outer_polygon[:, :] - np.roll(outer_polygon, -1, axis=0), axis=1)
+            #diam = np.max(edge_sizes)
+
+            bulk_reg = self.add_region(prefix + "bulk_2d_", dim=2, mesh_step=self.mesh_step)
+            self.reg_to_group[bulk_reg.id] = eid
+            # create regions
+            # outer polygon
+
+            pd, side_regions = self.init_decomposition(outer_polygon, bulk_reg)
+            for side_reg in side_regions:
+                side_reg.name = "." + prefix + side_reg.name[1:]
+                side_reg.sub_reg.name = "." + prefix + side_reg.sub_reg.name[1:]
+                self.reg_to_group[side_reg.id] = eid
+            self.side_regions.extend(side_regions)
+
+            # extract fracture lines larger then the mesh step
+            self.fracture_lines = self.fractures.get_lines(self.fr_range)
+            pd, fr_regions = self.add_fractures(pd)
+            for reg in fr_regions:
+                reg.name = prefix + reg.name
+                self.reg_to_group[reg.id] = eid
+
+            g2d.add_compoud(pd)
+
+        g2d.make_brep_geometry()
+        step_range = (self.mesh_step * 0.9, self.mesh_step *1.1)
+        gmsh_executable = self.config_dict["gmsh_executable"]
+        g2d.call_gmsh(gmsh_executable, step_range)
+        self.mesh = g2d.modify_mesh()
+
+
+
+
+
+
 
 
     def run(self):
@@ -286,43 +344,43 @@ class FlowProblem:
         self.thread.start()
         return self.thread
 
-    def effective_tensor_from_balance(self, side_regions):
-        """
-        :param mesh: GmshIO mesh object.
-        :param side_regions: List of side regions with the "normal" attribute.
-        :return:
-        """
-        loads = self.pressure_loads
-        with open(os.path.join(self.basename, "water_balance.yaml")) as f:
-            balance = yaml.load(f, Loader=yaml.FullLoader)['data']
-        flux_response = np.zeros_like(loads)
-        reg_map = {}
-        for reg in side_regions:
-            reg_map[reg.name] = reg
-            reg_map[reg.sub_reg.name] = reg
-        for entry in balance:
-            reg = reg_map.get(entry['region'], None)
-            bc_influx = entry['data'][0]
-            if reg is not None:
-                flux_response[entry['time']] += reg.normal * bc_influx
-        flux_response /= len(side_regions)
-        #flux_response *= np.array([100, 1])[None, :]
-
-
-        # least square fit for the symmetric conductivity tensor
-        rhs = flux_response.flatten()
-        # columns for the tensor values: C00, C01, C11
-        pressure_matrix = np.zeros((len(rhs), 3))
-        for i_load, (p0, p1) in enumerate(loads):
-            i0 = 2 * i_load
-            i1 = i0 + 1
-            pressure_matrix[i0] = [p0, p1, 0]
-            pressure_matrix[i1] = [0, p0, p1]
-        C = np.linalg.lstsq(pressure_matrix, rhs, rcond=None)[0]
-        cond_tn = np.array([[C[0], C[1]], [C[1], C[2]]])
-        self.plot_effective_tensor(loads, flux_response, cond_tn)
-        print(cond_tn)
-        return cond_tn
+    # def effective_tensor_from_balance(self, side_regions):
+    #     """
+    #     :param mesh: GmshIO mesh object.
+    #     :param side_regions: List of side regions with the "normal" attribute.
+    #     :return:
+    #     """
+    #     loads = self.pressure_loads
+    #     with open(os.path.join(self.basename, "water_balance.yaml")) as f:
+    #         balance = yaml.load(f, Loader=yaml.FullLoader)['data']
+    #     flux_response = np.zeros_like(loads)
+    #     reg_map = {}
+    #     for reg in side_regions:
+    #         reg_map[reg.name] = reg
+    #         reg_map[reg.sub_reg.name] = reg
+    #     for entry in balance:
+    #         reg = reg_map.get(entry['region'], None)
+    #         bc_influx = entry['data'][0]
+    #         if reg is not None:
+    #             flux_response[entry['time']] += reg.normal * bc_influx
+    #     flux_response /= len(side_regions)
+    #     #flux_response *= np.array([100, 1])[None, :]
+    #
+    #
+    #     # least square fit for the symmetric conductivity tensor
+    #     rhs = flux_response.flatten()
+    #     # columns for the tensor values: C00, C01, C11
+    #     pressure_matrix = np.zeros((len(rhs), 3))
+    #     for i_load, (p0, p1) in enumerate(loads):
+    #         i0 = 2 * i_load
+    #         i1 = i0 + 1
+    #         pressure_matrix[i0] = [p0, p1, 0]
+    #         pressure_matrix[i1] = [0, p0, p1]
+    #     C = np.linalg.lstsq(pressure_matrix, rhs, rcond=None)[0]
+    #     cond_tn = np.array([[C[0], C[1]], [C[1], C[2]]])
+    #     self.plot_effective_tensor(flux_response, cond_tn, label)
+    #     #print(cond_tn)
+    #     return cond_tn
 
     def element_volume(self, mesh, nodes):
         nodes = np.array([mesh.nodes[nid] for nid in  nodes])
@@ -339,7 +397,7 @@ class FlowProblem:
     def effective_tensor_from_bulk(self, bulk_regions):
         """
         :param bulk_regions: mapping reg_id -> tensor_group_id, groups of regions for which the tensor will be computed.
-        :return: List of tensors.
+        :return: {group_id: conductivity_tensor} List of effective tensors.
         """
 
         out_mesh = gmsh_io.GmshIO()
@@ -355,27 +413,32 @@ class FlowProblem:
         velocity_field = out_mesh.element_data['velocity_p0']
 
         loads = self.pressure_loads
-        n_groups = len(set(bulk_regions.values()))
-        group_labels = n_groups * ["_"]
-        for reg_id, group_idx in bulk_regions.items():
-            old_label = group_labels[group_idx]
+        group_idx = {group_id: i_group for i_group, group_id in enumerate(set(bulk_regions.values()))}
+        n_groups = len(group_idx)
+        group_labels = n_groups * ['_']
+        for reg_id, group_id in bulk_regions.items():
+            i_group = group_idx[group_id]
+            old_label = group_labels[i_group]
             new_label = self.regions[reg_id].name
-            group_labels[group_idx] = old_label if len(old_label) > len(new_label) else new_label
+            group_labels[i_group] = old_label if len(old_label) > len(new_label) else new_label
 
         n_directions = len(loads)
         flux_response = np.zeros((n_groups, n_directions, 2))
         area = np.zeros((n_groups, n_directions))
+        print("Averaging velocities ...")
         for i_time, (time, velocity) in velocity_field.items():
             for eid, ele_vel in velocity.items():
                 reg_id, vol = ele_reg_vol[eid]
                 cs = field_cs[eid][0]
                 volume = cs * vol
-                i_group = bulk_regions[reg_id]
+                i_group = group_idx[bulk_regions[reg_id]]
                 flux_response[i_group, i_time, :] += -(volume * np.array(ele_vel[0:2]))
                 area[i_group, i_time] += volume
         flux_response /= area[:, :, None]
-        cond_tensors = []
-        for group_label, flux in zip(group_labels, flux_response):
+        cond_tensors = {}
+        print("Fitting tensors ...")
+        for group_id, i_group in group_idx.items():
+            flux = flux_response[i_group]
             # least square fit for the symmetric conductivity tensor
             rhs = flux.flatten()
             # columns for the tensor values: C00, C01, C11
@@ -387,9 +450,10 @@ class FlowProblem:
                 pressure_matrix[i1] = [0, p0, p1]
             C = np.linalg.lstsq(pressure_matrix, rhs, rcond=None)[0]
             cond_tn = np.array([[C[0], C[1]], [C[1], C[2]]])
-            self.plot_effective_tensor(loads, flux, cond_tn, group_label)
+            print("Plot tensor for eid: ", group_id)
+            self.plot_effective_tensor(flux, cond_tn, self.basename + "_" + group_labels[i_group])
             #print(cond_tn)
-            cond_tensors.append(cond_tn)
+            cond_tensors[group_id] = cond_tn
         return cond_tensors
 
     def labeled_arrow(self, ax, start, end, label):
@@ -408,7 +472,7 @@ class FlowProblem:
             vert_align = 'top'
         ax.annotate(label, end + 0.1*(end - start), va=vert_align)
 
-    def plot_effective_tensor(self, loads, fluxes, cond_tn, label):
+    def plot_effective_tensor(self, fluxes, cond_tn, label):
         """
         Plot response fluxes for pressure gradients with angles [0, pi) measured from the X-azis counterclockwise.
         :param fluxes: np.array of 2d fluex vectors.
@@ -439,14 +503,11 @@ class FlowProblem:
 
         #ax_polar.grid(True)
         fig.savefig("cond_tn_{}.pdf".format(label))
-        plt.show()
+        plt.close(fig)
+        #plt.show()
 
 
 
-
-
-    def elementwise_mesh(self, coarse_mesh):
-        pass
 
 class BothSample:
 
@@ -503,7 +564,6 @@ class BothSample:
         fractures = self.generate_fractures()
         # fine problem
         fine_flow = FlowProblem("fine", (self.h_fine_step, np.inf), fractures, self.config_dict)
-        fine_flow.make_fracture_network()
         fine_flow.make_mesh()
         fine_flow.make_fields()
         fine_flow.run()
@@ -515,15 +575,16 @@ class BothSample:
 
             coarse_ref = FlowProblem("coarse_ref", (0, self.h_coarse_step), fractures, self.config_dict)
             #coarse_ref.make_fracture_network()
-            coarse_ref.elementwise_mesh(coarse_flow.mesh)
+            coarse_ref.elementwise_mesh(coarse_flow.mesh, fine_flow.mesh_step,  fine_flow.outer_polygon)
             coarse_ref.make_fields()
             coarse_ref.run().join()
-            cond = coarse_ref.element_conductivities()
+            cond_tensors = coarse_ref.effective_tensor_from_bulk(coarse_ref.reg_to_group)
 
-            coarse_flow.make_fields(cond)
+            coarse_flow.make_fields(cond_tensors)
             coarse_flow.run().join()
+            coarse_flow.effective_tensor_from_bulk(coarse_flow.reg_to_group)
         fine_flow.thread.join()
-        fine_flow.effective_tensor_from_bulk(fine_flow.bulk_regions)
+        fine_flow.effective_tensor_from_bulk(fine_flow.reg_to_group)
 
 
 
