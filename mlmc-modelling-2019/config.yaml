@@ -27,8 +27,11 @@ mc_samples: 10
 copy_files: []
 
 bulk_conductivity: 1e-10
-aperture_per_size: 1e-4
-n_probe_directions: 8
+aperture_per_size: 5e-5
+
+# number of pressure gradient directions to apply in order to get effective tensor,  min 2
+n_pressure_loads: 8
+
 
 
 geometry:

@@ -1,0 +1,21 @@
+# PyCharm IDE user configuration
+.idea/workspace.xml
+.idea/usage.statistics.xml
+.idea/tasks.xml
+.idea/shelf
+.idea/modules.xml
+*.iml
+
+# venv
+*/venv/*
+*/env/*
+
+#
+*/output_1/*
+
+mlmc_random_frac/fr*
+mlmc_random_frac/_save/*
+mlmc_random_frac/pe_fr*
+mlmc_random_frac/tst_cfg
+fixed-3-frac/output_th
+
