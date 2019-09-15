@@ -22,12 +22,12 @@ gmsh_executable: /home/jb/bin/gmsh4
 #  #- /storage/liberec3-tul/home/jan_brezina/workspace/flow-dbg/flow123d/bin/flow123d
 #metacentrum: true
 
-mc_samples: 10
+mc_samples: 20
 
 copy_files: []
 
 bulk_conductivity: 1e-10
-aperture_per_size: 5e-5
+aperture_per_size: 1e-4
 
 # number of pressure gradient directions to apply in order to get effective tensor,  min 2
 n_pressure_loads: 8
@@ -36,8 +36,8 @@ n_pressure_loads: 8
 
 geometry:
   # square side (meters)
-  fractures_box: [200, 200]
-  domain_box: [200, 200]
+  fractures_box: [1000, 1000]
+  domain_box: [1000, 1000]
   #fractures_box: [140, 140]
   #domain_box: [140, 140]
   #fractures_box: [1000, 1000]

@@ -159,11 +159,13 @@ class FractureFlowSimulation(Simulation):
             # Fine sim.
             sample_dir = os.path.join(self.work_dir, sample_tag)
             flow_mc.force_mkdir(sample_dir)
+            for f in ['flow_templ.yaml']:
+                shutil.copy(os.path.join(src_path, f), os.path.join(sample_dir, f))
             self.write_sample_config(sample_dir)
             # Fine sample starts execution job for both samples
             lines = [
                 'cd {sample_dir}',
-                'python3 {src_dir}/both_sample.py sample_config.yaml',
+                'python3 {src_dir}/both_sample.py sample_config.yaml 2>&1 | tee both_sample_out',
             ]
             package_dir = self.pbs_creater.add_realization(
                 weight=self.n_fine_elements,

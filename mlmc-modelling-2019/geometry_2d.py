@@ -244,7 +244,7 @@ class Geometry2d:
             while stack:
 
                 shp = stack.pop(-1)
-                print("shp: {} id: {}\n".format(type(shp), shp.id))
+                #print("shp: {} id: {}\n".format(type(shp), shp.id))
                 for sub in shp.subshapes():
                     if isinstance(sub, (bw.Vertex, bw.Edge, bw.Face, bw.Solid)):
                         if shape_dict[sub].visited < i_free:

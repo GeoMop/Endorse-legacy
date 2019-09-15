@@ -6,6 +6,7 @@ import subprocess
 import yaml
 import attr
 import collections
+import traceback
 from typing import Any, List, Dict, Tuple
 
 src_path = os.path.dirname(os.path.abspath(__file__))
@@ -156,27 +157,32 @@ class FlowProblem:
         pd.polygons[1].attr = bulk_reg
         return pd, side_regions
 
-    def add_fractures(self, pd):
+    def add_fractures(self, pd, fracture_lines):
         from geomop.plot_polygons import plot_decomp_segments
 
         outer_wire = pd.outer_polygon.outer_wire.childs
         assert len(outer_wire) == 1
         outer_wire = next(iter(outer_wire))
         fracture_regions = []
-        for i_fr, (p0, p1) in self.fracture_lines.items():
+        for i_fr, (p0, p1) in fracture_lines.items():
             reg = self.add_region("fr_{}".format(i_fr), dim=1, mesh_step=self.mesh_step)
             self.reg_to_fr[reg.id] = i_fr
             fracture_regions.append(reg)
-            print(i_fr, "fr size:", np.linalg.norm(p1 - p0))
+            #print("    ", i_fr, "fr size:", np.linalg.norm(p1 - p0))
             try:
+                #pd.decomp.check_consistency()
+                # if i_fr == 670:
+                #     plot_decomp_segments(pd, [p0, p1])
+
                 sub_segments = pd.add_line(p0, p1)
-                #if self.basename == 'coarse_ref':
-                #    plot_decomp_segments(pd, [p0, p1])
             except Exception as e:
                 # new_points = [pt for seg in segments for pt in seg.vtxs]
-                # plot_decomp_segments(pd, [p0, p1])
-                print(e)
-                pass
+                print('Decomp Error, dir: {} base: {} i_fr: {}'.format(os.getcwd(), self.basename, i_fr))
+                traceback.print_exc()
+                #plot_decomp_segments(pd, [p0, p1])
+                #raise e
+                #print(e)
+                #pass
             # pd.decomp.check_consistency()
 
             # remove segments out of the outer polygon
@@ -192,6 +198,7 @@ class FlowProblem:
                             if pt.is_free():
                                 pd.remove_free_point(pt.id)
 
+        #plot_decomp_segments(pd, [p0, p1])
         # assign boundary region to outer polygon points
         for seg, side in outer_wire.segments():
             side_reg = seg.attr
@@ -222,7 +229,7 @@ class FlowProblem:
 
         # extract fracture lines larger then the mesh step
         self.fracture_lines = self.fractures.get_lines(self.fr_range)
-        pd, fr_regions = self.add_fractures(pd)
+        pd, fr_regions = self.add_fractures(pd, self.fracture_lines)
         for reg in fr_regions:
             self.reg_to_group[reg.id] = 0
         self.decomp = pd
@@ -286,6 +293,7 @@ class FlowProblem:
 
     def elementwise_mesh(self, coarse_mesh, mesh_step, bounding_polygon):
         import geometry_2d as geom
+        from geomop.plot_polygons import plot_decomp_segments
 
         self.mesh_step = mesh_step
         self.none_reg = self.add_region('none', dim=-1)
@@ -293,6 +301,9 @@ class FlowProblem:
         self.reg_to_group = {}  # bulk and fracture region id to coarse element id
         g2d = geom.Geometry2d("mesh_" + self.basename, self.regions, bounding_polygon)
         for eid, (tele, tags, nodes) in coarse_mesh.elements.items():
+            # eid = 319
+            # (tele, tags, nodes) = coarse_mesh.elements[eid]
+            print("Geometry for eid: ", eid)
             if tele != 2:
                 continue
             prefix = "el_{:03d}_".format(eid)
@@ -304,17 +315,34 @@ class FlowProblem:
             self.reg_to_group[bulk_reg.id] = eid
             # create regions
             # outer polygon
-
+            normals = []
+            shifts = []
             pd, side_regions = self.init_decomposition(outer_polygon, bulk_reg)
-            for side_reg in side_regions:
+            for i_side, side_reg in enumerate(side_regions):
                 side_reg.name = "." + prefix + side_reg.name[1:]
                 side_reg.sub_reg.name = "." + prefix + side_reg.sub_reg.name[1:]
                 self.reg_to_group[side_reg.id] = eid
+                normals.append(side_reg.normal)
+                shifts.append(side_reg.normal @ outer_polygon[i_side])
             self.side_regions.extend(side_regions)
 
             # extract fracture lines larger then the mesh step
-            self.fracture_lines = self.fractures.get_lines(self.fr_range)
-            pd, fr_regions = self.add_fractures(pd)
+            fracture_lines = self.fractures.get_lines(self.fr_range)
+            line_candidates = {}
+            for i_fr, (p0, p1) in fracture_lines.items():
+                for n, d in zip(normals, shifts):
+                    sgn0 = n @ p0 - d > 0
+                    sgn1 = n @ p1 - d > 0
+                    #print(sgn0, sgn1)
+                    if sgn0 and sgn1:
+                        break
+                else:
+                    line_candidates[i_fr] = (p0, p1)
+                    #print("Add ", i_fr)
+                #plot_decomp_segments(pd, [p0, p1])
+
+
+            pd, fr_regions = self.add_fractures(pd, line_candidates)
             for reg in fr_regions:
                 reg.name = prefix + reg.name
                 self.reg_to_group[reg.id] = eid
@@ -450,9 +478,10 @@ class FlowProblem:
                 pressure_matrix[i1] = [0, p0, p1]
             C = np.linalg.lstsq(pressure_matrix, rhs, rcond=None)[0]
             cond_tn = np.array([[C[0], C[1]], [C[1], C[2]]])
-            print("Plot tensor for eid: ", group_id)
-            self.plot_effective_tensor(flux, cond_tn, self.basename + "_" + group_labels[i_group])
-            #print(cond_tn)
+            if flux_response.shape[0] < 5:
+                print("Plot tensor for eid: ", group_id)
+                self.plot_effective_tensor(flux, cond_tn, self.basename + "_" + group_labels[i_group])
+                #print(cond_tn)
             cond_tensors[group_id] = cond_tn
         return cond_tensors
 
@@ -575,7 +604,7 @@ class BothSample:
 
             coarse_ref = FlowProblem("coarse_ref", (0, self.h_coarse_step), fractures, self.config_dict)
             #coarse_ref.make_fracture_network()
-            coarse_ref.elementwise_mesh(coarse_flow.mesh, fine_flow.mesh_step,  fine_flow.outer_polygon)
+            coarse_ref.elementwise_mesh(coarse_flow.mesh, self.h_fine_step,  coarse_flow.outer_polygon)
             coarse_ref.make_fields()
             coarse_ref.run().join()
             cond_tensors = coarse_ref.effective_tensor_from_bulk(coarse_ref.reg_to_group)
@@ -601,9 +630,12 @@ class BothSample:
 
 
 if __name__ == "__main__":
+    import time
     sample_config = sys.argv[1]
     with open(sample_config, "r") as f:
         config_dict = yaml.load(f, Loader=yaml.FullLoader)
+    start_time = time.time()
     bs = BothSample(config_dict)
     bs.calculate()
+    print("Sample time: ", time.time() - start_time)
 
