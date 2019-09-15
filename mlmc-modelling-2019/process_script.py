@@ -10,14 +10,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 src_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(src_path, '../MLMC/src'))
-sys.path.append(os.path.join(src_path, '../gmsh-tools/src'))
+#sys.path.append(os.path.join(src_path, '../gmsh-tools/src'))
 
 from mlmc import mlmc
 from mlmc import base_process
 from mlmc.estimate import Estimate, CompareLevels
 from mlmc.moments import Legendre, Monomial
 
-import pbs
+from mlmc import pbs
 import fracture_model as fm
 from mlmc.simulation import Simulation
 from mlmc import flow_mc

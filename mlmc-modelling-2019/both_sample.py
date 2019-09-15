@@ -11,7 +11,7 @@ from typing import Any, List, Dict, Tuple
 
 src_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(src_path, '../MLMC/src'))
-sys.path.append(os.path.join(src_path, '../dfn/src'))
+#sys.path.append(os.path.join(src_path, '../dfn/src'))
 
 from mlmc import flow_mc
 import gmsh_io

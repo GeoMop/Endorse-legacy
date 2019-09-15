@@ -26,10 +26,15 @@ Heterogeneous mesh step:
 
 """
 import os
+import sys
 import numpy as np
+
+src_path = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(src_path, '../MLMC/src'))
+#sys.path.append(os.path.join(src_path, '../dfn/src'))
 import gmsh_io
-import brep_writer as bw
-from geomop import  polygons
+from geomop import brep_writer as bw
+from geomop import polygons
 
 class ShapeInfo:
     # count_by_dim = [0,0,0,0]
