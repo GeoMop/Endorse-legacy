@@ -120,6 +120,8 @@ class FlowProblem:
     reg_to_group: List[Tuple[int, int]] = attr.ib(factory=dict)
     # Groups of regions for which the effective conductivity tensor will be computed separately.
     # One group is specified by the tuple of bulk and fracture region ID.
+    group_positions: Dict[int, np.array] = attr.ib(factory=dict)
+    # Centers of macro elements.
 
     @property
     def pressure_loads(self):
@@ -157,7 +159,7 @@ class FlowProblem:
         pd.polygons[1].attr = bulk_reg
         return pd, side_regions
 
-    def add_fractures(self, pd, fracture_lines):
+    def add_fractures(self, pd, fracture_lines, eid):
         from geomop.plot_polygons import plot_decomp_segments
 
         outer_wire = pd.outer_polygon.outer_wire.childs
@@ -177,7 +179,7 @@ class FlowProblem:
                 sub_segments = pd.add_line(p0, p1)
             except Exception as e:
                 # new_points = [pt for seg in segments for pt in seg.vtxs]
-                print('Decomp Error, dir: {} base: {} i_fr: {}'.format(os.getcwd(), self.basename, i_fr))
+                print('Decomp Error, dir: {} base: {} eid: {}  i_fr: {}'.format(os.getcwd(), self.basename, eid, i_fr))
                 traceback.print_exc()
                 #plot_decomp_segments(pd, [p0, p1])
                 #raise e
@@ -221,15 +223,17 @@ class FlowProblem:
         bulk_reg = self.add_region('bulk_2d', dim=2, mesh_step=self.mesh_step)
         self.reg_to_group[bulk_reg.id] = 0
 
+
         # make outer polygon
         geom = self.config_dict["geometry"]
         lx, ly = geom["domain_box"]
         self.outer_polygon = [[-lx / 2, -ly / 2], [+lx / 2, -ly / 2], [+lx / 2, +ly / 2], [-lx / 2, +ly / 2]]
         pd, self.side_regions = self.init_decomposition(self.outer_polygon, bulk_reg)
+        self.group_positions[0] = np.mean(self.outer_polygon, axis=0)
 
         # extract fracture lines larger then the mesh step
         self.fracture_lines = self.fractures.get_lines(self.fr_range)
-        pd, fr_regions = self.add_fractures(pd, self.fracture_lines)
+        pd, fr_regions = self.add_fractures(pd, self.fracture_lines, eid=0)
         for reg in fr_regions:
             self.reg_to_group[reg.id] = 0
         self.decomp = pd
@@ -297,6 +301,7 @@ class FlowProblem:
 
         self.mesh_step = mesh_step
         self.none_reg = self.add_region('none', dim=-1)
+        # centers of macro elements
 
         self.reg_to_group = {}  # bulk and fracture region id to coarse element id
         g2d = geom.Geometry2d("mesh_" + self.basename, self.regions, bounding_polygon)
@@ -308,6 +313,7 @@ class FlowProblem:
                 continue
             prefix = "el_{:03d}_".format(eid)
             outer_polygon = np.array([coarse_mesh.nodes[nid][:2] for nid in nodes])
+            self.group_positions[eid] = np.mean(outer_polygon, axis=0)
             #edge_sizes = np.linalg.norm(outer_polygon[:, :] - np.roll(outer_polygon, -1, axis=0), axis=1)
             #diam = np.max(edge_sizes)
 
@@ -342,7 +348,7 @@ class FlowProblem:
                 #plot_decomp_segments(pd, [p0, p1])
 
 
-            pd, fr_regions = self.add_fractures(pd, line_candidates)
+            pd, fr_regions = self.add_fractures(pd, line_candidates, eid)
             for reg in fr_regions:
                 reg.name = prefix + reg.name
                 self.reg_to_group[reg.id] = eid
@@ -483,7 +489,10 @@ class FlowProblem:
                 self.plot_effective_tensor(flux, cond_tn, self.basename + "_" + group_labels[i_group])
                 #print(cond_tn)
             cond_tensors[group_id] = cond_tn
+        self.cond_tensors = cond_tensors
         return cond_tensors
+
+
 
     def labeled_arrow(self, ax, start, end, label):
         """
@@ -535,6 +544,11 @@ class FlowProblem:
         plt.close(fig)
         #plt.show()
 
+    def summary(self):
+        return dict(
+            pos=[self.group_positions[eid].tolist() for eid in self.cond_tensors.keys()],
+            cond_tn=[self.cond_tensors[eid].tolist() for eid in self.cond_tensors.keys()]
+        )
 
 
 
@@ -588,6 +602,11 @@ class BothSample:
         fr_set = fracture.Fractures(fractures, fr_size_range[0] / 2)
         return fr_set
 
+    def make_summary(self, done_list):
+        results = {problem.basename: problem.summary() for problem in done_list}
+        with open("summary.yaml", "w") as f:
+            yaml.dump(results, f)
+
 
     def calculate(self):
         fractures = self.generate_fractures()
@@ -596,6 +615,7 @@ class BothSample:
         fine_flow.make_mesh()
         fine_flow.make_fields()
         fine_flow.run()
+        done = []
         # coarse problem
         if self.do_coarse:
             coarse_flow = FlowProblem("coarse", (self.h_coarse_step, np.inf), fractures, self.config_dict)
@@ -607,14 +627,18 @@ class BothSample:
             coarse_ref.elementwise_mesh(coarse_flow.mesh, self.h_fine_step,  coarse_flow.outer_polygon)
             coarse_ref.make_fields()
             coarse_ref.run().join()
+            done.append(coarse_ref)
             cond_tensors = coarse_ref.effective_tensor_from_bulk(coarse_ref.reg_to_group)
 
             coarse_flow.make_fields(cond_tensors)
-            coarse_flow.run().join()
+            coarse_flow.run()
+            coarse_flow.thread.join()
+            done.append(coarse_flow)
             coarse_flow.effective_tensor_from_bulk(coarse_flow.reg_to_group)
         fine_flow.thread.join()
+        done.append(fine_flow)
         fine_flow.effective_tensor_from_bulk(fine_flow.reg_to_group)
-
+        self.make_summary(done)
 
 
 
@@ -627,13 +651,20 @@ class BothSample:
 
 
 
-
+def finished():
+    with open("FINISHED", "w") as f:
+        f.write("done")
 
 if __name__ == "__main__":
     import time
+    import atexit
+    atexit.register(finished)
     sample_config = sys.argv[1]
-    with open(sample_config, "r") as f:
-        config_dict = yaml.load(f, Loader=yaml.FullLoader)
+    try:
+        with open(sample_config, "r") as f:
+            config_dict = yaml.load(f, Loader=yaml.FullLoader)
+    except Exception as e:
+        print("cwd: ", os.getcwd(), "sample config: ", sample_config)
     start_time = time.time()
     bs = BothSample(config_dict)
     bs.calculate()

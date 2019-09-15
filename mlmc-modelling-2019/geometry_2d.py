@@ -28,6 +28,8 @@ Heterogeneous mesh step:
 import os
 import sys
 import numpy as np
+import subprocess
+import traceback
 
 src_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(src_path, '../MLMC/src'))
@@ -336,12 +338,18 @@ class Geometry2d:
             for id, char_length in self.vtx_char_length:
                 print(r'Characteristic Length {%s} = %s;' % (id, char_length), file=f)
 
-        from subprocess import call
+
         if not os.path.exists(gmsh_path):
             gmsh_path = "gmsh"
         #call([gmsh_path, "-3", "-rand 1e-10", self.geo_file])
-        call([gmsh_path, "-2", "-format", "msh2", self.geo_file])
+        #call([gmsh_path, "-2", "-format", "msh2", self.geo_file])
+        try:
+            subprocess.run([gmsh_path, "-2", "-format", "msh2", self.geo_file], check=True)
+        except subprocess.CalledProcessError as e:
+            traceback.print_exc()
         self.tmp_msh_file = self.basename + ".tmp.msh"
+        if not os.path.exists(self.tmp_msh_file):
+            assert False, "Meshing failed"
         return self.tmp_msh_file
 
 
