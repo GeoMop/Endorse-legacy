@@ -1,13 +1,13 @@
 # The flow executable and arguments to use.
 # JB: ABSOLUTE PATH
-flow_executable:
-  - /home/jb/workspace/flow123d_JB/bin/fterm
-  - --no-term
-  - rel
-  - run
-finish_sleep: 0
-metacentrum: false
-gmsh_executable: /home/jb/bin/gmsh4
+#flow_executable:
+  #- /home/jb/workspace/flow123d_JB/bin/fterm
+  #- --no-term
+  #- rel
+  #- run
+#finish_sleep: 0
+#metacentrum: false
+#gmsh_executable: /home/jb/bin/gmsh4
 # reuse existing sample directories and existing results
 # None - clean dir
 # False - keep dir, rerun process.py
@@ -15,14 +15,19 @@ gmsh_executable: /home/jb/bin/gmsh4
 #reuse_samples: true
 
 # Charon:
-#flow_executable:
-#  # release
-#   - /storage/liberec3-tul/home/jan_brezina/workspace/flow123d/bin/flow123d
-#  # debug
-#  #- /storage/liberec3-tul/home/jan_brezina/workspace/flow-dbg/flow123d/bin/flow123d
-#metacentrum: true
+flow_executable:
+ # release
+  - /storage/liberec3-tul/home/jan_brezina/workspace/flow123d/bin/flow123d
+ # debug
+ #- /storage/liberec3-tul/home/jan_brezina/workspace/flow-dbg/flow123d/bin/flow123d
+metacentrum: true
+gmsh_executable: /home/jan_brezina/workspace/wgc/mlmc_random_frac/env/bin/gmsh
 
-mc_samples: 20
+levels:
+  - n_samples: 1
+    step: 100
+  - n_samples: 30
+    step: 10
 
 copy_files: []
 

@@ -328,6 +328,8 @@ class Process():
             mem='8gb',
             queue='charon',
             qsub=None)
+        if self.config_dict['metacentrum']:
+            pbs_config['qsub'] = 'qsub'
         pbs_obj = pbs.Pbs(self.work_dir,
                                job_count=0,
                                qsub=pbs_config['qsub']

@@ -7,6 +7,7 @@ import yaml
 import attr
 import collections
 import traceback
+import time
 from typing import Any, List, Dict, Tuple
 
 src_path = os.path.dirname(os.path.abspath(__file__))
@@ -520,10 +521,10 @@ class FlowProblem:
         import matplotlib.pyplot as plt
 
         e_val, e_vec = np.linalg.eigh(cond_tn)
-        fig = plt.figure()
+        fig, axes = fig, axes = plt.subplots(nrows=1, ncols=1) 
+        ax = axes
         # setting the axis limits in [left, bottom, width, height]
         #rect = [0.1, 0.1, 0.8, 0.8]
-        ax = fig.add_subplot()
         ax.set_aspect('equal')
         #ax_polar = fig.add_axes(rect, polar=True, frameon=False)
         continuous_loads = np.array([(np.cos(t), np.sin(t)) for t in np.linspace(0, np.pi, 1000)])
@@ -652,6 +653,7 @@ class BothSample:
 
 
 def finished():
+    time.sleep(1)
     with open("FINISHED", "w") as f:
         f.write("done")
 
