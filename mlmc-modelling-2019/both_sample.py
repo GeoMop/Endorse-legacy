@@ -568,7 +568,7 @@ class BothSample:
         self.__dict__.update(sample_config)
         np.random.seed(self.seed)
         with open(self.config_path, "r") as f:
-            self.config_dict = yaml.load(f, Loader=yaml.FullLoader)
+            self.config_dict = yaml.load(f) # , Loader=yaml.FullLoader
 
     def generate_fractures(self):
         geom = self.config_dict["geometry"]
@@ -662,7 +662,7 @@ if __name__ == "__main__":
     sample_config = sys.argv[1]
     try:
         with open(sample_config, "r") as f:
-            config_dict = yaml.load(f, Loader=yaml.FullLoader)
+            config_dict = yaml.load(f) # , Loader=yaml.FullLoader
     except Exception as e:
         print("cwd: ", os.getcwd(), "sample config: ", sample_config)
     start_time = time.time()

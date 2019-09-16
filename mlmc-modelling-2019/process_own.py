@@ -25,9 +25,6 @@ from mlmc.simulation import Simulation
 from mlmc import flow_mc
 from mlmc.sample import Sample
 
-def load_config_dict(cfg):
-    with open(cfg, "r") as f:
-        return yaml.safe_load(f)
 
 
 
@@ -78,20 +75,35 @@ class SimulationSample(Sample):
 class FractureFlowSimulation():
     total_sim_id = 0
 
-    def __init__(self, mesh_step, pbs, coarse_step):
-
+    def __init__(self, i_level, pbs_obj, mesh_step, n_samples, coarse_step, work_dir):
+        self.i_level = i_level
         self.step = mesh_step
         self.coarse_step = coarse_step
         # Pbs script creater
-        self.pbs_creater = pbs
+        self.pbs_creater = pbs_obj
+        self.n_samples = n_samples
 
         self.cond_field_xy = []
         self.cond_field_values = []
         self.running_samples = {}
         self.finished_samples = {}
+        self.work_dir = work_dir
         # Register produced samples. After all are collected we perform averaging.
 
 
+    def run_level(self):
+        """
+        :return: [ (level, i_sample, dir) ]
+        """
+        level_dir = "sim_{}_step_{:.6f}".format(self.i_level, self.step)
+        level_dir = os.path.join(self.work_dir, level_dir)
+        os.makedirs(level_dir, mode=0o775, exist_ok=True)
+        for i_sample in range(self.n_samples):
+            sample_dir = "L{:02d}_F_S{:07}".format(self.i_level, i_sample)
+            sample_dir = os.path.join(level_dir, sample_dir)
+            os.makedirs(sample_dir, mode=0o775, exist_ok=True)
+            self.simulation_sample(i_sample, sample_dir)
+        return self.running_samples
 
 
 
@@ -101,7 +113,7 @@ class FractureFlowSimulation():
             do_coarse=self.coarse_step is not None,
             h_fine_step=self.step,
             h_coarse_step=self.coarse_step,
-            config_path=os.path.join(src_path, "config.yaml")
+            config_path=os.path.join(self.work_dir, "config.yaml")
         )
         config_path = os.path.join(sample_dir, "sample_config.yaml")
         if not os.path.exists(config_path):
@@ -174,7 +186,7 @@ class FractureFlowSimulation():
             finished = len(content) == 1 and content[0] == "done"
         if finished:
             with open(os.path.join(sample_dir, "summary.yaml"), "r") as f:
-                summary_dict = yaml.load(f, Loader=yaml.FullLoader)
+                summary_dict = yaml.load(f) #, Loader=yaml.FullLoader
 
             fine_cond_tn = np.array(summary_dict['fine']['cond_tn'][0])
             if self.coarse_step is not None:
@@ -298,23 +310,13 @@ class FractureFlowSimulation():
 class Process():
     def __init__(self, work_dir):
         self.work_dir = os.path.abspath(work_dir)
+        os.makedirs(self.work_dir, mode=0o775, exist_ok=True)
+        shutil.copy(os.path.join(src_path, "config.yaml"), self.work_dir)
+        with open(os.path.join(self.work_dir, "config.yaml"), "r") as f:
+            self.config_dict = yaml.load(f) #, Loader=yaml.FullLoader
+        
 
 
-
-    def run_level(self, i_level, ns, fine_sim):
-        """
-        :return: [ (level, i_sample, dir) ]
-        """
-        mesh_step = fine_sim.step
-        level_dir = "sim_{}_step_{:.6f}".format(i_level, mesh_step)
-        level_dir = os.path.join(self.work_dir, level_dir)
-        os.makedirs(level_dir, mode=0o775, exist_ok=True)
-        for i_sample in range(ns):
-            sample_dir = "L{:02d}_F_S{:07}".format(i_level, i_sample)
-            sample_dir = os.path.join(level_dir, sample_dir)
-            os.makedirs(sample_dir, mode=0o775, exist_ok=True)
-            fine_sim.simulation_sample(i_sample, sample_dir)
-        return fine_sim.running_samples
 
 
     def make_pbs(self):
@@ -337,16 +339,15 @@ class Process():
     def run(self):
         os.makedirs(self.work_dir, mode=0o775, exist_ok=True)
         self.pbs=self.make_pbs()
-        self.levels = [
-             (0, FractureFlowSimulation(100, self.pbs, coarse_step=None)),
-             (1, FractureFlowSimulation(10, self.pbs, coarse_step=100))
-        ]
-        n_samples = [1, 30]
 
-        ns_lev = list(zip(n_samples, self.levels))
-        for ns, lev in reversed(ns_lev):
-            il, sim = lev
-            self.run_level(il, ns, sim)
+        self.levels = []
+        last_step = None
+        for il, level_config in enumerate(self.config_dict['levels']):
+            sim = FractureFlowSimulation(il, self.pbs, level_config['step'], level_config['n_samples'], last_step, self.work_dir)
+            self.levels.append(sim)
+                               
+        for l in reversed(self.levels):
+            l.run_level()
 
     def move_failed(self, failed):
         failed_dir = os.path.join(self.work_dir, "FAILED")
@@ -360,7 +361,7 @@ class Process():
         n_running = 1
         while (n_running):
             n_running = 0
-            for il, sim in self.levels:
+            for sim in self.levels:
                 failed = sim.extract_results()
                 self.move_failed(failed)
                 n_running += len(sim.running_samples)
