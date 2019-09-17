@@ -263,6 +263,9 @@ class FlowProblem:
             for eid, c2d in cond_tensors_2d.items():
                 cond_tensors[eid][0:2, 0:2] += c2d
         aperture_per_size = float(self.config_dict['aperture_per_size'])
+        viscosity = float(self.config_dict['water_viscosity'])
+        gravity_accel = float(self.config_dict['gravity_accel'])
+        water_density = float(self.config_dict['water_density'])
         n_elem = len(bulk_elements)
         elem_ids = []
         cond_tn_field = np.empty((n_elem, 9))
@@ -277,7 +280,7 @@ class FlowProblem:
                 i_fr = self.reg_to_fr[reg_id]
                 fr_size = self.fractures.fractures[i_fr].rx
                 cs = fr_size * aperture_per_size
-                cond = cs ** 2 / 12
+                cond = cs ** 2 / 12 * water_density * gravity_accel / viscosity
                 cond_tn = cond * I_tn
             else:
                 cs = 1.0

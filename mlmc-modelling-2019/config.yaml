@@ -1,13 +1,14 @@
 # The flow executable and arguments to use.
 # JB: ABSOLUTE PATH
-#flow_executable:
-  #- /home/jb/workspace/flow123d_JB/bin/fterm
-  #- --no-term
-  #- rel
-  #- run
-#finish_sleep: 0
-#metacentrum: false
-#gmsh_executable: /home/jb/bin/gmsh4
+flow_executable:
+  - /home/jb/workspace/flow123d_JB/bin/fterm
+  - --no-term
+  - rel
+  - run
+finish_sleep: 0
+metacentrum: false
+gmsh_executable: /home/jb/bin/gmsh4
+
 # reuse existing sample directories and existing results
 # None - clean dir
 # False - keep dir, rerun process.py
@@ -15,24 +16,62 @@
 #reuse_samples: true
 
 # Charon:
-flow_executable:
- # release
-  - /storage/liberec3-tul/home/jan_brezina/workspace/flow123d/bin/flow123d
- # debug
- #- /storage/liberec3-tul/home/jan_brezina/workspace/flow-dbg/flow123d/bin/flow123d
-metacentrum: true
-gmsh_executable: /home/jan_brezina/workspace/wgc/mlmc_random_frac/env/bin/gmsh
+#flow_executable:
+# # release
+#  - /storage/liberec3-tul/home/jan_brezina/workspace/flow123d/bin/flow123d
+# # debug
+# #- /storage/liberec3-tul/home/jan_brezina/workspace/flow-dbg/flow123d/bin/flow123d
+#metacentrum: true
+#gmsh_executable: /home/jan_brezina/workspace/wgc/mlmc_random_frac/env/bin/gmsh
+
+
+# case 1
+aperture_per_size: 1e-4
+water_viscosity: 1
+water_density: 1
+gravity_accel: 1
 
 levels:
-  - n_samples: 1
+  - n_samples: 3
     step: 100
+    bulk_conductivity:
+        mean_log_conductivity: [-9.97926069, -9.41656073]
+        cov_log_conductivity: [[0.0056176,  0.0022999 ], [0.0022999,  0.04078208]]
   - n_samples: 30
     step: 10
+    bulk_conductivity:
+        mean_log_conductivity: [-10, -10]
+        cov_log_conductivity: None
 
+        
+# case 2
+levels:
+  - n_samples: 3
+    step: 100
+    bulk_conductivity:
+        mean_log_conductivity: [-9.97926069, -9.41656073]
+        cov_log_conductivity: [[0.0056176,  0.0022999 ], [0.0022999,  0.04078208]]
+  - n_samples: 30
+    step: 10
+    bulk_conductivity:
+        mean_log_conductivity: [-9, -9]
+        cov_log_conductivity: None
+
+aperture_per_size: 5e-7   # taken from WGC: initial cross_section: 5e-5m, fracture size about 100m
+water_viscosity: 8.9e-4
+water_density: 997
+gravity_accel: 9.80665
+# seems that realistic fracture conductivity about 40x higher then in case 1
+# however the background conductivity is also 10x higher, so we get reasonable 4x increase of the ratio
+
+        
+        
+        
 copy_files: []
 
-bulk_conductivity: 1e-10
-aperture_per_size: 1e-4
+#bulk_conductivity: 1e-10
+
+#bulk_conductivity: 1e-9
 
 # number of pressure gradient directions to apply in order to get effective tensor,  min 2
 n_pressure_loads: 8
