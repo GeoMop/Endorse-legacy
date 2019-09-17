@@ -102,6 +102,8 @@ class Region:
 
 @attr.s(auto_attribs=True)
 class FlowProblem:
+    i_level: int
+    # MLMC Level index (to retrieve model parameters from main config)
     basename: str
     # Basename for files of this flow problem.
     fr_range: Tuple[float, float]
@@ -123,7 +125,7 @@ class FlowProblem:
     # One group is specified by the tuple of bulk and fracture region ID.
     group_positions: Dict[int, np.array] = attr.ib(factory=dict)
     # Centers of macro elements.
-
+    skip_decomposition:bool = False
     @property
     def pressure_loads(self):
         return self.thread.p_loads
@@ -171,12 +173,13 @@ class FlowProblem:
             reg = self.add_region("fr_{}".format(i_fr), dim=1, mesh_step=self.mesh_step)
             self.reg_to_fr[reg.id] = i_fr
             fracture_regions.append(reg)
+            if self.skip_decomposition:
+                continue
             #print("    ", i_fr, "fr size:", np.linalg.norm(p1 - p0))
             try:
                 #pd.decomp.check_consistency()
                 # if i_fr == 670:
                 #     plot_decomp_segments(pd, [p0, p1])
-
                 sub_segments = pd.add_line(p0, p1)
             except Exception as e:
                 # new_points = [pt for seg in segments for pt in seg.vtxs]
@@ -205,6 +208,7 @@ class FlowProblem:
         # assign boundary region to outer polygon points
         for seg, side in outer_wire.segments():
             side_reg = seg.attr
+            #if not hasattr(side_reg, "sub_reg"):
             assert hasattr(side_reg, "sub_reg")
             seg.vtxs[side].attr = side_reg.sub_reg
         # none region to remaining
@@ -241,27 +245,80 @@ class FlowProblem:
 
     def make_mesh(self):
         import geometry_2d as geom
-
+        mesh_file = "mesh_{}.msh".format(self.basename)
+        self.skip_decomposition = os.path.exists(mesh_file)
         self.make_fracture_network()
-        gmsh_executable = self.config_dict["gmsh_executable"]
-        g2d = geom.Geometry2d("mesh_" + self.basename, self.regions)
-        g2d.add_compoud(self.decomp)
-        g2d.make_brep_geometry()
-        step_range = (self.mesh_step * 0.9, self.mesh_step *1.1)
-        g2d.call_gmsh(gmsh_executable, step_range)
-        self.mesh = g2d.modify_mesh()
+        if not self.skip_decomposition:
+            gmsh_executable = self.config_dict["gmsh_executable"]
+            g2d = geom.Geometry2d("mesh_" + self.basename, self.regions)
+            g2d.add_compoud(self.decomp)
+            g2d.make_brep_geometry()
+            step_range = (self.mesh_step * 0.9, self.mesh_step *1.1)
+            g2d.call_gmsh(gmsh_executable, step_range)
+            self.mesh = g2d.modify_mesh()
+        else:
+            self.mesh = gmsh_io.GmshIO()
+            with open(mesh_file, "r") as f:
+                self.mesh.read(f)
+
+
 
     def make_fields(self, cond_tensors_2d=None):
+
+        level_dict = self.config_dict['levels'][self.i_level]
+        bulk_conductivity = level_dict['bulk_conductivity']
+        mean_log_cond = [float(v) for v in bulk_conductivity['mean_log_conductivity']]
+        # default isotropic tensor
+        I_tn = np.eye(3, dtype=float)
+        default_cond_tn = np.power(10, np.mean(mean_log_cond)) * I_tn
+
+        cov_item = bulk_conductivity.get('cov_log_conductivity', None)
+        if cov_item is None:
+            cond_tn_sample = lambda: default_cond_tn.copy()
+        else:
+            cov_log_cond = [[float(v) for v in row] for row in cov_item]
+            cov_sqrt = np.linalg.cholesky(cov_log_cond)
+            # should be lower triangular
+
+            # other method, use different rotation of uncorrelated values, so it
+            # leads to different samples
+            #cov_eval, cov_egvec = np.linalg.eigh(cov_log_cond)
+            #cov_sqrt = (cov_egvec @ np.diag(np.sqrt(cov_eval))).T
+            def cond_tn_sample():
+                cond_eigenvals = cov_sqrt @ np.random.randn(2) + mean_log_cond
+                cond_eigenvals = np.power(10, cond_eigenvals)
+                unrotated_tn = np.diag(cond_eigenvals)
+                angle = np.random.uniform(0, 2 * np.pi, 1)[0]
+                c, s = np.cos(angle), np.sin(angle)
+                rot_mat = np.array([[c, -s], [s, c]])
+                cond_2d = rot_mat.T @ unrotated_tn @ rot_mat
+                cond_3d = np.eye(3)
+                cond_3d[0:2, 0:2] += cond_2d
+                return cond_3d
+
+
+
+        is_bs_reg_id={}
+        for name, reg_id_dim in self.mesh.physical.items():
+            is_bs_reg_id[reg_id_dim] = (name[0] == '.')
         bulk_elements = [eid
                          for eid, (t, tags, nodes) in self.mesh.elements.items()
-                         if not self.regions[tags[0]-10000].boundary]
-        I_tn = np.eye(3, dtype=float)
-        const_conductivity = float(self.config_dict['bulk_conductivity']) * I_tn
-        cond_tensors = collections.defaultdict(lambda: const_conductivity.copy())
+                         if not is_bs_reg_id[(tags[0], len(nodes)-1)] ]
+
+
+
+        # construct eid -> cond tensor dictionary either from input
+        # or random (uncorellated)
+        cond_tensors = collections.defaultdict(lambda: default_cond_tn.copy())
         if cond_tensors_2d is not None:
+            # tensors given by micro scale
             # convert 2d tensors to 3d
             for eid, c2d in cond_tensors_2d.items():
                 cond_tensors[eid][0:2, 0:2] += c2d
+        else:
+            # random tensors
+            for eid in bulk_elements:
+                cond_tensors[eid] = cond_tn_sample()
         aperture_per_size = float(self.config_dict['aperture_per_size'])
         viscosity = float(self.config_dict['water_viscosity'])
         gravity_accel = float(self.config_dict['gravity_accel'])
@@ -615,18 +672,24 @@ class BothSample:
     def calculate(self):
         fractures = self.generate_fractures()
         # fine problem
-        fine_flow = FlowProblem("fine", (self.h_fine_step, np.inf), fractures, self.config_dict)
+        fine_flow = FlowProblem(
+            self.i_level, "fine", (self.h_fine_step, np.inf),
+            fractures, self.config_dict)
         fine_flow.make_mesh()
         fine_flow.make_fields()
         fine_flow.run()
         done = []
         # coarse problem
         if self.do_coarse:
-            coarse_flow = FlowProblem("coarse", (self.h_coarse_step, np.inf), fractures, self.config_dict)
+            coarse_flow = FlowProblem(
+                self.i_level, "coarse", (self.h_coarse_step, np.inf),
+                fractures, self.config_dict)
             coarse_flow.make_fracture_network()
             coarse_flow.make_mesh()
 
-            coarse_ref = FlowProblem("coarse_ref", (0, self.h_coarse_step), fractures, self.config_dict)
+            coarse_ref = FlowProblem(
+                self.i_level, "coarse_ref", (0, self.h_coarse_step),
+                fractures, self.config_dict)
             #coarse_ref.make_fracture_network()
             coarse_ref.elementwise_mesh(coarse_flow.mesh, self.h_fine_step,  coarse_flow.outer_polygon)
             coarse_ref.make_fields()

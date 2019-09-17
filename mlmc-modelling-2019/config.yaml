@@ -32,35 +32,39 @@ water_density: 1
 gravity_accel: 1
 
 levels:
-  - n_samples: 3
+  - n_samples: 2
     step: 100
     bulk_conductivity:
+        # log10 used
         mean_log_conductivity: [-9.97926069, -9.41656073]
         cov_log_conductivity: [[0.0056176,  0.0022999 ], [0.0022999,  0.04078208]]
-  - n_samples: 30
+  - n_samples: 2
     step: 10
     bulk_conductivity:
+        # log10 used
         mean_log_conductivity: [-10, -10]
-        cov_log_conductivity: None
+        cov_log_conductivity: null
 
         
 # case 2
-levels:
-  - n_samples: 3
-    step: 100
-    bulk_conductivity:
-        mean_log_conductivity: [-9.97926069, -9.41656073]
-        cov_log_conductivity: [[0.0056176,  0.0022999 ], [0.0022999,  0.04078208]]
-  - n_samples: 30
-    step: 10
-    bulk_conductivity:
-        mean_log_conductivity: [-9, -9]
-        cov_log_conductivity: None
+#levels:
+  #- n_samples: 3
+    #step: 100
+    #bulk_conductivity:
+        ## log10 used
+        #mean_log_conductivity: [-9.97926069, -9.41656073]
+        #cov_log_conductivity: [[0.0056176,  0.0022999 ], [0.0022999,  0.04078208]]
+  #- n_samples: 30
+    #step: 10
+    #bulk_conductivity:
+        ## log10 used
+        #mean_log_conductivity: [-9, -9]
+        #cov_log_conductivity: None
 
-aperture_per_size: 5e-7   # taken from WGC: initial cross_section: 5e-5m, fracture size about 100m
-water_viscosity: 8.9e-4
-water_density: 997
-gravity_accel: 9.80665
+#aperture_per_size: 5e-7   # taken from WGC: initial cross_section: 5e-5m, fracture size about 100m
+#water_viscosity: 8.9e-4
+#water_density: 997
+#gravity_accel: 9.80665
 # seems that realistic fracture conductivity about 40x higher then in case 1
 # however the background conductivity is also 10x higher, so we get reasonable 4x increase of the ratio
 

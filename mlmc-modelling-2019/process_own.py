@@ -113,6 +113,7 @@ class FractureFlowSimulation():
             do_coarse=self.coarse_step is not None,
             h_fine_step=self.step,
             h_coarse_step=self.coarse_step,
+            i_level=self.i_level,
             config_path=os.path.join(self.work_dir, "config.yaml")
         )
         config_path = os.path.join(sample_dir, "sample_config.yaml")
@@ -486,8 +487,10 @@ class FractureFlowSimulation():
         print("Covarriance eigen values:\n", cov_cval)
 
         fig, axes = plt.subplots(nrows=1, ncols=2)
+
         cov_eval, cov_egvec = np.linalg.eigh(cov_cval)
         inv_cov_sqrt = (cov_egvec @ np.diag(1.0 / np.sqrt(cov_eval))).T
+
         std_cval = inv_cov_sqrt @ (c_val.T - mean_cval[:, None])
         from scipy.stats import norm
         for iax, ax in enumerate(axes):
@@ -511,8 +514,10 @@ class Process():
     def __init__(self, work_dir):
         self.work_dir = os.path.abspath(work_dir)
         os.makedirs(self.work_dir, mode=0o775, exist_ok=True)
-        shutil.copy(os.path.join(src_path, "config.yaml"), self.work_dir)
-        with open(os.path.join(self.work_dir, "config.yaml"), "r") as f:
+        work_config_path = os.path.join(self.work_dir, "config.yaml")
+        if not os.path.exists(work_config_path):
+            shutil.copy(os.path.join(src_path, "config.yaml"), self.work_dir)
+        with open(work_config_path, "r") as f:
             self.config_dict = yaml.load(f) #, Loader=yaml.FullLoader
         
 
@@ -602,6 +607,7 @@ class Process():
 
 if __name__ == "__main__":
     np.random.seed(123)
-    process = Process("output_2")
+    work_dir = sys.argv[1]
+    process = Process(work_dir)
     process.run()
     process.wait()
