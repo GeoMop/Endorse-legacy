@@ -2,7 +2,7 @@
 
 Predikce vlastností EDZ s vlivem na bezpečnost a spolehlivost hlubinného úložiště radioaktivního odpadu.
 
-##Cíl projektu
+## Cíl projektu
 
 Vytvořit SW nástroj a metodiku, pro predikci veličin charakterizujících bezpečnost dílčí části úložiště
 (tzv. *indikátorů bezpečnosti*) na základě geofyzikálních měření. To zahrnuje:
