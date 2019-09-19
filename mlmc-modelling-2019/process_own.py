@@ -209,10 +209,10 @@ class FractureFlowSimulation():
     def compute_cond_field_properties(self):
         if self.cond_field_xy:
             #self.test_homogenity()
-            #self.test_homogenity_xy()
-            #self.test_isotropy()
+            self.test_homogenity_xy()
+            self.test_isotropy()
             #self.test_isotropy_alt()
-            #self.compute_variogram()
+            self.compute_variogram()
             self.calculate_field_parameters()
 
     def test_homogenity(self):
@@ -405,9 +405,13 @@ class FractureFlowSimulation():
         for iy, axes_x in enumerate(axes):
             for ix, ax in enumerate(axes_x):
                 #ax.scatter(dists, variograms[:, iy, ix], s=0.5)
-                ax.plot(cell_dists, cell_variogram[:, iy, ix], color='red')
+                label = "C{}{}".format(["x", "y"][ix], ["x", "y"][iy])
+                ax.plot(cell_dists, cell_variogram[:, iy, ix],
+                        color='red', label=label)
+                ax.set_xlabel("corr. length")
+                ax.legend()
+        fig.suptitle("Empirical variogram.")
         fig.savefig("correlations.pdf")
-        plt.show()
         plt.close(fig)
 
 
@@ -499,7 +503,7 @@ class FractureFlowSimulation():
             ax.set_xlabel("samples")
             ax.set_ylabel("Q log_norm")
         fig.savefig("QQ_conductivity.pdf")
-        plt.show()
+        
 
 
 
