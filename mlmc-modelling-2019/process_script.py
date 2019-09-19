@@ -98,6 +98,16 @@ class FractureFlowSimulation(Simulation):
         self.coarse_sim = None
         self.coarse_sim_set = False
 
+        self.cond_field_xy = []
+        self.cond_field_values = []
+        self.running_samples = {}
+        self.finished_samples = {}
+        # Register produced samples. After all are collected we perform averaging.
+
+        self.result_struct = [["value", "cxx", "cxy", "cyy"],
+                              ["f8", "f8", "f8", "f8"]]
+
+
     @property
     def is_fine_sim(self):
         return self.coarse_sim_set
@@ -142,7 +152,7 @@ class FractureFlowSimulation(Simulation):
         with open(os.path.join(sample_dir, "sample_config.yaml"), "w") as f:
             yaml.dump(sample_config, f)
 
-    def simulation_sample(self, sample_tag, sample_id, start_time=0):
+    def simulation_sample(self, i_samplesample_tag, sample_id, start_time=0):
         """
 
         :param sample_tag:
@@ -153,38 +163,170 @@ class FractureFlowSimulation(Simulation):
 
 
         if not self.is_fine_sim:
-            sample_dir = ""
-            package_dir=""
+            sample = Sample(
+                        directory=self._last_fine_sample.directory,
+                        sample_id=sample_id,
+                        job_id=self._last_fine_sample.job_id)
+            sample._fine_sample = self._last_fine_sample
         else:
             # Fine sim.
             sample_dir = os.path.join(self.work_dir, sample_tag)
-            flow_mc.force_mkdir(sample_dir)
-            for f in ['flow_templ.yaml']:
-                shutil.copy(os.path.join(src_path, f), os.path.join(sample_dir, f))
-            self.write_sample_config(sample_dir)
-            # Fine sample starts execution job for both samples
-            lines = [
-                'cd {sample_dir}',
-                'python3 {src_dir}/both_sample.py sample_config.yaml 2>&1 | tee both_sample_out',
-            ]
-            package_dir = self.pbs_creater.add_realization(
-                weight=self.n_fine_elements,
-                lines=lines,
-                sample_dir=sample_dir,
-                src_dir=src_path)
+            if not os.path.exists(os.path.join(sample_dir, "FINISHED")):
+                flow_mc.force_mkdir(sample_dir)
+                for f in ['flow_templ.yaml']:
+                    shutil.copy(os.path.join(src_path, f), os.path.join(sample_dir, f))
+                self.write_sample_config(sample_dir)
+                # Fine sample starts execution job for both samples
+                lines = [
+                    'cd {sample_dir}',
+                    'python3 {src_dir}/both_sample.py sample_config.yaml 2>&1 | tee both_sample_out',
+                ]
 
-        sample = Sample(directory=sample_dir, sample_id=sample_id,
-                      job_id=package_dir)
-        sample.is_fine_sample = self.is_fine_sim
+                package_dir = self.pbs_creater.add_realization(
+                    weight=self.n_fine_elements,
+                    lines=lines,
+                    sample_dir=sample_dir,
+                    src_dir=src_path)
+            else:
+                package_dir = "finished_job"
+
+            sample = Sample(directory=sample_dir, sample_id=sample_id,
+                          job_id=package_dir)
+            self.running_samples[sample_id] = sample
+            if self.coarse_sim:
+                self.coarse_sim._last_fine_sample = sample
+
+
         return sample
 
 
 
+
     def _extract_result(self, sample):
-        if sample.is_coarse_sample:
-            pass
+        finished_file = os.path.join(sample.directory, "FINISHED")
+        finished = False
+        if os.path.exists(finished_file):
+            with open(finished_file, "r") as f:
+                content = f.read().split()
+            finished = len(content) == 1 and content[0] == "done"
+        if finished:
+            with open(os.path.join(sample.directory, "summary.yaml"), "r") as f:
+                summary_dict = yaml.load(f, Loader=yaml.FullLoader)
+            if self.is_fine_sim:
+                cond_tn = np.array(summary_dict['fine']['cond_tn'][0])
+                self.cond_field_xy.append(np.array(summary_dict['coarse_ref']['pos']))
+                self.cond_field_values.append(np.array(summary_dict['coarse_ref']['cond_tn']))
+            else:
+                cond_tn = np.array(summary_dict['coarse']['cond_tn'][0])
+            return [0, cond_tn[0, 0], cond_tn[1, 0], cond_tn[1, 1]]
         else:
-            pass
+            return None
+
+
+
+    def compute_cond_field_properties(self):
+        if self.cond_field_xy:
+            #self.test_homogenity()
+            self.test_homogenity_xy
+            #self.compute_variogram(point_samples, cond_samples)
+
+    def test_homogenity(self):
+        points = np.concatenate(self.cond_field_xy, axis=0)
+        cond_tn = np.concatenate(self.cond_field_values, axis=0)
+        mean_c_tn = np.mean(cond_tn, axis=0)
+        cond_diff = cond_tn - mean_c_tn
+        print(mean_c_tn)
+
+        fig, axes = plt.subplots(nrows=2, ncols=2)
+
+        X, Y = points.T
+        for iy, axes_x in enumerate(axes):
+            for ix, ax in enumerate(axes_x):
+                sc = ax.scatter(X, Y, s=1, c=cond_diff[:, ix, iy])
+
+        fig.subplots_adjust(right=0.8)
+        cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+        fig.colorbar(sc, cax=cbar_ax)
+
+        plt.show()
+
+    def test_homogenity_xy(self):
+        points = np.concatenate(self.cond_field_xy, axis=0)
+        cond_tn = np.concatenate(self.cond_field_values, axis=0)
+        mean_c_tn = np.mean(cond_tn, axis=0)
+        cond_diff = cond_tn - mean_c_tn
+        print(mean_c_tn)
+
+        fig, axes = plt.subplots(nrows=2, ncols=3)
+
+        X, Y = points.T
+        for iy, axes_x in enumerate(axes):
+            for ix, ax in enumerate(axes_x):
+                coord = [(0,0), (0,1), (1,1)][ix]
+                sc = ax.scatter(points[:, iy], cond_tn[:, coord[0], coord[1]], s=1)
+                ax.plot(points[:, iy], mean_c_tn[coord[0], coord[1]], c='red')
+
+
+        fig.subplots_adjust(right=0.8)
+        cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+        fig.colorbar(sc, cax=cbar_ax)
+
+        plt.show()
+
+    def compute_variogram(self, point_samples, cond_samples):
+
+        # Select pairs to sample various point distances
+        #radius = 0.5 * np.linalg.norm(points.max_pt - points.min_pt, 2)
+        n_samples = len(point_samples)
+        assert len(cond_samples) == n_samples
+        n_pairs_per_sample = 100
+        dist_list = []
+        variogram_list = []
+        for points, conds in zip(point_samples, cond_samples):
+            n_vals = len(points)
+            assert len(conds) == n_vals
+            pairs = np.random.choice(n_vals, (n_pairs_per_sample, 2))
+
+            pair_dists = np.linalg.norm(points.points[pairs[:, 0]] - points.points[pairs[:, 1]], axis=1)
+            pair_variogram = np.abs(conds[pairs[:, 0]] - conds[pairs[:, 1]]) ** 2
+
+            indices = np.argsort(pair_dists)
+            pair_dists = pair_dists[indices]
+            pair_variogram = pair_variogram[indices]
+            dist_list.append(pair_dists)
+            variogram_list.append(pair_variogram)
+        dists = np.concatenate(dist_list)
+        variograms = np.concatenate(variogram_list)
+        n_cells = 10
+        breaks = np.linspace(0, len(dists), n_cells, endpoint=False, dtype=int)
+        cell_dists = dists[breaks]
+        cell_variogram = []
+        breaks = list(breaks) + [len(dists)]
+        start = 0
+        for end in breaks[1:]:
+            cell_variogram.append(np.mean(variograms[start, end], axis=0))
+            start = end
+
+    def plot_variogram(self, breaks, variogram_tn):
+        fig = plt.figure()
+        # setting the axis limits in [left, bottom, width, height]
+        #rect = [0.1, 0.1, 0.8, 0.8]
+        ax_xx = fig.add_subplot(2, 2, 0)
+        ax_xy = fig.add_subplot(2, 2, 1)
+        ax_yx = fig.add_subplot(2, 2, 2)
+        ax_yy = fig.add_subplot(2, 2, 3)
+
+        breaks = [(breaks[i] + breaks[i+1])/2 for i in range(len(breaks))]
+        ax_xx.plot(breaks, variogram_tn[:, 0, 0])
+        ax_xy.plot(breaks, variogram_tn[:, 1, 0])
+        ax_yx.plot(breaks, variogram_tn[:, 0, 1])
+        ax_yy.plot(breaks, variogram_tn[:, 1, 1])
+
+
+
+
+
+
 
 
 
@@ -298,25 +440,38 @@ class Process(base_process.Process):
             mlmc_obj.load_from_file()
         return mlmc_obj
 
+    def setup(self):
+        os.makedirs(self.work_dir, mode=0o775, exist_ok=True)
+        levels = [
+            (FractureFlowSimulation(100, level_id=0), None),
+            (FractureFlowSimulation(10, level_id=1), FractureFlowSimulation(100, level_id=1))
+        ]
+        n_samples = [1, 3]
+        for ns, lev in zip(n_samples, reversed(levels))
+            fine_sim, coarse_sim = lev
+            fine_sim.set_coarse_sim(coarse_sim)
+            for i_sample in range(ns):
+                fine_sim.sample_simulation(i_sample)
 
     def run(self):
         """
         Run mlmc
         :return: None
         """
-        os.makedirs(self.work_dir, mode=0o775, exist_ok=True)
-        self.n_moments = 10
 
-        mlmc_list = []
-        # Run one level Monte-Carlo method
-        for nl in [2]:  # , 2, 3, 4,5, 7, 9]:
-            mlmc = self.setup_config(nl, clean=True)
-
-            # self.n_sample_estimate(mlmc)
-            self.generate_jobs(mlmc, n_samples=[self.mc_samples])
-            mlmc_list.append(mlmc)
-
-        self.all_collect(mlmc_list)
+        # self.n_moments = 10
+        #
+        # mlmc_list = []
+        # # Run one level Monte-Carlo method
+        # for nl in [2]:  # , 2, 3, 4,5, 7, 9]:
+        #     mlmc = self.setup_config(nl, clean=False)
+        #
+        #     # self.n_sample_estimate(mlmc)
+        #     #n_samples = nl * [self.mc_samples]
+        #     self.generate_jobs(mlmc, n_samples=[1,3])
+        #     mlmc_list.append(mlmc)
+        #
+        # self.all_collect(mlmc_list)
 
 
 
