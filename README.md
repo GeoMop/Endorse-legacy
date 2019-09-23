@@ -1,6 +1,6 @@
 # Endorse
 
-Predikce vlastností EDZ s vlivem na bezpečnost a spolehlivost hlubinného úložiště radioaktivního odpadu.
+Predikce vlastností EDZ (excavation damage zone) s vlivem na bezpečnost a spolehlivost hlubinného úložiště radioaktivního odpadu.
 
 ## Cíl projektu
 
