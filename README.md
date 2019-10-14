@@ -15,9 +15,17 @@ a geofyzikálních měření.
 4. Aplikaci vhodných stochastických výpočetních metod pro predikci rozdělení indikátorů bezpečnosti a parametrů 
 transportního modelu se zahrnutím chyb měření a dalších podstatných neurčitostí použitých modelů
 
-## Zdroje
+## Rozcestník
+
+- [Přehled řešení projektu](https://github.com/jbrezmorf/Endorse/projects/2) - přehled plánovaných, řešených a ukončených úkolů dle harmonogramu projektu
 
 - [Přehled řešitelů](https://docs.google.com/document/d/1R8CBU9197brrruWGahVbE7_At2S2V51J6JV5bgs-kxQ/edit#heading=h.e1t1yg8nyvaz)
+
+- [Zotero Endorse](https://www.zotero.org/groups/287302/flow123d/items/collectionKey/3BAS5Z2A) - sdílený prostor pro komunikaci referencí a fulltextů, použití v rámci aplikace [Zotero](https://www.zotero.org/download/)
+
+- [Overleaf Endorse](https://www.overleaf.com/project) - tvorba sdílených textů, zpráv, ... 
+
+## Software
 
 - [Flow123d](https://github.com/flow123d/flow123d) 
  simulátor transportních a mechanických procesů v rozpukaném porézním prostředí
@@ -26,3 +34,4 @@ transportního modelu se zahrnutím chyb měření a dalších podstatných neur
   metoda multilevel Monte Carlo v Pythonu, generování náhodných polí a puklinových sítí, 
   maximal entropy method pro rekonstrukci hustoty pravděpodobnosti
   
+- [PERMON](https://github.com/permon)
