@@ -9,7 +9,7 @@ Further notes:
 number of tractable fractures:
 approx. time of the calculation:
 
-
+read: poznamky_a_popis
 
   
   
