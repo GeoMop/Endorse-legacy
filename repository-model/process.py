@@ -11,6 +11,7 @@ import numpy as np
 import collections
 import math
 import matplotlib.pyplot as plt
+from bgem.gmsh import heal_mesh
 
 import fracture
 import mesh
@@ -166,7 +167,6 @@ def prepare_mesh(config_dict, fractures):
 
     mesh_healed = mesh_name + "_healed.msh"
     if not os.path.isfile(mesh_healed):
-        import heal_mesh
         hm = heal_mesh.HealMesh.read_mesh(mesh_file, node_tol=1e-4)
         hm.heal_mesh(gamma_tol=0.01)
         hm.stats_to_yaml(mesh_name + "_heal_stats.yaml")
@@ -450,8 +450,9 @@ if __name__ == "__main__":
     #
     # print("finished")
 
-    sample_dir = script_dir+"/tmp"
-    # sample_dir = sys.argv[1]
+    
+    sample_dir = sys.argv[1]
+    os.makedirs(sample_dir, exist_ok=True)
     with open(os.path.join(script_dir, "config.yaml"), "r") as f:
         config_dict = yaml.safe_load(f)
 
