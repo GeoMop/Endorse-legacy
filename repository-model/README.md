@@ -13,13 +13,18 @@ Files:
 - setup_python_environment.sh: Shell script to setup a virtual environment.
 
 
+Create virtual environment 'env' with preinstalled packages:
+
+    python3 setup_venv.py
+    
+
+Run the calculation:
+
+    env/bin/python process.py
+
 
 Further notes:
 
-number of tractable fractures:
+number of tractable fractures: about 50
 approx. time of the calculation:
 
-read: poznamky_a_popis
-
-  
-  
