@@ -11,7 +11,8 @@ which pip
 pip install --upgrade pip
 pip -V
 
-pip install pyyaml attrs numpy gmsh-sdk bih
+pip install pyyaml attrs numpy 
+pip install git+https://github.com/GeoMop/bgem.git@JB_endorse_mlmc
 
 #pip freeze
 deactivate

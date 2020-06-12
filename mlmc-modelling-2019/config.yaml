@@ -1,7 +1,7 @@
 # The flow executable and arguments to use.
 # JB: ABSOLUTE PATH
 flow_executable:
-  - /home/jb/workspace/flow123d_JB/bin/fterm
+  - /home/jb/workspace/flow123d/bin/fterm
   - --no-term
   - rel
   - run
