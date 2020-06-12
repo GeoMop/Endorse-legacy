@@ -11,59 +11,18 @@ import traceback
 import numpy as np
 import matplotlib.pyplot as plt
 src_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(src_path, '../MLMC/src'))
-#sys.path.append(os.path.join(src_path, '../gmsh-tools/src'))
 
-from mlmc import mlmc
-from mlmc import base_process
-from mlmc.estimate import Estimate, CompareLevels
-from mlmc.moments import Legendre, Monomial
-
-from mlmc import pbs
-import fracture_model as fm
-from mlmc.simulation import Simulation
-from mlmc import flow_mc
-from mlmc.sample import Sample
+import pbs
 
 
-
-
-class SimulationSample(Sample):
-    """
-    Object produced by the Simulation object.
-    - Used to compute both fine and coarse samples.
-    - Has to be serializable
-
-    """
-    def __init__(self, sample_dir, sample_id, seed, fine):
-        """
-        :param config: Configuration dict of the sample:
-        seed:
-        sample_dir:
-        fine_sample:
-        """
-
-        super().__init__(
-            sample_id=sample_id,
-            directory=sample_dir
-        )
-        self.random_seed = seed
-        self.fine = fine
-
-    def queue_execution(self, pbs):
-        sample_config = dict(
-            random_seed=self.random_seed,
-            level=
-            h_step)
-        if not self.fine:
-            return
-        self.job_id = package_dir
-
-
-    def extract_result(self):
-        result_file = ["FINISHED_COARSE.npy", "FINISHED_FINE.npy"][self.fine]
-        return np.load(result_file)
-
+"""
+Script overview:
+- independent of mlmc
+- schedule unfinished samples
+- wait for unfinished samples
+- move failed (should copy them to avoid their reschdulling
+- collect results, compute statistics (when all samples are finished, checked in extract_results)
+"""
 
 
 
@@ -132,7 +91,7 @@ class FractureFlowSimulation():
         # Fine sim.
         if not os.path.exists(os.path.join(sample_dir, "FINISHED")):
             print("Schedule: ", sample_dir)
-            flow_mc.force_mkdir(sample_dir)
+            os.makedirs(sample_dir, mode=0o775, exist_ok=True)
             for f in ['flow_templ.yaml']:
                 shutil.copy(os.path.join(src_path, f), os.path.join(sample_dir, f))
             self.write_sample_config(sample_dir)
@@ -335,7 +294,7 @@ class FractureFlowSimulation():
         cond = []
         for v in vec:
             c = cond_tn[np.random.choice(len(cond_tn), y_size), :, :]
-            cond.append(np.log(np.linalg.norm(np.dot(v, c), axis=1)))
+            cond.append(np.log10(np.linalg.norm(np.dot(v, c), axis=1)))
         cond = np.concatenate(cond)
         fig, ax = plt.subplots(nrows=1, ncols=1)
         angle = np.repeat(angle, y_size)
@@ -506,11 +465,17 @@ class FractureFlowSimulation():
         
 
 
-
-
-
-
-
+    def calculate_field_params_mcmc(self):
+        import pymc3
+        cov_sqrt = (cov_egvec @ np.diag(np.sqrt(cov_eval))).T
+        with pymc3.Model() as model:
+            cond_indep = pymc3.Normal("conv_indep", mu=0, shape=2)
+            cond_dep = cov_sqrt @ (c_indep) + log_cond_mean
+            unrotated_tn = np.diag(cond_dep)
+            angle = pymc3.Uniform("conv_angle", lower=0, upper=2 * np.pi)
+            c, s = np.cos(angle), np.sin(angle)
+            rot_mat = np.array([[c, -s], [s, c]])
+            cond_2d = rot_mat.T @ unrotated_tn @ rot_mat
 
 
 

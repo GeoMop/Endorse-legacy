@@ -32,11 +32,11 @@ import subprocess
 import traceback
 
 src_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(src_path, '../MLMC/src'))
+#sys.path.append(os.path.join(src_path, '../MLMC/src'))
 #sys.path.append(os.path.join(src_path, '../dfn/src'))
-import gmsh_io
-from geomop import brep_writer as bw
-from geomop import polygons
+from bgem.gmsh import gmsh_io
+from bgem.bspline import brep_writer as bw
+from bgem.polygons import polygons
 
 class ShapeInfo:
     # count_by_dim = [0,0,0,0]

@@ -11,13 +11,10 @@ import time
 from typing import Any, List, Dict, Tuple
 
 src_path = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(src_path, '../MLMC/src'))
-#sys.path.append(os.path.join(src_path, '../dfn/src'))
 
-from mlmc import flow_mc
-import gmsh_io
-from geomop import polygons
-import mlmc.random.fracture as fracture
+from bgem.gmsh import gmsh_io
+from bgem.polygons import polygons
+import fracture
 
 
 def in_file(base):
@@ -31,6 +28,28 @@ def fields_file(base):
 
 
 
+def substitute_placeholders(file_in, file_out, params):
+    """
+    Substitute for placeholders of format '<name>' from the dict 'params'.
+    :param file_in: Template file.
+    :param file_out: Values substituted.
+    :param params: { 'name': value, ...}
+    """
+    used_params = []
+    with open(file_in, 'r') as src:
+        text = src.read()
+    for name, value in params.items():
+        placeholder = '<%s>' % name
+        n_repl = text.count(placeholder)
+        if n_repl > 0:
+            used_params.append(name)
+            text = text.replace(placeholder, str(value))
+    with open(file_out, 'w') as dst:
+        dst.write(text)
+    return used_params
+
+
+
 class FlowThread(threading.Thread):
 
     def __init__(self, basename, outer_regions, config_dict):
@@ -38,7 +57,7 @@ class FlowThread(threading.Thread):
         self.outer_regions_list = outer_regions
         self.flow_args = config_dict["flow_executable"].copy()
         n_steps = config_dict["n_pressure_loads"]
-        t = np.linspace(0.0, np.pi, n_steps)
+        t = np.linspace(0.0, np.pi, n_steps, endpoint=False)
         self.p_loads = np.array([np.cos(t), np.sin(t)]).T
         super().__init__()
 
@@ -53,7 +72,7 @@ class FlowThread(threading.Thread):
             outer_regions=str(self.outer_regions_list),
             n_steps=len(self.p_loads)
             )
-        flow_mc.substitute_placeholders("flow_templ.yaml", in_f, params)
+        substitute_placeholders("flow_templ.yaml", in_f, params)
         self.flow_args.extend(['--output_dir', out_dir, in_f])
 
         if os.path.exists(os.path.join(out_dir, "flow_fields.msh")):
@@ -163,7 +182,7 @@ class FlowProblem:
         return pd, side_regions
 
     def add_fractures(self, pd, fracture_lines, eid):
-        from geomop.plot_polygons import plot_decomp_segments
+        from bgem.polygons.plot_polygons import plot_decomp_segments
 
         outer_wire = pd.outer_polygon.outer_wire.childs
         assert len(outer_wire) == 1
@@ -178,8 +197,9 @@ class FlowProblem:
             #print("    ", i_fr, "fr size:", np.linalg.norm(p1 - p0))
             try:
                 #pd.decomp.check_consistency()
-                # if i_fr == 670:
-                #     plot_decomp_segments(pd, [p0, p1])
+                # if eid == 595 and i_fr == 130:
+                #      print("stop")
+                #      #plot_decomp_segments(pd, [p0, p1])
                 sub_segments = pd.add_line(p0, p1)
             except Exception as e:
                 # new_points = [pt for seg in segments for pt in seg.vtxs]
@@ -202,7 +222,7 @@ class FlowProblem:
                         pd.delete_segment(seg)
                         for pt in points:
                             if pt.is_free():
-                                pd.remove_free_point(pt.id)
+                                pd._rm_point(pt)
 
         #plot_decomp_segments(pd, [p0, p1])
         # assign boundary region to outer polygon points
@@ -358,7 +378,14 @@ class FlowProblem:
 
     def elementwise_mesh(self, coarse_mesh, mesh_step, bounding_polygon):
         import geometry_2d as geom
-        from geomop.plot_polygons import plot_decomp_segments
+        from bgem.polygons.plot_polygons import plot_decomp_segments
+
+        mesh_file = "mesh_{}.msh".format(self.basename)
+        if os.path.exists(mesh_file):
+            # just initialize reg_to_group map
+            self.skip_decomposition = True
+
+
 
         self.mesh_step = mesh_step
         self.none_reg = self.add_region('none', dim=-1)
@@ -413,8 +440,14 @@ class FlowProblem:
             for reg in fr_regions:
                 reg.name = prefix + reg.name
                 self.reg_to_group[reg.id] = eid
+            if not self.skip_decomposition:
+                g2d.add_compoud(pd)
 
-            g2d.add_compoud(pd)
+        if self.skip_decomposition:
+            self.mesh = gmsh_io.GmshIO()
+            with open(mesh_file, "r") as f:
+                self.mesh.read(f)
+            return
 
         g2d.make_brep_geometry()
         step_range = (self.mesh_step * 0.9, self.mesh_step *1.1)
@@ -545,7 +578,7 @@ class FlowProblem:
                 pressure_matrix[i1] = [0, p0, p1]
             C = np.linalg.lstsq(pressure_matrix, rhs, rcond=None)[0]
             cond_tn = np.array([[C[0], C[1]], [C[1], C[2]]])
-            if flux_response.shape[0] < 5:
+            if i_group < 10:
                 print("Plot tensor for eid: ", group_id)
                 self.plot_effective_tensor(flux, cond_tn, self.basename + "_" + group_labels[i_group])
                 #print(cond_tn)
@@ -581,7 +614,7 @@ class FlowProblem:
         import matplotlib.pyplot as plt
 
         e_val, e_vec = np.linalg.eigh(cond_tn)
-        fig, axes = fig, axes = plt.subplots(nrows=1, ncols=1) 
+        fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(10, 10))
         ax = axes
         # setting the axis limits in [left, bottom, width, height]
         #rect = [0.1, 0.1, 0.8, 0.8]
@@ -589,10 +622,11 @@ class FlowProblem:
         #ax_polar = fig.add_axes(rect, polar=True, frameon=False)
         continuous_loads = np.array([(np.cos(t), np.sin(t)) for t in np.linspace(0, np.pi, 1000)])
         X, Y = cond_tn @ continuous_loads.T
-        ax.scatter(X, Y, c='green', s=0.2)
-        ax.scatter(-X, -Y, c='green', s=0.2)
-        ax.scatter(fluxes[:, 0], fluxes[:, 1], c='red')
-        ax.scatter(-fluxes[:, 0], -fluxes[:, 1], c='red')
+        # print("Fluxes: ", fluxes)
+        ax.scatter(X, Y, c='green', s=0.1)
+        ax.scatter(-X, -Y, c='green', s=0.1)
+        ax.scatter(fluxes[:, 0], fluxes[:, 1], c='red', s=30, marker='+')
+        ax.scatter(-fluxes[:, 0], -fluxes[:, 1], c='red', s=30, marker='+')
         lim = max(max(X), max(fluxes[:, 0]), max(Y), max(fluxes[:, 1])) * 1.2
         ax.set_xlim(-lim, lim)
         ax.set_ylim(-lim, lim)
