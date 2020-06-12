@@ -578,7 +578,8 @@ class FlowProblem:
                 pressure_matrix[i1] = [0, p0, p1]
             C = np.linalg.lstsq(pressure_matrix, rhs, rcond=None)[0]
             cond_tn = np.array([[C[0], C[1]], [C[1], C[2]]])
-            if i_group < 10:
+            #if i_group < 10:
+            if flux.shape[0] < 5:
                 print("Plot tensor for eid: ", group_id)
                 self.plot_effective_tensor(flux, cond_tn, self.basename + "_" + group_labels[i_group])
                 #print(cond_tn)
