@@ -172,7 +172,7 @@ class FlowProblem:
             reg.normal =  normal / np.linalg.norm(normal)
             side_regions.append(reg)
 
-            sub_segments = pd.add_line(last_pt, pt)
+            sub_segments = pd.add_line(last_pt, pt, deformability=0)
             for seg in sub_segments:
                 seg.attr = reg
             last_pt = pt
@@ -197,10 +197,11 @@ class FlowProblem:
             #print("    ", i_fr, "fr size:", np.linalg.norm(p1 - p0))
             try:
                 #pd.decomp.check_consistency()
-                # if eid == 595 and i_fr == 130:
+                # if eid == 0 and i_fr == 5:
                 #      print("stop")
-                #      #plot_decomp_segments(pd, [p0, p1])
-                sub_segments = pd.add_line(p0, p1)
+                #      # plot_decomp_segments(pd, [p0, p1])
+                # TODO: make short fractures more deformable
+                sub_segments = pd.add_line(p0, p1, deformability=1)
             except Exception as e:
                 # new_points = [pt for seg in segments for pt in seg.vtxs]
                 print('Decomp Error, dir: {} base: {} eid: {}  i_fr: {}'.format(os.getcwd(), self.basename, eid, i_fr))
@@ -228,9 +229,9 @@ class FlowProblem:
         # assign boundary region to outer polygon points
         for seg, side in outer_wire.segments():
             side_reg = seg.attr
-            #if not hasattr(side_reg, "sub_reg"):
-            assert hasattr(side_reg, "sub_reg")
-            seg.vtxs[side].attr = side_reg.sub_reg
+            if side_reg.boundary:
+                assert hasattr(side_reg, "sub_reg")
+                seg.vtxs[side].attr = side_reg.sub_reg
         # none region to remaining
         for shape_list in pd.decomp.shapes:
             for shape in shape_list.values():
