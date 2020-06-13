@@ -31,24 +31,36 @@ QQ_conductivity.pdf
 - effective tensor from bulk fluxes
   The volume averaging may be inapropriate, diminishing impact of the fractures.
   
+- Improve failure rate for the level 1. Curently about 30%, would be good to drop it bellow 10%.
+- Better plots confirming: homogennity, no correlation, isotropy, create slides for this.
+- Plots for:
+  - 3d histogram
+  - correlation matrix (compute), correlation matrix for logarithms
+  - test dependency of transformed lineary uncorrelated parameters see:
+    https://stats.stackexchange.com/questions/73646/how-do-i-test-that-two-continuous-variables-are-independent#:~:text=Hoeffding%20developed%20a%20general%20nonparametric,R%20Hmisc%20package's%20hoeffd%20function.&text=%22Measuring%20and%20testing%20dependence%20by%20correlation%20of%20distances%22.
+  - Hoeffding test is based on H(x,y) = F(x)G(y) zero hypothesis.
+  - we can plot ratio H/FG
+  - try for original eigne values and their log transformation
   
 ## Postponed Problems
 - Fracture adding problem for coarse_fine mesh. PolygonDecomposition.merge_points moves the points, to average. But one of the points can be on boundary and can not move.
   Quick resolution: decrease tolerance and ignore such errors.
   Later make specific unit tests, introduce a 'move_weight' for points and segments.
 
-
-## 2020 TODO:
 - Flow extremly slow, about 1.5 min. per timestep takes 15 minutes to compute problem on fine mesh, 85% taken by assembly. Should not be because of the FieldFormula as it is only on the boundary.
   Seems there is a lot of allocations
-
-- modify to be based on bgem and have own MLMC algorithm
 
 - Possible problem with geometry_2d, Warnning when reading the BREP: 
   Warning : Something wrong in edge loop of size=17, no sign! 
   See: https://github.com/feelpp/debian-gmsh/blob/master/Geo/GEdgeLoop.cpp
   the method nextOne should return 1 or -1 sign, but it returns 0 if the wire can not be prolonged. We must review the prolongation algorithm 
   Try tu gess which wire is responsible for that.
+
+## 2020 TODO:
+- fix a.pt != b.pt
+- fix ply is not None
+- plot lambda max vs. lambda min; logs; invariants
+- plot 3d histogram
 
 ### Properties of the projected coarse conductivity field:
 
