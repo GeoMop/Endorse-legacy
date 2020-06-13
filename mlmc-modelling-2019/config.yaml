@@ -1,13 +1,15 @@
 # The flow executable and arguments to use.
 # JB: ABSOLUTE PATH
-flow_executable:
-  - /home/jb/workspace/flow123d/bin/fterm
-  - --no-term
-  - rel
-  - run
-finish_sleep: 0
-metacentrum: false
-gmsh_executable: /home/jb/bin/gmsh4
+
+#flow_executable:
+  #- /home/jb/workspace/flow123d/bin/fterm
+  #- --no-term
+  #- rel
+  #- run
+#finish_sleep: 0
+#metacentrum: false
+#gmsh_executable: /home/jb/bin/gmsh4
+
 
 # reuse existing sample directories and existing results
 # None - clean dir
@@ -16,13 +18,13 @@ gmsh_executable: /home/jb/bin/gmsh4
 #reuse_samples: true
 
 # Charon:
-#flow_executable:
-# # release
-#  - /storage/liberec3-tul/home/jan_brezina/workspace/flow123d/bin/flow123d
-# # debug
-# #- /storage/liberec3-tul/home/jan_brezina/workspace/flow-dbg/flow123d/bin/flow123d
-#metacentrum: true
-#gmsh_executable: /home/jan_brezina/workspace/wgc/mlmc_random_frac/env/bin/gmsh
+flow_executable:
+# release
+ - /storage/liberec3-tul/home/jan_brezina/workspace/flow123d/bin/flow123d
+# debug
+#- /storage/liberec3-tul/home/jan_brezina/workspace/flow-dbg/flow123d/bin/flow123d
+metacentrum: true
+gmsh_executable: /home/jan_brezina/workspace/wgc/mlmc_random_frac/env/bin/gmsh
 
 
 # case 1
@@ -32,13 +34,13 @@ water_density: 1
 gravity_accel: 1
 
 levels:
-  - n_samples: 2
+  - n_samples: 300
     step: 100
     bulk_conductivity:
         # log10 used
         mean_log_conductivity: [-9.97926069, -9.41656073]
         cov_log_conductivity: [[0.0056176,  0.0022999 ], [0.0022999,  0.04078208]]
-  - n_samples: 2
+  - n_samples: 300
     step: 10
     bulk_conductivity:
         # log10 used
