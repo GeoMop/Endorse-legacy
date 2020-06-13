@@ -98,7 +98,7 @@ class FractureFlowSimulation():
             # Fine sample starts execution job for both samples
             lines = [
                 'cd {sample_dir}',
-                'python3 {src_dir}/both_sample.py sample_config.yaml 2>&1 | tee both_sample_out',
+                '{src_dir}/env/bin/python {src_dir}/both_sample.py sample_config.yaml 2>&1 | tee both_sample_out',
             ]
 
             package_dir = self.pbs_creater.add_realization(
@@ -462,7 +462,6 @@ class FractureFlowSimulation():
             ax.set_xlabel("samples")
             ax.set_ylabel("Q log_norm")
         fig.savefig("QQ_conductivity.pdf")
-        
 
 
     def calculate_field_params_mcmc(self):
@@ -496,7 +495,7 @@ class Process():
     def make_pbs(self):
         pbs_config = dict(
             job_weight=250000,  # max number of elements per job
-            n_cores=1,
+            n_cores=3,
             n_nodes=1,
             select_flags=[],
             mem='8gb',
