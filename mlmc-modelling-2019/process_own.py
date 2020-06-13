@@ -167,6 +167,7 @@ class FractureFlowSimulation():
 
     def compute_cond_field_properties(self):
         if self.cond_field_xy:
+            self.
             #self.test_homogenity()
             self.test_homogenity_xy()
             self.test_isotropy()
@@ -174,9 +175,21 @@ class FractureFlowSimulation():
             self.compute_variogram()
             self.calculate_field_parameters()
 
+    @property
+    def cond_xy(self):
+        if self._cond_xy is None:
+            self._cond_xy = np.concatenate(self.cond_field_xy, axis=0)
+        return self._cond_xy
+
+    @property
+    def cond_tn(self):
+        if self._cond_tn is None:
+            self._cond_tn = np.concatenate(self.cond_field_values, axis=0)
+        return self._cond_tn
+
     def test_homogenity(self):
-        points = np.concatenate(self.cond_field_xy, axis=0)
-        cond_tn = np.concatenate(self.cond_field_values, axis=0)
+        points = self.cond_xy
+        cond_tn = self.cond_tn
         mean_c_tn = np.mean(cond_tn, axis=0)
         cond_diff = cond_tn - mean_c_tn
         print(mean_c_tn)
@@ -195,8 +208,8 @@ class FractureFlowSimulation():
         plt.show()
 
     def test_homogenity_xy(self):
-        points = np.concatenate(self.cond_field_xy, axis=0)
-        cond_tn = np.concatenate(self.cond_field_values, axis=0)
+        points = self.cond_xy
+        cond_tn = self.cond_tn
         mean_c_tn = np.mean(cond_tn, axis=0)
         print(mean_c_tn)
         fig, axes = plt.subplots(nrows=2, ncols=3)
@@ -219,8 +232,8 @@ class FractureFlowSimulation():
         plt.close(fig)
 
     def test_var_homogenity(self):
-        points = np.concatenate(self.cond_field_xy, axis=0)
-        cond_tn = np.concatenate(self.cond_field_values, axis=0)
+        points = self.cond_xy
+        cond_tn = self.cond_tn
         mean_c_tn = np.mean(cond_tn, axis=0)
         print(mean_c_tn)
         fig, axes = plt.subplots(nrows=2, ncols=3)
@@ -244,7 +257,7 @@ class FractureFlowSimulation():
 
 
     def test_isotropy(self):
-        cond_tn = np.concatenate(self.cond_field_values, axis=0)
+        cond_tn = self.cond_tn
         mean_c_tn = np.mean(cond_tn, axis=0)
         print("Mean tensor: \n", mean_c_tn)
         e_val, e_vec = np.linalg.eigh(mean_c_tn)
@@ -288,7 +301,7 @@ class FractureFlowSimulation():
     def test_isotropy_alt(self):
         x_size = 100
         y_size = 100
-        cond_tn = np.concatenate(self.cond_field_values, axis=0)
+        cond_tn = self.cond_tn
         angle = np.linspace(0, 2*np.pi, x_size)
         vec = np.stack([np.cos(angle), np.sin(angle)], axis=1)
         cond = []
@@ -317,8 +330,8 @@ class FractureFlowSimulation():
 
 
     def compute_variogram(self):
-        point_samples = self.cond_field_xy
-        cond_samples = self.cond_field_values
+        point_samples = self.cond_xy
+        cond_samples = self.cond_tn
         max_length = 1000
 
         # Select pairs to sample various point distances
@@ -387,7 +400,7 @@ class FractureFlowSimulation():
         so we drop such samples for angle related statistics
         :return:
         """
-        cond_tn = np.concatenate(self.cond_field_values, axis=0)
+        cond_tn = self.cond_tn
         print("n samples: ", len(cond_tn))
         angle = []  # angle of larger eig val
         c_val = []  # pairs of eigvals [cmin, cmax]
@@ -462,6 +475,9 @@ class FractureFlowSimulation():
             ax.set_xlabel("samples")
             ax.set_ylabel("Q log_norm")
         fig.savefig("QQ_conductivity.pdf")
+        
+    def eigenvals_correlation(self):
+        pass
 
 
     def calculate_field_params_mcmc(self):
