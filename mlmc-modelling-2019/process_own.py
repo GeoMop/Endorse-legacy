@@ -26,8 +26,31 @@ Script overview:
 
 
 
+def cache(property_method):
+    attr_name = "_" + property_method.__name__
+    def cached_property(self):
+        if not hasattr(self, attr_name):
+            self.__dict__[attr_name] = property_method(self)
+        return self.__dict__[attr_name]
+    return property(cached_property)
 
 
+class change_cwd:
+    """
+    Context manager that change CWD, to given relative or absolute path.
+    """
+    def __init__(self, path: str):
+        self.path = path
+        self.orig_cwd = ""
+
+    def __enter__(self):
+        if self.path:
+            self.orig_cwd = os.getcwd()
+            os.chdir(self.path)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.orig_cwd:
+            os.chdir(self.orig_cwd)
 
 
 
@@ -49,6 +72,9 @@ class FractureFlowSimulation():
         self.work_dir = work_dir
         # Register produced samples. After all are collected we perform averaging.
 
+        # data processing
+        #self._cond_xy = None
+        #self._cond_tn = None
 
     def run_level(self):
         """
@@ -166,85 +192,79 @@ class FractureFlowSimulation():
 
 
     def compute_cond_field_properties(self):
-        if self.cond_field_xy:
-            self.
-            #self.test_homogenity()
-            self.test_homogenity_xy()
-            self.test_isotropy()
-            #self.test_isotropy_alt()
-            self.compute_variogram()
-            self.calculate_field_parameters()
+        if self.cond_field_xy:   # List of samples, every sample have conductivity tensor for every coarse mesh element.
+            with change_cwd(self.work_dir):
+                self.precompute()
+                self.test_homogenity()
+                self.test_homogenity_xy()
+                self.test_isotropy()
+                self.test_isotropy_alt()
+                self.compute_variogram()
+                self.eigenvals_correlation()
+                self.calculate_field_parameters()
 
-    @property
-    def cond_xy(self):
-        if self._cond_xy is None:
-            self._cond_xy = np.concatenate(self.cond_field_xy, axis=0)
-        return self._cond_xy
+    def precompute(self):
+        self.cond_xy = np.concatenate(self.cond_field_xy, axis=0)
+        self.cond_tn = np.concatenate(self.cond_field_values, axis=0)
 
-    @property
-    def cond_tn(self):
-        if self._cond_tn is None:
-            self._cond_tn = np.concatenate(self.cond_field_values, axis=0)
-        return self._cond_tn
+        self.mean_c_tn = np.mean(self.cond_tn, axis=0)
+        print("Mean C tensor: ", self.mean_c_tn)
+        self.mean_c_tn_min, self.mean_c_tn_max, self.mean_c_tn_angle  = self.tn_eigen(self.mean_c_tn)
+        print("Cmin: {} Cmax: {} angle: {}"
+            .format(self.mean_c_tn_min, self.mean_c_tn_max, self.mean_c_tn_angle))
+
+        # Use explicit formulas to compute eigen values and angle of the conductivity tensors
+        # see: http://scipp.ucsc.edu/~haber/ph116A/diag2x2_11.pdf
+        half_trace = (self.cond_tn[:, 0, 0] + self.cond_tn[:, 1, 1]) / 2
+        det = (self.cond_tn[:, 0, 0] * self.cond_tn[:, 1, 1]  -  self.cond_tn[:, 0, 1] ** 2)
+        discr = abs(half_trace ** 2 - det)
+        discr = np.sqrt(discr)
+        self.cond_e_min = half_trace - discr
+        self.cond_e_max = half_trace + discr
+        ab_diff = self.cond_tn[:, 0, 0] - self.cond_tn[:, 1, 1]
+        angle = np.arctan(2*self.cond_tn[:, 0, 1] / ab_diff)/2
+        angle = np.where( angle > 0, angle, angle + np.pi/2 )
+        angle = np.where(self.cond_tn[:, 0, 1] > 0, angle, angle + np.pi / 2)
+        self.cond_angle = angle
+
+    def tn_eigen(self, tn):
+        half_trace = (tn[0, 0] + tn[1, 1]) / 2
+        det = (tn[0, 0] * tn[1, 1]  - tn[0, 1] ** 2)
+        discr = half_trace ** 2 - det
+        print(discr[discr < 0])
+        discr = np.sqrt(discr)
+        e_min = half_trace - discr
+        e_max = half_trace + discr
+        ab_diff = tn[0, 0] - tn[1, 1]
+        angle = np.arctan(2*tn[0, 1] / ab_diff)/2
+
+        angle += (angle < 0) * np.pi / 2
+        angle += (tn[0, 1] < 0) * np.pi / 2
+
+        return e_min, e_max, angle
 
     def test_homogenity(self):
-        points = self.cond_xy
-        cond_tn = self.cond_tn
-        mean_c_tn = np.mean(cond_tn, axis=0)
-        cond_diff = cond_tn - mean_c_tn
-        print(mean_c_tn)
-
+        cond_diff = self.cond_tn - self.mean_c_tn
         fig, axes = plt.subplots(nrows=2, ncols=2)
-
-        X, Y = points.T
+        X, Y = self.cond_xy.T
         for iy, axes_x in enumerate(axes):
             for ix, ax in enumerate(axes_x):
                 sc = ax.scatter(X, Y, s=1, c=cond_diff[:, ix, iy])
-
         fig.subplots_adjust(right=0.8)
         cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
         fig.colorbar(sc, cax=cbar_ax)
-
-        plt.show()
-
-    def test_homogenity_xy(self):
-        points = self.cond_xy
-        cond_tn = self.cond_tn
-        mean_c_tn = np.mean(cond_tn, axis=0)
-        print(mean_c_tn)
-        fig, axes = plt.subplots(nrows=2, ncols=3)
-
-        for iy, axes_x in enumerate(axes):
-            for ix, ax in enumerate(axes_x):
-                coord = [(0,0), (1,1), (0,1)][ix]
-                X = points[:, iy]
-                Y = cond_tn[:, coord[0], coord[1]]
-                sc = ax.scatter(X, Y, s=1)
-                Y0 = np.full_like(X, mean_c_tn[coord[0], coord[1]])
-                ax.plot(X, Y0, c='red')
-                ax.set_ylim([np.min(Y), np.max(Y)])
-                if iy == 0:
-                    ax.set_title(["Cxx", "Cyy", "Cxy"][ix])
-                if ix == 0:
-                    ax.set_ylabel("avg. over " + ["Y", "X"][iy])
-        fig.suptitle("Homogenity of the conductivity field")
         fig.savefig("homogenity.pdf")
         plt.close(fig)
 
-    def test_var_homogenity(self):
-        points = self.cond_xy
-        cond_tn = self.cond_tn
-        mean_c_tn = np.mean(cond_tn, axis=0)
-        print(mean_c_tn)
+    def test_homogenity_xy(self):
         fig, axes = plt.subplots(nrows=2, ncols=3)
-
         for iy, axes_x in enumerate(axes):
             for ix, ax in enumerate(axes_x):
                 coord = [(0,0), (1,1), (0,1)][ix]
-                X = points[:, iy]
-                Y = cond_tn[:, coord[0], coord[1]]
+                X = self.cond_xy[:, iy]
+                Y = self.cond_tn[:, coord[0], coord[1]]
                 sc = ax.scatter(X, Y, s=1)
-                Y0 = np.full_like(X, mean_c_tn[coord[0], coord[1]])
+                Y0 = np.full_like(X, self.mean_c_tn[coord[0], coord[1]])
                 ax.plot(X, Y0, c='red')
                 ax.set_ylim([np.min(Y), np.max(Y)])
                 if iy == 0:
@@ -257,41 +277,24 @@ class FractureFlowSimulation():
 
 
     def test_isotropy(self):
-        cond_tn = self.cond_tn
-        mean_c_tn = np.mean(cond_tn, axis=0)
-        print("Mean tensor: \n", mean_c_tn)
-        e_val, e_vec = np.linalg.eigh(mean_c_tn)
-        print("Cmin: {} Cmax: {} angle: {}"
-            .format(e_val[0], e_val[1], np.angle(e_vec[0, 1] + e_vec[1, 1] * 1j)))
-
         fig, ax = plt.subplots(nrows=1, ncols=1)
-        angle = []
-        c_val = []
-        for ctn in cond_tn:
-            e_val, e_vec = np.linalg.eigh(ctn)
-            angle.append(np.angle(e_vec[0, :] + e_vec[1, :] * 1j))
-            c_val.append(e_val)
-            angle.append(np.angle(-e_vec[0, :] - e_vec[1, :] * 1j))
-            c_val.append(e_val)
-        angle = np.array(angle)
-        c_val = np.array(c_val)
         #ax.set_aspect('equal')
-        ax.scatter(angle[:, 0]/np.pi, c_val[:, 0], label='C min eigv', s=0.5, c='blue')
-        ax.scatter(angle[:, 1]/np.pi, c_val[:, 1],  label='C max eigv', s=0.5, c='darkblue')
+        ax.scatter(self.cond_angle[:]/np.pi, self.cond_e_min, label='C min eigv', s=0.5, c='blue')
+        ax.scatter(self.cond_angle[:]/np.pi, self.cond_e_max,  label='C max eigv', s=0.5, c='orange')
 
-        angle = np.linspace(-np.pi, np.pi, 200)
+        angle = np.linspace(0, np.pi, 200)
         vec = np.stack([np.cos(angle), np.sin(angle)], axis=0)
-        mean_flux = mean_c_tn @ vec
+        mean_flux = self.mean_c_tn @ vec
 
         ax.plot(angle/np.pi, np.linalg.norm(mean_flux, axis=0),
-                label='C mean', color='orange', linewidth=2)
+                label='|C_mean * vec(angle)|', color='orange', linewidth=2)
         Y = np.full_like(angle, 1e-10)
         ax.plot(angle/np.pi, Y,
                 label='C bulk', color='red', linewidth=2)
         ax.xaxis.set_major_formatter(plt.FormatStrFormatter('%g $\pi$'))
         import matplotlib
         ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(base=0.25))
-        ax.set_ylim(np.min(c_val.flatten()), np.max(c_val.flatten()))
+        ax.set_ylim(np.min(self.cond_e_min), np.max(self.cond_e_max))
         ax.set_yscale('log')
         ax.legend()
         fig.suptitle("Isotropy  of the conductivity field")
@@ -299,18 +302,16 @@ class FractureFlowSimulation():
         plt.close(fig)
 
     def test_isotropy_alt(self):
-        x_size = 100
-        y_size = 100
-        cond_tn = self.cond_tn
-        angle = np.linspace(0, 2*np.pi, x_size)
+        size = 100
+        angle = np.linspace(0, 2*np.pi, size)
         vec = np.stack([np.cos(angle), np.sin(angle)], axis=1)
         cond = []
         for v in vec:
-            c = cond_tn[np.random.choice(len(cond_tn), y_size), :, :]
+            c = self.cond_tn[np.random.choice(len(self.cond_tn), size), :, :]
             cond.append(np.log10(np.linalg.norm(np.dot(v, c), axis=1)))
         cond = np.concatenate(cond)
         fig, ax = plt.subplots(nrows=1, ncols=1)
-        angle = np.repeat(angle, y_size)
+        angle = np.repeat(angle, size)
         ax.scatter(angle.flatten(), cond.flatten(), s=0.5)
         self.set_x_pi_ticks(ax)
         ax.set_ylabel("|C @ unit_vector|")
@@ -330,18 +331,16 @@ class FractureFlowSimulation():
 
 
     def compute_variogram(self):
-        point_samples = self.cond_xy
-        cond_samples = self.cond_tn
         max_length = 1000
 
         # Select pairs to sample various point distances
         #radius = 0.5 * np.linalg.norm(points.max_pt - points.min_pt, 2)
-        n_samples = len(point_samples)
-        assert len(cond_samples) == n_samples
+        n_samples = len(self.cond_field_xy)
+        assert len(self.cond_field_values) == n_samples
         n_pairs_per_sample = 10000
         dist_list = []
         variogram_list = []
-        for points, conds in zip(point_samples, cond_samples):
+        for points, conds in zip(self.cond_field_xy, self.cond_field_values):
             var = np.var(conds, axis=0, ddof=1)
             n_vals = len(points)
             assert len(conds) == n_vals
@@ -477,7 +476,40 @@ class FractureFlowSimulation():
         fig.savefig("QQ_conductivity.pdf")
         
     def eigenvals_correlation(self):
-        pass
+        cond_min = self.cond_e_min
+        cond_max = self.cond_e_max
+        print("Cov (min, max): \n", np.cov(cond_min, cond_max))
+        print("Cov (min, max): \n", np.corrcoef(cond_min, cond_max))
+
+        fig, axes = plt.subplots(nrows=1, ncols=1)
+        axes.plot(np.sort(np.log10(cond_max)), np.linspace(0, 1, len(cond_max)), 'red')
+        axes.plot(np.sort(np.log10(cond_min)), np.linspace(0, 1, len(cond_min)), 'blue')
+        fig.savefig("ecdf_c_max_min_log10.pdf")
+        plt.close(fig)
+
+        fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(10,10))
+        axes.scatter(cond_min, cond_max)
+        axes.set_xlabel("c_min")
+        axes.set_ylabel("c_max")
+        axes.set_xlim(np.min(cond_min), np.max(cond_min))
+        axes.set_ylim(np.min(cond_max), np.max(cond_max))
+        fig.savefig("min_max_relation.pdf")
+        plt.close(fig)
+
+        cond_min = np.log10(self.cond_e_min)
+        cond_max = np.log10(self.cond_e_max)
+        print("Cov (log min, log max): \n", np.cov(cond_min, cond_max))
+        print("Cov (log min, log max): \n", np.corrcoef(cond_min, cond_max))
+
+        fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(10,10))
+        axes.scatter(cond_min, cond_max)
+        axes.set_xlabel("c_min")
+        axes.set_ylabel("c_max")
+        axes.set_xlim(np.min(cond_min), np.max(cond_min))
+        axes.set_ylim(np.min(cond_max), np.max(cond_max))
+        fig.savefig("min_max_log_relation.pdf")
+        plt.close(fig)
+
 
 
     def calculate_field_params_mcmc(self):
