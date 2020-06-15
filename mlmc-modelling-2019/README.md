@@ -22,17 +22,18 @@ isotropy.pdf            Changes of maximal and minimal eigen value with angle (r
                         Changes of |Cmean @ unit vector|
                         Sometimes the conductivity is even smaller then backgroung conductivity.
 QQ_conductivity.pdf
+## Results
+
+- equivalent conductivity field for bulk + fractures (isotropic)
+  - corellation length under mesh resolution
+  - homogeneous
+  - isotropic 
+  - eigen values nearly independent, Cmin equal to Cbulk in the most cases
+  - distribution possibly given by powerlaw for the fracture size 
 
 ## Problems
-  
-  
-- effective tensor from boundary fluxes 
-  Which direction assign to the flux from fracture boundary?
-- effective tensor from bulk fluxes
-  The volume averaging may be inapropriate, diminishing impact of the fractures.
-  
-- Improve failure rate for the level 1. Curently about 30%, would be good to drop it bellow 10%.
-- Better plots confirming: homogennity, no correlation, isotropy, create slides for this.
+
+- Make slides for: Better plots confirming: homogennity, no correlation, isotropy, create slides for this.
 - Plots for:
   - 3d histogram
   - correlation matrix (compute), correlation matrix for logarithms
@@ -43,10 +44,7 @@ QQ_conductivity.pdf
   - try for original eigne values and their log transformation
   
 ## Postponed Problems
-- Fracture adding problem for coarse_fine mesh. PolygonDecomposition.merge_points moves the points, to average. But one of the points can be on boundary and can not move.
-  Quick resolution: decrease tolerance and ignore such errors.
-  Later make specific unit tests, introduce a 'move_weight' for points and segments.
-
+- Fix more failed cases.
 - Flow extremly slow, about 1.5 min. per timestep takes 15 minutes to compute problem on fine mesh, 85% taken by assembly. Should not be because of the FieldFormula as it is only on the boundary.
   Seems there is a lot of allocations
 
@@ -56,16 +54,23 @@ QQ_conductivity.pdf
   the method nextOne should return 1 or -1 sign, but it returns 0 if the wire can not be prolonged. We must review the prolongation algorithm 
   Try tu gess which wire is responsible for that.
 
+- effective tensor from boundary fluxes 
+  Which direction assign to the flux from fracture boundary?
+- effective tensor from bulk fluxes
+  The volume averaging may be inapropriate, diminishing impact of the fractures.
+
 ## 2020 TODO:
-- fix a.pt != b.pt
-- fix ply is not None
-- plot lambda max vs. lambda min; logs; invariants
+
+
+- invariants
 - plot 3d histogram
 
-### Properties of the projected coarse conductivity field:
+- try meshes with more fractures, different conductivity
 
+### Properties of the projected coarse conductivity field:
+- 
 **better check of isotropy**
-- isotrpoy of invariants
+- isotropy of invariants
 - random rotation before decomposition
 - do same plot for randomly generated eigen values
 
