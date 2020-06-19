@@ -1,3 +1,6 @@
+from typing import *
+from abc import *
+
 import os
 import sys
 import numpy as np
@@ -8,7 +11,7 @@ import attr
 import collections
 import traceback
 import time
-from typing import Any, List, Dict, Tuple
+import pandas
 
 src_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -52,20 +55,21 @@ def substitute_placeholders(file_in, file_out, params):
 
 class FlowThread(threading.Thread):
 
+
     def __init__(self, basename, outer_regions, config_dict):
         self.base = basename
         self.outer_regions_list = outer_regions
         self.flow_args = config_dict["flow_executable"].copy()
         n_steps = config_dict["n_pressure_loads"]
-        t = np.linspace(0.0, np.pi, n_steps, endpoint=False)
+        t = np.pi * np.arange(1, n_steps + 1) / n_steps
         self.p_loads = np.array([np.cos(t), np.sin(t)]).T
         super().__init__()
 
     def run(self):
         in_f = in_file(self.base)
         out_dir = self.base
-        n_loads = len(self.p_loads)
-        flow_in = "flow_{}.yaml".format(self.base)
+        # n_loads = len(self.p_loads)
+        # flow_in = "flow_{}.yaml".format(self.base)
         params = dict(
             mesh_file=mesh_file(self.base),
             fields_file=fields_file(self.base),
@@ -116,7 +120,133 @@ class Region:
             assert dim == self.dim, "Can not create shape of dim: {} in region '{}' of dim: {}.".format(dim, self.name, self.dim)
         return active
 
+def gmsh_mesh_bulk_elements(mesh):
+    """
+    Generator of IDs of bulk elements.
+    :param mesh:
+    :return:
+    """
+    is_bc_reg_id={}
+    for name, reg_id_dim in mesh.physical.items():
+        is_bc_reg_id[reg_id_dim] = (name[0] == '.')
+    for eid, ele in mesh.elements.items():
+        (t, tags, nodes) = ele
+        dim = len(nodes) - 1
+        if not is_bc_reg_id[(tags[0], dim)]:
+            yield eid, ele
 
+
+
+class BulkBase(ABC):
+    @abstractmethod
+    def element_data(self, mesh, eid):
+        """
+        :return:
+        """
+        pass
+
+
+@attr.s(auto_attribs=True)
+class BulkFields(BulkBase):
+    mean_log_conductivity: Tuple[float, float]
+    cov_log_conductivity: Optional[List[List[float]]]
+    angle_mean: float = attr.ib(converter=float)
+    angle_dispersion: float = attr.ib(converter=float)
+
+    def element_data(self, mesh, eid):
+
+        # Unrotated tensor (eigenvalues)
+        if self.cov_log_conductivity is None:
+            log_eigenvals = self.mean_log_conductivity
+        else:
+            log_eigenvals = np.random.multivariate_normal(
+                mean=self.mean_log_conductivity,
+                cov=self.cov_log_conductivity
+                )
+        unrotated_tn = np.diag(np.power(10, log_eigenvals))
+
+        # rotation angle
+        if self.angle_dispersion is None or self.angle_dispersion == 0:
+            angle = self.angle_mean
+        elif self.angle_dispersion == 'inf':
+            angle = np.random.uniform(0, 2*np.pi)
+        else:
+            angle = np.random.vonmises(self.angle_mean, self.angle_dispersion)
+        c, s = np.cos(angle), np.sin(angle)
+        rot_mat = np.array([[c, -s], [s, c]])
+        cond_2d = rot_mat @ unrotated_tn @ rot_mat.T
+        return 1.0, cond_2d
+
+class BulkMicroScale(BulkBase):
+    def __init__(self, microscale):
+        self.microscale = microscale
+        self.microscale_tensors = None
+
+    def element_data(self, mesh, eid):
+        if self.microscale_tensors is None:
+            self.microscale_tensors = self.microscale.effective_tensor_from_bulk()
+        return 1.0, self.microscale_tensors[eid]
+
+class BulkChoose(BulkBase):
+    def __init__(self, finer_level_path):
+        self.cond_tn = np.array(pandas.read_csv(finer_level_path, sep=' '))
+
+
+    def element_data(self, mesh, eid):
+        idx = np.random.randint(len(self.cond_tn))
+        return 1.0, self.cond_tn[idx].reshape(2,2)
+
+
+@attr.s(auto_attribs=True)
+class FractureModel:
+    fractures: fracture.Fractures
+    region_to_fracture: Dict[int, int]
+    aperture_per_size: float = attr.ib(converter=float)
+    water_viscosity: float = attr.ib(converter=float)
+    gravity_accel: float = attr.ib(converter=float)
+    water_density: float = attr.ib(converter=float)
+
+    def element_data(self, mesh, eid):
+        el_type, tags, node_ids = mesh.elements[eid]
+        reg_id = tags[0] - 10000
+        # line, compute conductivity from fracture size using cubic law
+        # Isotropic conductivity in fractures. (Simplification.)
+        i_fr = self.region_to_fracture[reg_id]
+        fr_size = self.fractures.fractures[i_fr].rx
+        cs = fr_size * self.aperture_per_size
+        cond = cs ** 2 / 12 * self.water_density * self.gravity_accel / self.water_viscosity
+        cond_tn = cond * np.eye(2, 2)
+        return cs, cond_tn
+
+
+
+def tensor_3d_flatten(tn_2d):
+    tn3d = np.eye(3)
+    tn3d[0:2, 0:2] = tn_2d
+    # tn3d[0:2, 0:2] += tn_2d # ???
+    return tn3d.ravel()
+
+
+def write_fields(mesh, basename, bulk_model, fracture_model):
+    elem_ids = []
+    cond_tn_field = []
+    cs_field = []
+    for el_id, ele in gmsh_mesh_bulk_elements(mesh):
+        elem_ids.append(el_id)
+        el_type, tags, node_ids = ele
+        n_nodes = len(node_ids)
+        if n_nodes == 2:
+            cs, cond_tn = fracture_model.element_data(mesh, el_id)
+        else:
+            cs, cond_tn = bulk_model.element_data(mesh, el_id)
+        cs_field.append(cs)
+        cond_tn_field.append(tensor_3d_flatten(cond_tn))
+
+    fname = fields_file(basename)
+    with open(fname, "w") as fout:
+        mesh.write_ascii(fout)
+        mesh.write_element_data(fout, elem_ids, 'conductivity_tensor', cond_tn_field)
+        mesh.write_element_data(fout, elem_ids, 'cross_section', cs_field)
 
 
 @attr.s(auto_attribs=True)
@@ -129,6 +259,8 @@ class FlowProblem:
     # Fracture range to extract from the full list of the generated fractures.
     fractures: List[Any]
     # The Fractures object with generated fractures.
+    bulk_model: BulkBase
+    # The bulk model (specific for fine, coarse, etc.)
     config_dict: Dict[str, Any]
     # global config dictionary.
 
@@ -145,6 +277,40 @@ class FlowProblem:
     group_positions: Dict[int, np.array] = attr.ib(factory=dict)
     # Centers of macro elements.
     skip_decomposition:bool = False
+
+    # created later
+    mesh:gmsh_io.GmshIO = None
+
+
+
+    @classmethod
+    def make_fine(cls, i_level, fr_range, fractures, finer_level_path, config_dict):
+        level_dict = config_dict['levels'][i_level]
+        bulk_conductivity = level_dict['bulk_conductivity']
+        if bulk_conductivity.get('choose_from_finer_level', False):
+            bulk_model = BulkChoose(finer_level_path)
+        else:
+            bulk_model = BulkFields(**bulk_conductivity)
+        return FlowProblem(i_level, "fine",
+                           fr_range, fractures, bulk_model, config_dict)
+
+
+    @classmethod
+    def make_coarse(cls, i_level, fr_range, fractures, micro_scale_problem, config_dict):
+        bulk_model = BulkMicroScale(micro_scale_problem)
+        return FlowProblem(i_level, "coarse",
+                           fr_range, fractures, bulk_model, config_dict)
+
+    @classmethod
+    def make_microscale(cls, i_level, fr_range, fractures, config_dict):
+        level_dict = config_dict['levels'][i_level]
+        bulk_conductivity = level_dict['bulk_conductivity']
+        bulk_model = BulkFields(**bulk_conductivity)
+
+        return FlowProblem(i_level, "coarse_ref",
+                           fr_range, fractures, bulk_model, config_dict)
+
+
     @property
     def pressure_loads(self):
         return self.thread.p_loads
@@ -284,97 +450,17 @@ class FlowProblem:
 
 
 
-    def make_fields(self, cond_tensors_2d=None):
+    def make_fields(self):
+        """
+        Calculate the conductivity and the cross-section fields, write into a GMSH file.
 
-        level_dict = self.config_dict['levels'][self.i_level]
-        bulk_conductivity = level_dict['bulk_conductivity']
-        mean_log_cond = [float(v) for v in bulk_conductivity['mean_log_conductivity']]
-        # default isotropic tensor
-        I_tn = np.eye(3, dtype=float)
-        default_cond_tn = np.power(10, np.mean(mean_log_cond)) * I_tn
-
-        cov_item = bulk_conductivity.get('cov_log_conductivity', None)
-        if cov_item is None:
-            cond_tn_sample = lambda: default_cond_tn.copy()
-        else:
-            cov_log_cond = [[float(v) for v in row] for row in cov_item]
-            cov_sqrt = np.linalg.cholesky(cov_log_cond)
-            # should be lower triangular
-
-            # other method, use different rotation of uncorrelated values, so it
-            # leads to different samples
-            #cov_eval, cov_egvec = np.linalg.eigh(cov_log_cond)
-            #cov_sqrt = (cov_egvec @ np.diag(np.sqrt(cov_eval))).T
-            def cond_tn_sample():
-                cond_eigenvals = cov_sqrt @ np.random.randn(2) + mean_log_cond
-                cond_eigenvals = np.power(10, cond_eigenvals)
-                unrotated_tn = np.diag(cond_eigenvals)
-                angle = np.random.uniform(0, 2 * np.pi, 1)[0]
-                c, s = np.cos(angle), np.sin(angle)
-                rot_mat = np.array([[c, -s], [s, c]])
-                cond_2d = rot_mat.T @ unrotated_tn @ rot_mat
-                cond_3d = np.eye(3)
-                cond_3d[0:2, 0:2] += cond_2d
-                return cond_3d
-
-
-
-        is_bs_reg_id={}
-        for name, reg_id_dim in self.mesh.physical.items():
-            is_bs_reg_id[reg_id_dim] = (name[0] == '.')
-        bulk_elements = [eid
-                         for eid, (t, tags, nodes) in self.mesh.elements.items()
-                         if not is_bs_reg_id[(tags[0], len(nodes)-1)] ]
-
-
-
-        # construct eid -> cond tensor dictionary either from input
-        # or random (uncorellated)
-        cond_tensors = collections.defaultdict(lambda: default_cond_tn.copy())
-        if cond_tensors_2d is not None:
-            # tensors given by micro scale
-            # convert 2d tensors to 3d
-            for eid, c2d in cond_tensors_2d.items():
-                cond_tensors[eid][0:2, 0:2] += c2d
-        else:
-            # random tensors
-            for eid in bulk_elements:
-                cond_tensors[eid] = cond_tn_sample()
-        aperture_per_size = float(self.config_dict['aperture_per_size'])
-        viscosity = float(self.config_dict['water_viscosity'])
-        gravity_accel = float(self.config_dict['gravity_accel'])
-        water_density = float(self.config_dict['water_density'])
-        n_elem = len(bulk_elements)
-        elem_ids = []
-        cond_tn_field = np.empty((n_elem, 9))
-        cs_field = np.empty((n_elem, 1))
-        for el_id in bulk_elements:
-            ele = self.mesh.elements[el_id]
-            el_type, tags, node_ids = ele
-            n_nodes = len(node_ids)
-            if n_nodes == 2:
-                reg_id = tags[0] - 10000
-                # line, compute conductivity from fracture size using cubic law
-                i_fr = self.reg_to_fr[reg_id]
-                fr_size = self.fractures.fractures[i_fr].rx
-                cs = fr_size * aperture_per_size
-                cond = cs ** 2 / 12 * water_density * gravity_accel / viscosity
-                cond_tn = cond * I_tn
-            else:
-                cs = 1.0
-                cond_tn = cond_tensors[el_id]
-
-            i = len(elem_ids)
-            elem_ids.append(el_id)
-            cond_tn_field[i] = cond_tn.flatten()
-            cs_field[i] = cs
-
-
-        fname = fields_file(self.basename)
-        with open(fname, "w") as fout:
-            self.mesh.write_ascii(fout)
-            self.mesh.write_element_data(fout, elem_ids, 'conductivity_tensor', cond_tn_field)
-            self.mesh.write_element_data(fout, elem_ids, 'cross_section', cs_field)
+        :param cond_tensors_2d: Dictionary of the conductivities determined from a subscale
+        calculation.
+        :param cond_2d_samples: Array Nx2x2 of 2d tensor samples from own and other subsample problems.
+        :return:
+        """
+        fracture_model = FractureModel(self.fractures, self.reg_to_fr, **self.config_dict['fracture_model'])
+        write_fields(self.mesh, self.basename, self.bulk_model, fracture_model)
 
 
     def elementwise_mesh(self, coarse_mesh, mesh_step, bounding_polygon):
@@ -523,12 +609,12 @@ class FlowProblem:
             assert False
 
 
-    def effective_tensor_from_bulk(self, bulk_regions):
+    def effective_tensor_from_bulk(self):
         """
         :param bulk_regions: mapping reg_id -> tensor_group_id, groups of regions for which the tensor will be computed.
         :return: {group_id: conductivity_tensor} List of effective tensors.
         """
-
+        bulk_regions = self.reg_to_group
         out_mesh = gmsh_io.GmshIO()
         with open(os.path.join(self.basename, "flow_fields.msh"), "r") as f:
             out_mesh.read(f)
@@ -579,11 +665,14 @@ class FlowProblem:
                 pressure_matrix[i1] = [0, p0, p1]
             C = np.linalg.lstsq(pressure_matrix, rhs, rcond=None)[0]
             cond_tn = np.array([[C[0], C[1]], [C[1], C[2]]])
-            #if i_group < 10:
-            if flux.shape[0] < 5:
-                print("Plot tensor for eid: ", group_id)
-                self.plot_effective_tensor(flux, cond_tn, self.basename + "_" + group_labels[i_group])
-                #print(cond_tn)
+            if i_group < 10:
+                 # if flux.shape[0] < 5:
+                 print("Plot tensor for eid: ", group_id)
+                 print("Fluxes: \n", flux)
+                 print("pressures: \n", loads)
+                 print("cond: \n", cond_tn)
+                 self.plot_effective_tensor(flux, cond_tn, self.basename + "_" + group_labels[i_group])
+                 #print(cond_tn)
             cond_tensors[group_id] = cond_tn
         self.cond_tensors = cond_tensors
         return cond_tensors
@@ -662,6 +751,15 @@ class BothSample:
         config_path
         :param sample_config:
         """
+        # sample_config attributes:
+        # finer_level_path - Path to the file with microscale tensors from the previous level. Used for sampling conductivity.
+        # config_path
+        # do_coarse
+        # h_coarse_step
+        # h_fine_step
+        # seed
+        # i_level
+
         self.__dict__.update(sample_config)
         np.random.seed(self.seed)
         with open(self.config_path, "r") as f:
@@ -708,39 +806,36 @@ class BothSample:
     def calculate(self):
         fractures = self.generate_fractures()
         # fine problem
-        fine_flow = FlowProblem(
-            self.i_level, "fine", (self.h_fine_step, np.inf),
-            fractures, self.config_dict)
+        fine_flow = FlowProblem.make_fine(self.i_level, (self.h_fine_step, np.inf), fractures, self.finer_level_path, self.config_dict)
         fine_flow.make_mesh()
         fine_flow.make_fields()
         fine_flow.run()
         done = []
         # coarse problem
         if self.do_coarse:
-            coarse_flow = FlowProblem(
-                self.i_level, "coarse", (self.h_coarse_step, np.inf),
-                fractures, self.config_dict)
+            coarse_ref = FlowProblem.make_microscale(self.i_level, (0, self.h_coarse_step), fractures, self.config_dict)
+            coarse_flow = FlowProblem.make_coarse(self.i_level, (self.h_coarse_step, np.inf), fractures, coarse_ref, self.config_dict)
+
+            # coarse mesh
             coarse_flow.make_fracture_network()
             coarse_flow.make_mesh()
 
-            coarse_ref = FlowProblem(
-                self.i_level, "coarse_ref", (0, self.h_coarse_step),
-                fractures, self.config_dict)
+            # microscale mesh and run
             #coarse_ref.make_fracture_network()
             coarse_ref.elementwise_mesh(coarse_flow.mesh, self.h_fine_step,  coarse_flow.outer_polygon)
             coarse_ref.make_fields()
             coarse_ref.run().join()
             done.append(coarse_ref)
-            cond_tensors = coarse_ref.effective_tensor_from_bulk(coarse_ref.reg_to_group)
 
-            coarse_flow.make_fields(cond_tensors)
+            # coarse fields and run
+            coarse_flow.make_fields()
             coarse_flow.run()
             coarse_flow.thread.join()
             done.append(coarse_flow)
-            coarse_flow.effective_tensor_from_bulk(coarse_flow.reg_to_group)
+            coarse_flow.effective_tensor_from_bulk()
         fine_flow.thread.join()
         done.append(fine_flow)
-        fine_flow.effective_tensor_from_bulk(fine_flow.reg_to_group)
+        fine_flow.effective_tensor_from_bulk()
         self.make_summary(done)
 
 
@@ -766,11 +861,11 @@ if __name__ == "__main__":
     sample_config = sys.argv[1]
     try:
         with open(sample_config, "r") as f:
-            config_dict = yaml.load(f) # , Loader=yaml.FullLoader
+            sample_dict = yaml.load(f) # , Loader=yaml.FullLoader
     except Exception as e:
         print("cwd: ", os.getcwd(), "sample config: ", sample_config)
     start_time = time.time()
-    bs = BothSample(config_dict)
+    bs = BothSample(sample_dict)
     bs.calculate()
     print("Sample time: ", time.time() - start_time)
 
