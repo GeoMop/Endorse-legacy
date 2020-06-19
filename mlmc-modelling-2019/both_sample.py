@@ -61,7 +61,7 @@ class FlowThread(threading.Thread):
         self.outer_regions_list = outer_regions
         self.flow_args = config_dict["flow_executable"].copy()
         n_steps = config_dict["n_pressure_loads"]
-        t = np.pi * np.arange(1, n_steps + 1) / n_steps
+        t = np.pi * np.arange(0, n_steps) / n_steps
         self.p_loads = np.array([np.cos(t), np.sin(t)]).T
         super().__init__()
 
