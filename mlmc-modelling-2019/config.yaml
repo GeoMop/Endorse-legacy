@@ -39,7 +39,7 @@ fracture_model:
     gravity_accel: 1
 
 levels:
-  - n_samples: 300
+  - n_samples: 100
     step: 100
     bulk_conductivity:
         choose_from_finer_level: True
@@ -108,8 +108,9 @@ geometry:
 
   #pow_law_size_range: [0.05, 500]
   pow_law_size_range: [0.1, 1000]
-  pow_law_size_exp: 2.8   # 3d exponent
-  p_32: 2
+  #pow_law_size_exp: 2.8   # 3d exponent
+  pow_law_size_exp: 3   # 3d exponent
+  p_32: 5
   # Mean total fracture surface for the full size range (pow_law_size_range).
   # realistic value is about 0.5,
   # p_32==64 continuous for exp 3.2
