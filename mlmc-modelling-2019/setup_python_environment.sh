@@ -11,7 +11,7 @@ which pip
 pip install --upgrade pip
 pip -V
 
-pip install pyyaml attrs numpy 
+pip install pyyaml attrs numpy pandas
 pip install git+https://github.com/GeoMop/bgem.git@JB_endorse_mlmc
 
 #pip freeze
