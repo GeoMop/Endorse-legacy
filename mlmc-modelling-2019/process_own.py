@@ -57,35 +57,58 @@ class change_cwd:
 class FractureFlowSimulation():
     total_sim_id = 0
 
-    def __init__(self, i_level, pbs_obj, mesh_step, n_samples, coarse_step, work_dir):
+    def __init__(self, i_level, pbs_obj, coarse_step, work_dir, config_dict):
         self.i_level = i_level
-        self.step = mesh_step
+
         self.coarse_step = coarse_step
         # Pbs script creater
         self.pbs_creater = pbs_obj
-        self.n_samples = n_samples
+
+        # target n samples
 
         self.cond_field_xy = []
         self.cond_field_values = []
         self.running_samples = {}
         self.finished_samples = {}
         self.work_dir = work_dir
+        # top workdir
+        self.config_dict = config_dict
         # Register produced samples. After all are collected we perform averaging.
 
+        self.step = self.level_config['step']
+        self.n_samples = self.level_config['n_samples']
+        self.micro_cond_tn_samples = "micro_cond_tn_samples.csv"
         # data processing
         #self._cond_xy = None
         #self._cond_tn = None
+
+    @property
+    def choose_from_finer_level(self):
+        return self.level_config['bulk_conductivity'].get('choose_from_finer_level', False)
+
+    @property
+    def level_config(self):
+        return self.config_dict['levels'][self.i_level]
+
+    @property
+    def n_collected(self):
+        return len(self.finished_samples)
+
+
+    def level_dir(self, i_level=None):
+        if i_level is None:
+            i_level = self.i_level
+        level_dir = "sim_level_{}".format(i_level)
+        return os.path.join(self.work_dir, level_dir)
 
     def run_level(self):
         """
         :return: [ (level, i_sample, dir) ]
         """
-        level_dir = "sim_{}_step_{:.6f}".format(self.i_level, self.step)
-        level_dir = os.path.join(self.work_dir, level_dir)
-        os.makedirs(level_dir, mode=0o775, exist_ok=True)
+        os.makedirs(self.level_dir(), mode=0o775, exist_ok=True)
         for i_sample in range(self.n_samples):
             sample_dir = "L{:02d}_F_S{:07}".format(self.i_level, i_sample)
-            sample_dir = os.path.join(level_dir, sample_dir)
+            sample_dir = os.path.join(self.level_dir(), sample_dir)
             os.makedirs(sample_dir, mode=0o775, exist_ok=True)
             self.simulation_sample(i_sample, sample_dir)
         return self.running_samples
@@ -93,13 +116,20 @@ class FractureFlowSimulation():
 
 
     def write_sample_config(self, sample_dir):
+        if self.choose_from_finer_level:
+            finer_level_path = os.path.join(self.level_dir(self.i_level+1), self.micro_cond_tn_samples)
+        else:
+            finer_level_path = None
+
+
         sample_config = dict(
             seed=np.random.randint(0, np.iinfo(np.int32).max),
             do_coarse=self.coarse_step is not None,
             h_fine_step=self.step,
             h_coarse_step=self.coarse_step,
             i_level=self.i_level,
-            config_path=os.path.join(self.work_dir, "config.yaml")
+            config_path=os.path.join(self.work_dir, "config.yaml"),
+            finer_level_path=finer_level_path
         )
         config_path = os.path.join(sample_dir, "sample_config.yaml")
         if not os.path.exists(config_path):
@@ -118,7 +148,9 @@ class FractureFlowSimulation():
         if not os.path.exists(os.path.join(sample_dir, "FINISHED")):
             print("Schedule: ", sample_dir)
             os.makedirs(sample_dir, mode=0o775, exist_ok=True)
-            for f in ['flow_templ.yaml']:
+            flow_template = self.config_dict['flow_model']
+            subscale_template = self.config_dict['subscale_model']
+            for f in [flow_template, subscale_template]:
                 shutil.copy(os.path.join(src_path, f), os.path.join(sample_dir, f))
             self.write_sample_config(sample_dir)
             # Fine sample starts execution job for both samples
@@ -182,12 +214,20 @@ class FractureFlowSimulation():
             if self.coarse_step is not None:
                 coarse_cond_tn = np.array(summary_dict['coarse']['cond_tn'][0])
                 self.cond_field_xy.append(np.array(summary_dict['coarse_ref']['pos']))
-                self.cond_field_values.append(np.array(summary_dict['coarse_ref']['cond_tn']))
+                micro_cond_tn_samples = np.array(summary_dict['coarse_ref']['cond_tn'])
+                self.cond_field_values.append(micro_cond_tn_samples)
+                self.append_microscale(micro_cond_tn_samples)
             else:
                 coarse_cond_tn = None
+
             return fine_cond_tn, coarse_cond_tn
         else:
             return None
+
+    def append_microscale(self, cond_values):
+        micro_samples = os.path.join(self.level_dir(self.i_level), self.micro_cond_tn_samples)
+        with open(micro_samples, "a") as f:
+            np.savetxt(f, cond_values.reshape((-1, 4)))
 
 
 
@@ -203,6 +243,23 @@ class FractureFlowSimulation():
                 self.eigenvals_correlation()
                 self.calculate_field_parameters()
 
+    def decompose_22(self, tn_samples):
+        # decompose stack of 2x2 tensors
+        # Use explicit formulas to compute eigen values and angle of the conductivity tensors
+        # see: http://scipp.ucsc.edu/~haber/ph116A/diag2x2_11.pdf
+        half_trace = (tn_samples[:, 0, 0] + tn_samples[:, 1, 1]) / 2
+        det = (tn_samples[:, 0, 0] * tn_samples[:, 1, 1] - tn_samples[:, 0, 1] ** 2)
+        discr = abs(half_trace ** 2 - det)
+        discr = np.sqrt(discr)
+        tn_e_min = half_trace - discr
+        tn_e_max = half_trace + discr
+        ab_diff = tn_samples[:, 0, 0] - tn_samples[:, 1, 1]
+        angle = np.arctan(2*tn_samples[:, 0, 1] / ab_diff)/2
+        angle = np.where( angle > 0, angle, angle + np.pi/2 )
+        angle = np.where(tn_samples[:, 0, 1] > 0, angle, angle + np.pi / 2)
+        # angle in (0, pi)
+        return tn_e_max, tn_e_min, angle, half_trace, det
+
     def precompute(self):
         self.cond_xy = np.concatenate(self.cond_field_xy, axis=0)
         self.cond_tn = np.concatenate(self.cond_field_values, axis=0)
@@ -212,20 +269,40 @@ class FractureFlowSimulation():
         self.mean_c_tn_min, self.mean_c_tn_max, self.mean_c_tn_angle  = self.tn_eigen(self.mean_c_tn)
         print("Cmin: {} Cmax: {} angle: {}"
             .format(self.mean_c_tn_min, self.mean_c_tn_max, self.mean_c_tn_angle))
+        self.cond_e_max, self.cond_e_min, self.cond_angle, self.cond_half_trace, self.cond_det = self.decompose_22(self.cond_tn)
 
-        # Use explicit formulas to compute eigen values and angle of the conductivity tensors
-        # see: http://scipp.ucsc.edu/~haber/ph116A/diag2x2_11.pdf
-        half_trace = (self.cond_tn[:, 0, 0] + self.cond_tn[:, 1, 1]) / 2
-        det = (self.cond_tn[:, 0, 0] * self.cond_tn[:, 1, 1]  -  self.cond_tn[:, 0, 1] ** 2)
-        discr = abs(half_trace ** 2 - det)
-        discr = np.sqrt(discr)
-        self.cond_e_min = half_trace - discr
-        self.cond_e_max = half_trace + discr
-        ab_diff = self.cond_tn[:, 0, 0] - self.cond_tn[:, 1, 1]
-        angle = np.arctan(2*self.cond_tn[:, 0, 1] / ab_diff)/2
-        angle = np.where( angle > 0, angle, angle + np.pi/2 )
-        angle = np.where(self.cond_tn[:, 0, 1] > 0, angle, angle + np.pi / 2)
-        self.cond_angle = angle
+        # Fit log normal
+        self.L_mean_cond_tn, self.cov_log_e_cond_tn = self.fit_lognormal_cond(self.cond_tn)
+
+
+    def fit_lognormal_cond(self, cond_tn_samples):
+        """
+        Estimate parameters of the model:
+        C = L C0 Lt
+        where L Lt = expectated C
+        C0 is random part with identical matrix as a mean value
+        C0 = R D Rt
+        R .. rotation matrix for angle uniform in 0, \pi
+        D = diag(c1, c2)
+        log(c1), log(c2) ~ bivvarNorm( [1,1], Cov)
+        :param cond_tn_samples:
+        :return:
+        """
+
+        # determine mean conductivity
+        mean_cond_tn = np.mean(cond_tn_samples, axis=0)
+        L_mean_cond_tn = np.linalg.cholesky(mean_cond_tn)
+        Linv_mean_cond_tn = np.linalg.inv(L_mean_cond_tn)
+        cond_0_samples = Linv_mean_cond_tn @ cond_tn_samples @ Linv_mean_cond_tn.T
+        # This works as matmult broadcasts: L @ [C1, C2, ..] @ Lt = [L @ C1 @ Lt, ...]
+
+        # Estimate parameters of lognorm distr
+        c0_e_max, c0_e_min, _, _, _ = self.decompose_22(cond_0_samples)
+        cov_log_e = np.cov(np.log([c0_e_max, c0_e_min]))
+
+        return L_mean_cond_tn, cov_log_e
+
+
 
     def tn_eigen(self, tn):
         half_trace = (tn[0, 0] + tn[1, 1]) / 2
@@ -474,55 +551,60 @@ class FractureFlowSimulation():
             ax.set_xlabel("samples")
             ax.set_ylabel("Q log_norm")
         fig.savefig("QQ_conductivity.pdf")
-        
+
+    def correlation_plot(self, X, Y, name_x, name_y):
+        assert len(X) == len(Y)
+        print(f"Covariance  ({name_x}, {name_y}): \n", np.cov(X, Y))
+        print(f"Correlation ({name_x}, {name_y}): \n", np.corrcoef(X, Y))
+
+        fig, (ecdf_ax, corr_ax) = plt.subplots(nrows=1, ncols=2)
+        sorted_x = np.argsort(X)
+        sorted_y = np.argsort(Y)
+        sample_pos = np.linspace(0, 1, len(X))
+        ecdf_ax.plot(X[sorted_x], sample_pos, 'red', label=f"ecdf {name_x}")
+        ecdf_ax.plot(Y[sorted_y], sample_pos, 'blue', label=f"ecdf {name_y}")
+        ecdf_ax.legend()
+
+        inv_x = np.empty_like(X)
+        inv_y = np.empty_like(Y)
+        inv_x[sorted_x] = sample_pos
+        inv_y[sorted_y] = sample_pos
+        corr_ax.scatter(inv_x, inv_y, s=0.01)
+        corr_ax.set_xlabel(f"$F^{{-1}}$ {name_x}")
+        corr_ax.set_ylabel(f"$F^{{-1}}$ {name_y}")
+        fig.savefig(f"dependency_{name_x}_{name_y}.pdf")
+        plt.close(fig)
+
     def eigenvals_correlation(self):
-        cond_min = self.cond_e_min
-        cond_max = self.cond_e_max
-        print("Cov (min, max): \n", np.cov(cond_min, cond_max))
-        print("Cov (min, max): \n", np.corrcoef(cond_min, cond_max))
-
-        fig, axes = plt.subplots(nrows=1, ncols=1)
-        axes.plot(np.sort(np.log10(cond_max)), np.linspace(0, 1, len(cond_max)), 'red')
-        axes.plot(np.sort(np.log10(cond_min)), np.linspace(0, 1, len(cond_min)), 'blue')
-        fig.savefig("ecdf_c_max_min_log10.pdf")
-        plt.close(fig)
-
-        fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(10,10))
-        axes.scatter(cond_min, cond_max)
-        axes.set_xlabel("c_min")
-        axes.set_ylabel("c_max")
-        axes.set_xlim(np.min(cond_min), np.max(cond_min))
-        axes.set_ylim(np.min(cond_max), np.max(cond_max))
-        fig.savefig("min_max_relation.pdf")
-        plt.close(fig)
-
-        cond_min = np.log10(self.cond_e_min)
-        cond_max = np.log10(self.cond_e_max)
-        print("Cov (log min, log max): \n", np.cov(cond_min, cond_max))
-        print("Cov (log min, log max): \n", np.corrcoef(cond_min, cond_max))
-
-        fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(10,10))
-        axes.scatter(cond_min, cond_max)
-        axes.set_xlabel("c_min")
-        axes.set_ylabel("c_max")
-        axes.set_xlim(np.min(cond_min), np.max(cond_min))
-        axes.set_ylim(np.min(cond_max), np.max(cond_max))
-        fig.savefig("min_max_log_relation.pdf")
-        plt.close(fig)
+        self.correlation_plot(self.cond_e_min, self.cond_e_max, "e_min", "e_max")
+        #self.correlation_plot(np.log10(self.cond_e_min), np.log10(self.cond_e_max), "log_e_min", "log_e_max")
+        #self.correlation_plot(np.log10(self.cond_e_max), np.log10(self.cond_e_max/self.cond_e_min), "log_e_max", "log_ratio")
+        self.correlation_plot(self.cond_half_trace, self.cond_e_max - self.cond_e_min, "tr2", "diff")
 
 
 
-    def calculate_field_params_mcmc(self):
-        import pymc3
-        cov_sqrt = (cov_egvec @ np.diag(np.sqrt(cov_eval))).T
-        with pymc3.Model() as model:
-            cond_indep = pymc3.Normal("conv_indep", mu=0, shape=2)
-            cond_dep = cov_sqrt @ (c_indep) + log_cond_mean
-            unrotated_tn = np.diag(cond_dep)
-            angle = pymc3.Uniform("conv_angle", lower=0, upper=2 * np.pi)
-            c, s = np.cos(angle), np.sin(angle)
-            rot_mat = np.array([[c, -s], [s, c]])
-            cond_2d = rot_mat.T @ unrotated_tn @ rot_mat
+
+    # def calculate_field_params_mcmc(self):
+    #     import pymc3 as pm
+    #     obs_cond_tn_3 = np.stack(self.cond_tn[:,0,0], self.cond_tn[:,0,0], self.cond_tn[:,0,1])
+    #
+    #     with pm.Model() as model:
+    #         angle = pm.Uniform('angle', lower=0, upper=np.pi)
+    #         cond_eig = pm.Lognormal('cond_eig', mu=(1e-10, 1e-10), sigma=10, shape=2)
+    #         c = pm.math.cos(angle)
+    #         s = pm.math.sin(angle)
+    #         cond_tn_3 = [c*c*cond_eig[0] + s*s*cond_eig[1],
+    #                      s*s*cond_eig[0] + c*c*cond_eig[1],
+    #                      c*s*(cond_eig[0] - cond_eig[1])]
+    #         cond_tn = pm.Deterministic('cond_tn', cond_tn_3, observed=obs_cond_tn_3)
+    #
+    #         cond_indep = pymc3.Normal("conv_indep", mu=0, shape=2)
+    #         cond_dep = cov_sqrt @ (c_indep) + log_cond_mean
+    #         unrotated_tn = np.diag(cond_dep)
+    #         angle = pm.Uniform("conv_angle", lower=0, upper=2 * np.pi)
+    #         c, s = np.cos(angle), np.sin(angle)
+    #         rot_mat = np.array([[c, -s], [s, c]])
+    #         cond_2d = rot_mat.T @ unrotated_tn @ rot_mat
 
 
 
@@ -563,18 +645,25 @@ class Process():
         os.makedirs(self.work_dir, mode=0o775, exist_ok=True)
         self.pbs=self.make_pbs()
 
+        # Create level simulations.
         self.levels = []
         last_step = None
         for il, level_config in enumerate(self.config_dict['levels']):
             sim_step = level_config['step']
-            sim = FractureFlowSimulation(
-                il, self.pbs, sim_step,
-                level_config['n_samples'], last_step, self.work_dir)
+            sim = FractureFlowSimulation(il, self.pbs, last_step, self.work_dir, self.config_dict)
             self.levels.append(sim)
             last_step = sim_step
-                               
+
+
+        finer_l = None
         for l in reversed(self.levels):
+            if l.choose_from_finer_level:
+                assert finer_l is not None
+                self.pbs.execute()
+                self.wait_for_level(finer_l, self.config_dict['n_finer_level_samples'])
             l.run_level()
+            finer_l = l
+
 
     def move_failed(self, failed):
         failed_dir = os.path.join(self.work_dir, "FAILED")
@@ -589,6 +678,16 @@ class Process():
             with open(os.path.join(sample_dir, "FINISHED"), "w") as f:
                 f.write('done')
 
+    def wait_for_level(self, level, n_finished):
+        """
+        Wait until `level` have at least `n_finished` samples.
+        """
+        while level.n_collected < n_finished and len(level.running_samples) > 0:
+                failed = level.extract_results()
+                self.move_failed(failed)
+                time.sleep(1)
+
+
 
     def wait(self):
         self.pbs.execute()
@@ -597,7 +696,7 @@ class Process():
             n_running = 0
             for sim in self.levels:
                 failed = sim.extract_results()
-                self.move_failed(failed)
+                #self.move_failed(failed)
                 n_running += len(sim.running_samples)
             time.sleep(1)
 
