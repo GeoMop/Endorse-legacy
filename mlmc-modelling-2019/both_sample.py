@@ -246,7 +246,7 @@ def write_fields(mesh, basename, bulk_model, fracture_model):
     with open(fname, "w") as fout:
         mesh.write_ascii(fout)
         mesh.write_element_data(fout, elem_ids, 'conductivity_tensor', np.array(cond_tn_field))
-        mesh.write_element_data(fout, elem_ids, 'cross_section', np.array(cs_field))
+        mesh.write_element_data(fout, elem_ids, 'cross_section', np.array(cs_field).reshape(-1, 1))
 
 
 @attr.s(auto_attribs=True)
