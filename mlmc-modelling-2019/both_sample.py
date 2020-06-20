@@ -168,7 +168,7 @@ class BulkFields(BulkBase):
         # rotation angle
         if self.angle_dispersion is None or self.angle_dispersion == 0:
             angle = self.angle_mean
-        elif self.angle_dispersion == 'inf':
+        elif self.angle_dispersion == np.inf:
             angle = np.random.uniform(0, 2*np.pi)
         else:
             angle = np.random.vonmises(self.angle_mean, self.angle_dispersion)

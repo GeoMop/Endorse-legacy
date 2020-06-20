@@ -582,6 +582,8 @@ class FractureFlowSimulation():
         self.correlation_plot(self.cond_half_trace, self.cond_e_max - self.cond_e_min, "tr2", "diff")
 
 
+    def mlmc_level_variances(self):
+        pass
 
 
     # def calculate_field_params_mcmc(self):
@@ -609,12 +611,12 @@ class FractureFlowSimulation():
 
 
 class Process():
-    def __init__(self, work_dir):
+    def __init__(self, work_dir, config_file):
         self.work_dir = os.path.abspath(work_dir)
         os.makedirs(self.work_dir, mode=0o775, exist_ok=True)
         work_config_path = os.path.join(self.work_dir, "config.yaml")
         if not os.path.exists(work_config_path):
-            shutil.copy(os.path.join(src_path, "config.yaml"), self.work_dir)
+            shutil.copy(os.path.join(src_path, config_file), work_config_path)
         with open(work_config_path, "r") as f:
             self.config_dict = yaml.load(f) #, Loader=yaml.FullLoader
         
@@ -664,6 +666,10 @@ class Process():
             l.run_level()
             finer_l = l
 
+        self.mlmc_processing()
+
+    def mlmc_processing(self):
+        pass
 
     def move_failed(self, failed):
         failed_dir = os.path.join(self.work_dir, "FAILED")
@@ -696,7 +702,7 @@ class Process():
             n_running = 0
             for sim in self.levels:
                 failed = sim.extract_results()
-                #self.move_failed(failed)
+                self.move_failed(failed)
                 n_running += len(sim.running_samples)
             time.sleep(1)
 
@@ -723,6 +729,7 @@ class Process():
 if __name__ == "__main__":
     np.random.seed(123)
     work_dir = sys.argv[1]
-    process = Process(work_dir)
+    config = sys.argv[2]
+    process = Process(work_dir, config)
     process.run()
     process.wait()
