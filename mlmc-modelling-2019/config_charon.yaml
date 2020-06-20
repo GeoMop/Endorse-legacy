@@ -10,7 +10,7 @@
 #finish_sleep: 0
 #metacentrum: false
 #gmsh_executable: /home/jb/bin/gmsh4
-n_finer_level_samples: 1
+n_finer_level_samples: 20
 
 # reuse existing sample directories and existing results
 # None - clean dir
@@ -27,19 +27,19 @@ flow_executable:
 metacentrum: true
 gmsh_executable: /home/jan_brezina/workspace/wgc/mlmc_random_frac/env/bin/gmsh
 
-flow_model: "repository_templ.yaml"
+flow_model: "flow_templ.yaml"
 subscale_model: "flow_templ.yaml"
 
 
 # case 1
 fracture_model:
-    aperture_per_size: 1e-4
-    water_viscosity: 1
-    water_density: 1
-    gravity_accel: 1
+    aperture_per_size: 1e-6
+    water_viscosity: 1.3e-3  #[Pa s] decrease from 1.8mPa.s at 0deg to 1.3mPa.s at 10deg,
+    water_density: 1000
+    gravity_accel: 9.8
 
 levels:
-  - n_samples: 100
+  - n_samples: 300
     step: 100
     bulk_conductivity:
         choose_from_finer_level: True
@@ -48,14 +48,14 @@ levels:
     step: 10
     bulk_conductivity:
         # Bivariate log normal distribution for the tensor eigen values
-        mean_log_conductivity: [-9.97926069, -9.41656073]
-        cov_log_conductivity: [[0.0056176,  0.0022999 ], [0.0022999,  0.04078208]]
+        mean_log_conductivity: [-6, -6]
+        cov_log_conductivity: [[0.2,0.07],[0.07,0.2]]
         # Von Mises for the rotation. 
         # Rotation angle of the first eigen vector. Counter clockwise from the axis X.
         # dispersion == 'inf' -> uniform distribution on interval (0, 2pi)
         # dispersion == 0 -> used constant value `angle_mean`.
         angle_mean: 0
-        angle_dispersion: 1.0
+        angle_concentration: 0
 
         
 # case 2
