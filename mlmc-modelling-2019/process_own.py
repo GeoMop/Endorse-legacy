@@ -308,7 +308,7 @@ class FractureFlowSimulation():
         half_trace = (tn[0, 0] + tn[1, 1]) / 2
         det = (tn[0, 0] * tn[1, 1]  - tn[0, 1] ** 2)
         discr = half_trace ** 2 - det
-        print(discr[discr < 0])
+        #print(discr[discr < 0])
         discr = np.sqrt(discr)
         e_min = half_trace - discr
         e_max = half_trace + discr
