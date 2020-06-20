@@ -239,14 +239,14 @@ def write_fields(mesh, basename, bulk_model, fracture_model):
             cs, cond_tn = fracture_model.element_data(mesh, el_id)
         else:
             cs, cond_tn = bulk_model.element_data(mesh, el_id)
-        cs_field.append(cs)
+        cs_field.append(np.array(cs))
         cond_tn_field.append(tensor_3d_flatten(cond_tn))
 
     fname = fields_file(basename)
     with open(fname, "w") as fout:
         mesh.write_ascii(fout)
-        mesh.write_element_data(fout, elem_ids, 'conductivity_tensor', cond_tn_field)
-        mesh.write_element_data(fout, elem_ids, 'cross_section', cs_field)
+        mesh.write_element_data(fout, elem_ids, 'conductivity_tensor', np.array(cond_tn_field))
+        mesh.write_element_data(fout, elem_ids, 'cross_section', np.array(cs_field))
 
 
 @attr.s(auto_attribs=True)
