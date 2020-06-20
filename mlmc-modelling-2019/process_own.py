@@ -631,7 +631,8 @@ class Process():
             n_nodes=1,
             select_flags=[],
             mem='8gb',
-            queue='charon',
+            queue='charon_2h',
+            walltime='2:00:00',
             qsub=None)
         if self.config_dict['metacentrum']:
             pbs_config['qsub'] = 'qsub'
