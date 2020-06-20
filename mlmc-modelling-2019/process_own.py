@@ -6,6 +6,7 @@ import sys
 import os
 import time
 import yaml
+import pickle
 import shutil
 import traceback
 import numpy as np
@@ -175,6 +176,7 @@ class FractureFlowSimulation():
         new_running = {}
         failed = []
         for i_sample, sample_dir in self.running_samples.items():
+            print("Extracting: ", sample_dir)
             try:
                 result = self.extract_result(sample_dir)
                 if result is None:
@@ -188,8 +190,7 @@ class FractureFlowSimulation():
                 print("-----------------------------")
                 failed.append(sample_dir)
         self.running_samples = new_running
-        if len(self.running_samples) == 0:
-            self.compute_cond_field_properties()
+
         return failed
 
     def extract_result(self, sample_dir):
@@ -206,11 +207,14 @@ class FractureFlowSimulation():
             with open(finished_file, "r") as f:
                 content = f.read().split()
             finished = content[0] == "done"
-            walltime = float(content[1])
+            if len(content) > 1:
+                walltime = float(content[1])
+            else:
+                walltime = 1
         if finished:
             with open(os.path.join(sample_dir, "summary.yaml"), "r") as f:
                 summary_dict = yaml.load(f) #, Loader=yaml.FullLoader
-
+            print("   ...store")
             fine_cond_tn = np.array(summary_dict['fine']['cond_tn'][0])
             if self.coarse_step is not None:
                 coarse_cond_tn = np.array(summary_dict['coarse']['cond_tn'][0])
@@ -234,6 +238,7 @@ class FractureFlowSimulation():
 
 
     def compute_cond_field_properties(self):
+        assert len(self.running_samples) == 0
         if self.cond_field_xy:   # List of samples, every sample have conductivity tensor for every coarse mesh element.
             with change_cwd(self.work_dir):
                 self.precompute()
@@ -584,8 +589,6 @@ class FractureFlowSimulation():
         self.correlation_plot(self.cond_half_trace, self.cond_e_max - self.cond_e_min, "tr2", "diff")
 
 
-    def mlmc_level_variances(self):
-        pass
 
 
     # def calculate_field_params_mcmc(self):
@@ -659,6 +662,11 @@ class Process():
             self.levels.append(sim)
             last_step = sim_step
 
+        try:
+            self.load_finished()
+            return
+        except FileNotFoundError:
+            pass
 
         finer_l = None
         for l in reversed(self.levels):
@@ -669,12 +677,13 @@ class Process():
             l.run_level()
             finer_l = l
 
-        self.mlmc_processing()
 
     @staticmethod
     def cond_scalar_statistics(cond_tn):
         half_trace = (cond_tn[0,0] + cond_tn[1,1])/2
-        return np.array([half_trace])
+        sqrt_det = np.sqrt(abs(cond_tn[0,0]*cond_tn[1,1] - cond_tn[0,1]**2))
+        return np.array([half_trace, sqrt_det])
+
 
     def mlmc_processing(self):
         statistics = self.cond_scalar_statistics
@@ -692,10 +701,23 @@ class Process():
 
         mc = mlmc.MLMC(level_data, level_times)
 
+        # compare level means
+        means = mc.level_means()  # shape (L, 2, M)
+        vars = mc.level_variances() # shape (L, 2, M)
+        n_samples = mc.n_samples
+        for il in range(1, mc.n_levels):
+            for iv, v_name in enumerate(['half_trace', 'sqrt_det']):
+                fine = means[il-1, 0, iv]
+                coarse = means[il, 1, iv]
+                diff = coarse - fine
+                var = vars[il-1, 0, iv]/n_samples[il-1] + vars[il, 1, iv]/n_samples[il] # estimate of the diff variance
+                std = np.sqrt(var)
+                print(f"level {il:3}  var {v_name:10}  EXc_l-EXf_(l-1) {fine} - {coarse} = {diff} (std: {std})")
+
+
+
 
     def move_failed(self, failed):
-        return
-
         failed_dir = os.path.join(self.work_dir, "FAILED")
         os.makedirs(failed_dir, mode=0o775, exist_ok=True)
         for sample_dir in failed:
@@ -717,9 +739,32 @@ class Process():
                 self.move_failed(failed)
                 time.sleep(1)
 
+    def save_finished(self):
+        finished_file = os.path.join(self.work_dir, "finished_samples.json")
+        finished = [sim.finished_samples for sim in self.levels]
+        with open(finished_file, 'wb') as f:
+            pickle.dump(finished, f)
+
+
+    def load_finished(self):
+        finished_file = os.path.join(self.work_dir, "finished_samples.json")
+        with open(finished_file, 'rb') as f:
+            finished = pickle.load(f)
+        for sim, level_finished in zip(self.levels, finished):
+            sim.finished_samples = level_finished
+            new_running = {}
+            for ir, sample in sim.running_samples.items():
+                if ir not in sim.finished:
+                    new_running[ir] = sample
+            sim.running_samples = new_running
 
 
     def wait(self):
+        try:
+            self.load_finished()
+            return
+        except FileNotFoundError:
+            pass
         self.pbs.execute()
         n_running = 1
         while (n_running):
@@ -729,23 +774,29 @@ class Process():
                 self.move_failed(failed)
                 n_running += len(sim.running_samples)
             time.sleep(1)
+        self.save_finished()
 
 
     def process(self):
-        """
-        Use collected data
-        :return: None
-        """
-        assert os.path.isdir(self.work_dir)
-        mlmc_est_list = []
+        #for sim in self.levels:
+        #    sim.compute_cond_field_properties()
+        self.mlmc_processing()
 
-        for nl in [1]:  # high resolution fields
-            mlmc = self.setup_config(nl, clean=False)
-            # Use wrapper object for working with collected data
-            mlmc_est = Estimate(mlmc)
-            mlmc_est_list.append(mlmc_est)
-
-        print("PROCESS FINISHED :)")
+    # def process(self):
+    #     """
+    #     Use collected data
+    #     :return: None
+    #     """
+    #     assert os.path.isdir(self.work_dir)
+    #     mlmc_est_list = []
+    #
+    #     for nl in [1]:  # high resolution fields
+    #         mlmc = self.setup_config(nl, clean=False)
+    #         # Use wrapper object for working with collected data
+    #         mlmc_est = Estimate(mlmc)
+    #         mlmc_est_list.append(mlmc_est)
+    #
+    #     print("PROCESS FINISHED :)")
 
 
 
@@ -753,7 +804,11 @@ class Process():
 if __name__ == "__main__":
     np.random.seed(123)
     work_dir = sys.argv[1]
-    config = sys.argv[2]
+    if len(sys.argv) > 2:
+        config = sys.argv[2]
+    else:
+        config=None
     process = Process(work_dir, config)
     process.run()
     process.wait()
+    process.process()
