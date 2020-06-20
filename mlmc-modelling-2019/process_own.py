@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 src_path = os.path.dirname(os.path.abspath(__file__))
 
 import pbs
-
+import mlmc
 
 """
 Script overview:
@@ -69,7 +69,7 @@ class FractureFlowSimulation():
         self.cond_field_xy = []
         self.cond_field_values = []
         self.running_samples = {}
-        self.finished_samples = {}
+        self.finished_samples = {}  # i_sample -> (sample_dir, (fine, coarse, walltime))
         self.work_dir = work_dir
         # top workdir
         self.config_dict = config_dict
@@ -205,7 +205,8 @@ class FractureFlowSimulation():
         if os.path.exists(finished_file):
             with open(finished_file, "r") as f:
                 content = f.read().split()
-            finished = len(content) == 1 and content[0] == "done"
+            finished = content[0] == "done"
+            walltime = float(content[1])
         if finished:
             with open(os.path.join(sample_dir, "summary.yaml"), "r") as f:
                 summary_dict = yaml.load(f) #, Loader=yaml.FullLoader
@@ -218,9 +219,10 @@ class FractureFlowSimulation():
                 self.cond_field_values.append(micro_cond_tn_samples)
                 self.append_microscale(micro_cond_tn_samples)
             else:
-                coarse_cond_tn = None
+                # zero level coarse
+                coarse_cond_tn = np.array([[0,0],[0,0]])
 
-            return fine_cond_tn, coarse_cond_tn
+            return fine_cond_tn, coarse_cond_tn, walltime
         else:
             return None
 
@@ -669,10 +671,31 @@ class Process():
 
         self.mlmc_processing()
 
+    @staticmethod
+    def cond_scalar_statistics(cond_tn):
+        half_trace = (cond_tn[0,0] + cond_tn[1,1])/2
+        return np.array([half_trace])
+
     def mlmc_processing(self):
-        pass
+        statistics = self.cond_scalar_statistics
+        level_data = []
+        level_times = []
+        for level in self.levels:
+            data = []
+            times = []
+            for dir, result in level.finished_samples.values():
+                fine, coarse, walltime = result
+                data.append([statistics(fine), statistics(coarse)])
+                times.append(walltime)
+            level_data.append(data)
+            level_times.append(np.mean(times))
+
+        mc = mlmc.MLMC(level_data, level_times)
+
 
     def move_failed(self, failed):
+        return
+
         failed_dir = os.path.join(self.work_dir, "FAILED")
         os.makedirs(failed_dir, mode=0o775, exist_ok=True)
         for sample_dir in failed:

@@ -12,6 +12,9 @@ import collections
 import traceback
 import time
 import pandas
+import scipy.spatial as sc_spatial
+import scipy.interpolate as sc_interpolate
+import atexit
 
 src_path = os.path.dirname(os.path.abspath(__file__))
 
@@ -151,7 +154,7 @@ class BulkFields(BulkBase):
     mean_log_conductivity: Tuple[float, float]
     cov_log_conductivity: Optional[List[List[float]]]
     angle_mean: float = attr.ib(converter=float)
-    angle_dispersion: float = attr.ib(converter=float)
+    angle_concentration: float = attr.ib(converter=float)
 
     def element_data(self, mesh, eid):
 
@@ -166,12 +169,12 @@ class BulkFields(BulkBase):
         unrotated_tn = np.diag(np.power(10, log_eigenvals))
 
         # rotation angle
-        if self.angle_dispersion is None or self.angle_dispersion == 0:
-            angle = self.angle_mean
-        elif self.angle_dispersion == np.inf:
+        if self.angle_concentration is None or self.angle_concentration == 0:
             angle = np.random.uniform(0, 2*np.pi)
+        elif self.angle_concentration == np.inf:
+            angle = self.angle_mean
         else:
-            angle = np.random.vonmises(self.angle_mean, self.angle_dispersion)
+            angle = np.random.vonmises(self.angle_mean, self.angle_concentration)
         c, s = np.cos(angle), np.sin(angle)
         rot_mat = np.array([[c, -s], [s, c]])
         cond_2d = rot_mat @ unrotated_tn @ rot_mat.T
@@ -186,6 +189,35 @@ class BulkMicroScale(BulkBase):
         if self.microscale_tensors is None:
             self.microscale_tensors = self.microscale.effective_tensor_from_bulk()
         return 1.0, self.microscale_tensors[eid]
+
+class BulkFromFine(BulkBase):
+    def __init__(self, fine_problem):
+        points, values = fine_problem.bulk_field()
+        self.mean_val = np.mean(values)
+        tria = sc_spatial.Delaunay(points)
+        #print("Values, shape:", values.shape)
+        self.interp =  sc_interpolate.LinearNDInterpolator(tria, values.T, fill_value=0)
+        self.interp_nearest = sc_interpolate.LinearNDInterpolator(points, values.T)
+
+    def element_data(self, mesh, eid):
+        el_type, tags, node_ids = mesh.elements[eid]
+        center = np.mean([np.array(mesh.nodes[nid]) for nid in node_ids], axis=0)
+        v = self.interp(center[0:2])
+        if np.alltrue(v == 0):
+            #v = self.interp_nearest(center[0:2])
+            v = [[self.mean_val,0,self.mean_val]]
+        #print("V, shape:", v.shape)
+        v00, v01, v11 = v[0]
+        cond = np.array([[v00, v01], [v01, v11]])
+        #print("cond, shape: ", cond.shape)
+        e0, e1 = np.linalg.eigvalsh(cond)
+        if e0 < 1e-20 or e1 < 1e-20:
+            print(e0, e1, v, center)
+            assert False
+        return 1.0, cond
+
+
+
 
 class BulkChoose(BulkBase):
     def __init__(self, finer_level_path):
@@ -215,6 +247,7 @@ class FractureModel:
         fr_size = self.fractures.fractures[i_fr].rx
         cs = fr_size * self.aperture_per_size
         cond = cs ** 2 / 12 * self.water_density * self.gravity_accel / self.water_viscosity
+        # print(f"fr: {fr_size} {cs} {cond}")
         cond_tn = cond * np.eye(2, 2)
         return cs, cond_tn
 
@@ -247,6 +280,7 @@ def write_fields(mesh, basename, bulk_model, fracture_model):
         mesh.write_ascii(fout)
         mesh.write_element_data(fout, elem_ids, 'conductivity_tensor', np.array(cond_tn_field))
         mesh.write_element_data(fout, elem_ids, 'cross_section', np.array(cs_field).reshape(-1, 1))
+    return elem_ids, cs_field, cond_tn_field
 
 
 @attr.s(auto_attribs=True)
@@ -278,10 +312,13 @@ class FlowProblem:
     # Centers of macro elements.
     skip_decomposition:bool = False
 
+
     # created later
     mesh:gmsh_io.GmshIO = None
 
-
+    # safe conductivities produced by `make_fields`
+    _elem_ids: Any = None
+    _cond_tn_field: Any = None
 
     @classmethod
     def make_fine(cls, i_level, fr_range, fractures, finer_level_path, config_dict):
@@ -302,10 +339,9 @@ class FlowProblem:
                            fr_range, fractures, bulk_model, config_dict)
 
     @classmethod
-    def make_microscale(cls, i_level, fr_range, fractures, config_dict):
-        level_dict = config_dict['levels'][i_level]
-        bulk_conductivity = level_dict['bulk_conductivity']
-        bulk_model = BulkFields(**bulk_conductivity)
+    def make_microscale(cls, i_level, fr_range, fractures, fine_flow, config_dict):
+        # use bulk fields from the fine level
+        bulk_model = BulkFromFine(fine_flow)
 
         return FlowProblem(i_level, "coarse_ref",
                            fr_range, fractures, bulk_model, config_dict)
@@ -460,7 +496,30 @@ class FlowProblem:
         :return:
         """
         fracture_model = FractureModel(self.fractures, self.reg_to_fr, **self.config_dict['fracture_model'])
-        write_fields(self.mesh, self.basename, self.bulk_model, fracture_model)
+        elem_ids, cs_field, cond_tn_field = write_fields(self.mesh, self.basename, self.bulk_model, fracture_model)
+
+        self._elem_ids = elem_ids
+        self._cond_tn_field = cond_tn_field
+
+    def bulk_field(self):
+        assert self._elem_ids is not None
+
+        points = []
+        values00 = []
+        values11 = []
+        values01 = []
+        for eid, tensor in zip(self._elem_ids, self._cond_tn_field):
+            el_type, tags, node_ids = self.mesh.elements[eid]
+            if len(node_ids) > 2:
+                center = np.mean([np.array(self.mesh.nodes[nid]) for nid in node_ids], axis=0)
+                points.append(center[0:2])
+                # tensor is flatten 3x3
+                values00.append(tensor[0])
+                values01.append(tensor[1])
+                values11.append(tensor[4])
+
+        return np.array(points), np.array([values00, values01, values11])
+
 
 
     def elementwise_mesh(self, coarse_mesh, mesh_step, bounding_polygon):
@@ -483,7 +542,7 @@ class FlowProblem:
         for eid, (tele, tags, nodes) in coarse_mesh.elements.items():
             # eid = 319
             # (tele, tags, nodes) = coarse_mesh.elements[eid]
-            print("Geometry for eid: ", eid)
+            #print("Geometry for eid: ", eid)
             if tele != 2:
                 continue
             prefix = "el_{:03d}_".format(eid)
@@ -813,7 +872,7 @@ class BothSample:
         done = []
         # coarse problem
         if self.do_coarse:
-            coarse_ref = FlowProblem.make_microscale(self.i_level, (0, self.h_coarse_step), fractures, self.config_dict)
+            coarse_ref = FlowProblem.make_microscale(self.i_level, (self.h_fine_step, self.h_coarse_step), fractures, fine_flow, self.config_dict)
             coarse_flow = FlowProblem.make_coarse(self.i_level, (self.h_coarse_step, np.inf), fractures, coarse_ref, self.config_dict)
 
             # coarse mesh
@@ -849,23 +908,23 @@ class BothSample:
 
 
 
-def finished():
+def finished(start_time):
+    sample_time = time.time() - start_time
     time.sleep(1)
     with open("FINISHED", "w") as f:
-        f.write("done")
+        f.write(f"done\n{sample_time}")
 
 if __name__ == "__main__":
-    import time
-    import atexit
-    atexit.register(finished)
+    start_time = time.time()
+    atexit.register(finished, start_time)
     sample_config = sys.argv[1]
     try:
         with open(sample_config, "r") as f:
             sample_dict = yaml.load(f) # , Loader=yaml.FullLoader
     except Exception as e:
         print("cwd: ", os.getcwd(), "sample config: ", sample_config)
-    start_time = time.time()
+
     bs = BothSample(sample_dict)
     bs.calculate()
-    print("Sample time: ", time.time() - start_time)
+
 
