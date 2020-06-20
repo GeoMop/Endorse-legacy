@@ -57,7 +57,7 @@ class Pbs:
         self._pbs_header_template = ["#!/bin/bash",
                                      '#PBS -S /bin/bash',
                                      '#PBS -l select={n_nodes}:ncpus={n_cores}:mem={mem}{select_flags}',
-                                     '#PBS -l walltime=4:00:00',
+                                     '#PBS -l walltime={walltime}',
                                      '#PBS -q {queue}',
                                      '#PBS -N Flow123d',
                                      '#PBS -j oe',
