@@ -106,7 +106,10 @@ class MLMC:
         means = []
         vars = []
         for nl, l in zip(n_samples, self.level_data):
-            subset = np.random.choice(len(l), nl)
+            if seed is None:
+                subset = np.arange(nl)
+            else:
+                subset = np.random.choice(len(l), nl)
             l_sub = l[subset, :, :]
             l_diff = l_sub[:, 0, :] - l_sub[:, 1, :]
             l_mean = np.mean(l_diff, axis=0)

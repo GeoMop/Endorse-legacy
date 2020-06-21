@@ -702,19 +702,53 @@ class Process():
         mc = mlmc.MLMC(level_data, level_times)
 
         # compare level means
-        means = mc.level_means()  # shape (L, 2, M)
-        vars = mc.level_variances() # shape (L, 2, M)
+        print("\nMeans\n")
+        level_means = mc.level_means()  # shape (L, 2, M)
+        level_vars = mc.level_variances() # shape (L, 2, M)
         n_samples = mc.n_samples
         for il in range(1, mc.n_levels):
             for iv, v_name in enumerate(['half_trace', 'sqrt_det']):
-                fine = means[il-1, 0, iv]
-                coarse = means[il, 1, iv]
+                fine = level_means[il-1, 0, iv]
+                coarse = level_means[il, 1, iv]
                 diff = coarse - fine
-                var = vars[il-1, 0, iv]/n_samples[il-1] + vars[il, 1, iv]/n_samples[il] # estimate of the diff variance
+                var = level_vars[il-1, 0, iv]/n_samples[il-1] + level_vars[il, 1, iv]/n_samples[il] # estimate of the diff variance
                 std = np.sqrt(var)
                 print(f"level {il:3}  var {v_name:10}  EXc_l-EXf_(l-1) {fine} - {coarse} = {diff} (std: {std})")
 
+        print("\nMC estimate\n")
+        for iv, v_name in enumerate(['half_trace', 'sqrt_det']):
+            mean = level_means[0, 0, iv]
+            std = np.sqrt(level_vars[0, 0, iv]/n_samples[0])
+            print(f"var {v_name:10}  est: {mean} (std: {std})")
 
+
+        # level diff variances
+        print("\nDiff variances\n")
+        level_diff_vars = mc.level_diff_variances()
+        for il in range(mc.n_levels):
+            for iv, v_name in enumerate(['half_trace', 'sqrt_det']):
+                var = np.sqrt(level_diff_vars[il, iv])
+                print(f"level {il:3}  var {v_name:10}  sqrt(diff_var) {var}")
+
+        # estimate
+        n_samples = mc.estimate_n_samples_for_target_variance(7e-18, level_diff_vars)
+        print("\nN samples\n")
+        print(n_samples)
+
+
+        mlmc_means, mlmc_vars = mc.estimate(n_samples, 123)
+        print("\nMLMC Estimate\n")
+        for iv, v_name in enumerate(['half_trace', 'sqrt_det']):
+            mean = mlmc_means[iv]
+            std = np.sqrt(mlmc_vars[iv])
+            print(f"var {v_name:10}  est: {mean} (std: {std})")
+
+        mlmc_means, mlmc_vars = mc.estimate(mc.n_samples, None)
+        print("\nMLMC Estimate FULL\n")
+        for iv, v_name in enumerate(['half_trace', 'sqrt_det']):
+            mean = mlmc_means[iv]
+            std = np.sqrt(mlmc_vars[iv])
+            print(f"var {v_name:10}  est: {mean} (std: {std})")
 
 
     def move_failed(self, failed):
@@ -778,8 +812,8 @@ class Process():
 
 
     def process(self):
-        #for sim in self.levels:
-        #    sim.compute_cond_field_properties()
+        for sim in self.levels:
+            sim.compute_cond_field_properties()
         self.mlmc_processing()
 
     # def process(self):
