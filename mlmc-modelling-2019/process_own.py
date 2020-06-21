@@ -160,8 +160,9 @@ class FractureFlowSimulation():
                 '{src_dir}/env/bin/python {src_dir}/both_sample.py sample_config.yaml 2>&1 | tee both_sample_out',
             ]
 
+            n_el_est = 1e6 / self.coarse_step / self.coarse_step
             package_dir = self.pbs_creater.add_realization(
-                weight=100,
+                weight=n_el_est,
                 lines=lines,
                 sample_dir=sample_dir,
                 src_dir=src_path)
@@ -631,7 +632,7 @@ class Process():
 
     def make_pbs(self):
         pbs_config = dict(
-            job_weight=250000,  # max number of elements per job
+            job_weight=150000,  # max number of elements per job
             n_cores=3,
             n_nodes=1,
             select_flags=[],
