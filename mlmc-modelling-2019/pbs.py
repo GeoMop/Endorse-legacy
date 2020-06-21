@@ -21,7 +21,7 @@ class Pbs:
         self._job_count = job_count
         # Work dir for scripts and PBS files.
         self.work_dir = work_dir
-        self.max_realizations = 3
+        self.max_realizations = 100
         self._number_of_realizations = 0
         # Lines to put at the beginning of the PBS script.
         self.pbs_script_heading = None
