@@ -357,13 +357,13 @@ class FlowProblem:
         self.regions.append(reg)
         return reg
 
-    def init_decomposition(self, outer_polygon, bulk_reg):
+    def init_decomposition(self, outer_polygon, bulk_reg, tol):
         """
         Create polygon decomposition and add the outer polygon.
         :param outer_polygon: [np.array[2], ..] Vertices of the outer polygon.
         :return: (PolygonDecomposition, side_regions)
         """
-        pd = polygons.PolygonDecomposition(self.mesh_step)
+        pd = polygons.PolygonDecomposition(tol)
         last_pt = outer_polygon[-1]
         side_regions = []
         for i_side, pt in enumerate(outer_polygon):
@@ -375,16 +375,20 @@ class FlowProblem:
             side_regions.append(reg)
 
             sub_segments = pd.add_line(last_pt, pt, deformability=0)
+            if not (type(sub_segments) == list and len(sub_segments) == 1):
+                from bgem.polygons.plot_polygons import plot_decomp_segments
+                plot_decomp_segments(pd)
+
             for seg in sub_segments:
                 seg.attr = reg
             last_pt = pt
-            assert type(sub_segments) == list and len(sub_segments) == 1
+            #assert type(sub_segments) == list and len(sub_segments) == 1, sub_segments
         assert len(pd.polygons) == 2
         pd.polygons[1].attr = bulk_reg
         return pd, side_regions
 
     def add_fractures(self, pd, fracture_lines, eid):
-        from bgem.polygons.plot_polygons import plot_decomp_segments
+
 
         outer_wire = pd.outer_polygon.outer_wire.childs
         assert len(outer_wire) == 1
@@ -456,7 +460,7 @@ class FlowProblem:
         geom = self.config_dict["geometry"]
         lx, ly = geom["domain_box"]
         self.outer_polygon = [[-lx / 2, -ly / 2], [+lx / 2, -ly / 2], [+lx / 2, +ly / 2], [-lx / 2, +ly / 2]]
-        pd, self.side_regions = self.init_decomposition(self.outer_polygon, bulk_reg)
+        pd, self.side_regions = self.init_decomposition(self.outer_polygon, bulk_reg, tol=self.mesh_step)
         self.group_positions[0] = np.mean(self.outer_polygon, axis=0)
 
         # extract fracture lines larger then the mesh step
@@ -547,6 +551,13 @@ class FlowProblem:
                 continue
             prefix = "el_{:03d}_".format(eid)
             outer_polygon = np.array([coarse_mesh.nodes[nid][:2] for nid in nodes])
+            # set mesh step to maximal height of the triangle
+            area = np.linalg.norm(np.cross(outer_polygon[1] - outer_polygon[0], outer_polygon[2] - outer_polygon[0]))
+
+            self.mesh_step = min(self.mesh_step, area / np.linalg.norm(outer_polygon[1] - outer_polygon[0]))
+            self.mesh_step = min(self.mesh_step, area / np.linalg.norm(outer_polygon[2] - outer_polygon[1]))
+            self.mesh_step = min(self.mesh_step, area / np.linalg.norm(outer_polygon[0] - outer_polygon[2]))
+
             self.group_positions[eid] = np.mean(outer_polygon, axis=0)
             #edge_sizes = np.linalg.norm(outer_polygon[:, :] - np.roll(outer_polygon, -1, axis=0), axis=1)
             #diam = np.max(edge_sizes)
@@ -557,7 +568,9 @@ class FlowProblem:
             # outer polygon
             normals = []
             shifts = []
-            pd, side_regions = self.init_decomposition(outer_polygon, bulk_reg)
+            if eid==1353:
+                print("break")
+            pd, side_regions = self.init_decomposition(outer_polygon, bulk_reg, tol = self.mesh_step*0.8)
             for i_side, side_reg in enumerate(side_regions):
                 side_reg.name = "." + prefix + side_reg.name[1:]
                 side_reg.sub_reg.name = "." + prefix + side_reg.sub_reg.name[1:]
