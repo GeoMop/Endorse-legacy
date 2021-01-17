@@ -718,7 +718,7 @@ class Process():
 
         print("\nMC estimate\n")
         for iv, v_name in enumerate(['half_trace', 'sqrt_det']):
-            mean = level_means[0, 0, iv]
+            mean = level_means[1, 0, iv]
             std = np.sqrt(level_vars[0, 0, iv]/n_samples[0])
             print(f"var {v_name:10}  est: {mean} (std: {std})")
 
