@@ -28,3 +28,10 @@ fixed-3-frac/output_th
 
 repository-model/env/*
 repository-model/tmp/*
+
+metodika_vypoctu_indikatoru/*.aux
+metodika_vypoctu_indikatoru/*.bbl
+metodika_vypoctu_indikatoru/*.blg
+metodika_vypoctu_indikatoru/*.log
+metodika_vypoctu_indikatoru/*.out
+metodika_vypoctu_indikatoru/main.pdf
