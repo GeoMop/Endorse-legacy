@@ -13,7 +13,7 @@
 
 \title{Koncept predikce bezpečnostních indikátorů EDZ}
 \author{Jan Březina}
-\date{leden 2020}
+\date{2020}
 
 \def\prtl{\partial}
 \def\vc#1{\mathbf{\boldsymbol{#1}}}     % vector
@@ -46,19 +46,14 @@ shrnuta základní rešerše zdrojů k dané problematice.
 Koncepce metodiky a matematického modelu pro predikci indikátorů bezpečnosti EDZ  vychází z předpokládaného průběhu prací při budování a provozování úložiště:
 \begin{enumerate}
     \item Z hlavního překopu je proveden horizontální průzkumný vrt v ose budoucí úložné chodby (vertikální ukládání) resp. úložného vrtu (horizontální ukládání).
-    \item Na průzkumném vrtu je provedena sada geofyzikálních měření, např:
-    \begin{itemize}
-        \item optická a ultrazvuková karotáž - identifikace protnutých geologických poruch;
-        \item ERT vůči sousední paralelní chodbě;
-        \item seismika vůči sousední paralelní chodbě;
-        \item tlakové zkoušky v různých úsecích vrtu.
-    \end{itemize}
+    \item Na průzkumném vrtu je provedena sada geofyzikálních měření, např: optická a ultrazvuková karotáž, elektrická odporová tomografie, případně tlakové zkoušky.
+
     \item \label{item_model1}
-    S pomocí software, jenž bude výsledkem projektu, je proveden výpočet indikátorů bezpečnosti.
+    Z měření jsou přímo nebo pomocí inverzních metod stanoveny parametry neporušené horniny. Parametry jsou popsány ve smyslu statistických rozdělení, např. pomocí Bayesovké inverze. S pomocí software, jenž bude výsledkem projektu, jsou stanoveny předpokládané vlastnosti EDZ a je vypočtena predikce indikátorů bezpečnosti ve smyslu distribuční funkce. 
     \item Na základě výsledků predikce indikátorů a dle expertního posouzení se určí počet bezpečných úložných pozic a rozhodne se, zda a v jakém rozsahu bude provedena ražba  konkrétního úložného vrtu.
     \item Po vyražení jsou získána další data na povrchu nově vyražených prostor: optické mapování, geofyzikální radar, ultrazvuk, ERT, seismika pro charakterizaci skutečné EDZ a 
           upřesnění makroskopických poruch.
-    \item Data jsou použita k \uv{učení modelu} ve smyslu vylepšení priorů Bayesovských modelů. 
+    \item Data jsou použita k upřesnění parametrů modelu a zlepšení predikce indikátorů bezpečnosti.  
     \item \label{item_model2}
     Na základě upřesněného modelu a dle expertního posouzení se určí, které úložné pozice budou skutečně použity.
 \end{enumerate}
@@ -76,13 +71,16 @@ V kapitole \ref{sec:parameters} jsou popsána možná měření vhodná pro iden
 parametrů modelů. Pro vybraná měření jsou popsány inverzní úlohy pro identifikaci těchto parametrů.
 
 
-\section{Model transportu a definice indikátorů bezpečnosti}
+\section{Model transportu a definice indikátorů bezpečnosti EDZ}
 \label{sec:transport}
+Cílem modelu je postihnout šíření kontaminace z daných úložných pozic do preferenčních cest širší geologické bariéry.
 \subsection{Geometrie}
-Cílem modelu je postihnout šíření kontaminace z daných úložných pozic do preferenčních cest širší geologické bariéry. Pro zjednodušení uvažujeme pouze systém horizontálního ukládání, viz.  pracovní dokument SÚRAO \uv{Profily jednotlivých chodeb HÚ}, příloha A. Geometrie transportního modelu bude zahrnovat úložné pozice v jednoho úložného vrtu o předpokládané délce 300 metrů. Dále jsou uvažovány  struktury, které mohou představovat preferenční cesty do výrazných geologických poruch v okolí úložiště. Konkrétně jsou do geometrie modelu zahrnuty bezprostředně sousedící úložné vrty a hlavní překop. Vzdálenější vrty budou případně uvažovány pouze jako kontinuum s efektivní anizotropní hydraulickou vodivostí zahrnující vliv EDZ. 
+ Pro zjednodušení uvažujeme pouze systém horizontálního ukládání, viz.  pracovní dokument SÚRAO \uv{Profily jednotlivých chodeb HÚ}, příloha A. Geometrie transportního modelu bude zahrnovat úložné pozice v jednoho úložného vrtu o předpokládané délce 300 metrů. Dále jsou uvažovány  struktury, které mohou představovat preferenční cesty do výrazných geologických poruch v okolí úložiště. Konkrétně jsou do geometrie modelu zahrnuty bezprostředně sousedící úložné vrty a hlavní překop. Vzdálenější vrty budou případně uvažovány pouze jako kontinuum s efektivní anizotropní hydraulickou vodivostí zahrnující vliv EDZ. 
 Ještě nevyražené chodby jsou konzervativně předpokládány v plné délce. Do geometrie budou zahrnuty též významné známé pukliny (geologické poruchy) a dále náhodné neznámé pukliny dle předpokládaných rozdělení puklin.
 
 % TODO: zahrnout do plánu prací úpravu algoritmů pro generování puklin aby zahrnuly známé pukliny.
+
+\subsection{Transportní model}
 
 
 \subsection{Vliv EDZ}
@@ -95,7 +93,7 @@ se vzdáleností od stěny díla. Cílem modelu vzniku EDZ (viz. sekce \ref{mode
 Prostor chodeb bude uvažován již po zpětném vyplnění (backfill) bentonitem. Vzhledem k velmi malé vodivost nasyceného bentonitu  bude tato oblast z modelu odstraněna jako nevodivá.
 
 \subsection{Další parametry modelu}
-Na uvedené oblasti bude uvažována úloha ustáleného proudění s předepsanou tlakovou výškou na vnější hranici danou regionálním modelem proudění. Pro testování SW v rámci projektu bude použit regionální model z parallelního projektu Geotran. Na stěnách díla bude uvažován nulový tok vody. 
+Na uvedené oblasti bude uvažována úloha ustáleného proudění s předepsanou tlakovou výškou na vnější hranici danou regionálním modelem proudění. Pro testování SW v rámci projektu bude použit regionální model z paralelního projektu Geotran. Na stěnách díla bude uvažován nulový tok vody. 
 Následně bude řešena úloha difúzního transportu stopovače, t.j. bez sorpce v hornině. Jedná se o nejkonzervativnější model, reálné kontaminanty budou retardovány díky sorpci do matrice. Pro posouzení jedné úložné pozice bude v příslušné části úložného vrtu uvažována okrajová podmínka na stěně díla předepisující tok stopovače jakožto funkci času. Časový průběh bude převzat z modelů zdrojového členu.
 
 % TODO: statistika časového průběhu zdrojového členu
@@ -143,13 +141,14 @@ V případě, že by hydraulické vodivosti EDZ byly srovnatelné s vodivostmi v
 Nejistoty uvažujeme pouze pro parametry lokálního transportního modelu. Případný zjednodušený model transportu geologickou bariérou v případě indikátoru $I_2$ slouží pouze pro lepší porovnání průběhu koncentrací a bude proto uvažován bez nejistot. Pro model lokálního transportu  bude uvažována nejistota v klíčových parametrech modelována následovně:
 \begin{itemize}
  \item Bude uvažována nejistota o poloze a vlastnostech větších diskrétních puklin.
- \item Tenzor hyraulické vodivosti bude výsledkem modelu EDZ s vlastním stochastickým modelem.
- \item Předpsaná okrajová podmínka bude zpočátku uvažována bez nejistot. Pro testování  bude případně uvažována náhodná modifikace tlakového pole. Pokud se v rámci projektu Endorse podaří zvládnout výpočet lokálního modelu proudění a transportu s nejistotami, lze následně uplatnit stejný přístup pro regionální model proudění a vzrokovat okrajovou podmínku pomocí stochastického regionálního modelu proudění.
+ \item Tenzor hydraulické vodivosti bude výsledkem modelu EDZ s vlastním stochastickým modelem.
+ \item Předepsaná okrajová podmínka bude zpočátku uvažována bez nejistot. Pro testování  bude případně uvažována náhodná modifikace tlakového pole. Pokud se v rámci projektu Endorse podaří zvládnout výpočet lokálního modelu proudění a transportu s nejistotami, lze následně uplatnit stejný přístup pro regionální model proudění a vzorkovat okrajovou podmínku pomocí stochastického regionálního modelu proudění.
  \item Zdrojový člen bude uvažován jako časově závislá veličina bez neurčitosti, jelikož 
  je nezávislý na vlastnostech EDZ a cílem výsledných indikátorů je specificky charakterizace bezpečnosti EDZ.
 \end{itemize}
 
-
+\section{Model mechaniky}
+\todo{Zde by bylo vhodné popsat možné modely mechaniky případně včetně poroelasticity}. Matematickou formulaci raději odložit do přílohy??
 \section{Model EDZ}
 
 \label{sec:model_EDZ}
@@ -172,10 +171,9 @@ zahrnutím vlivu změn napětí a to jak změny v důsledku ražby tak změny v 
 (zatopení a bobtnací tlak bentonitu).
 
 \subsection{Konceptuální model EDZ}
-Uvažujeme válcovou oblast $\Omega_{EDZ}$ sahající do vzdálenosti $R$ od osy tunelu o průměru $r$ a 
-zahrnující výsek tunelu o délce $L$. Tunel je vyříznutý. Orientačně $R\approx 10m$, $r\approx 2m$, $L\approx 1m$. 
-Střední hodnota modelovaných veličin a parametrů je uvažována konstantní ve směru tunelu, ale 
-proměnná v řezu kolmo na tunel. Tato symetrie není zachována pro jednotlivé realizace náhodných polí.
+Uvažujeme válcovou oblast $\Omega_{EDZ}$ sahající do vzdálenosti $R$ od osy úložného vrtu o poloměru $r$, délku oblasti označme $L$. Tunel je vyříznutý. Orientačnní rozměry jsou $R\approx 10m$, $r\approx 2m$, $L\approx 1m$. 
+Predikované transportní parametry EDZ budou uvažovány jako náhodná pole se střední hodnotou
+konstantní ve směru tunelu, ale proměnnou v řezu kolmo na tunel. Díky fluktuacím není tato symetrie zachována pro jednotlivé realizace náhodných polí.
 
 {\bf počáteční stav} - tenzor napětí lineární s hloubkou $\sigma'_0(z)$, nulové posunutí, hydrostatický tlak
                        
@@ -184,7 +182,7 @@ proměnná v řezu kolmo na tunel. Tato symetrie není zachována pro jednotliv�
                          Nutno uvažovat nelineární mechaniku a modely poškození v blízkosti tunelu.
                          Skutečné napětí je součet počátečního stavu, změny napětí v důsledku deformace a tlaku vody.
                          Je možno uvažovat tvorbu makro trhlin, nebo jejich otevírání, mikro trhliny (po rozlišení modelu)
-                         jsou modelovány pomocí plastických modelů (např. Hošek-Brown model).
+                         jsou modelovány pomocí plastických modelů (např. Hoek-Brown model).
                          
 {\bf stav po uzavření} - Změna okrajové podmínky na stěně tunelu na hydrostatický tlak, případně tlak bentonitu.
                          
@@ -192,32 +190,18 @@ Zajímá nás hydraulická vodivost (a transportní parametry) po poslední fáz
 v důsledku předchozí fáze.
 
 \subsubsection{Je potřeba poroelasticita?}
+\todo{... k uvážení}
 Pro hydraulickou vodivost okolo $1e-8 m/s$ a tlakový gradient $100$ dostáváme Darcyho rychlost 
 $1e-6 m/s$. Což odpovídá zhruba $24m$ za rok. Lze tedy předpokládat, že v hloubkách v řádu 
 stovek metrů se hydrulické poměry v potenciální EDZ vyrovnají zhruba do jednoho roku po vyražení. 
 To údajně odpovídá i praktickým zkušenostem (viz. jarní setkání v Ostravě). 
 Pokud tedy v uvažovaných nelineárních modelech nejsou jevy závislé na rychlosti deformace (asi ne),
-pak postačí provést statiský mechanický výpočet bez vlivu hydrauliky.
-
-
-
-
-Makroskopické modely (Rutquist, Hošek-Brown) využívají různé empirické indexy popisující poškození horniny:
-
-RMR - rock mass rating, RMQ, GSI -
-
-v principu je asi lze nahradit pomocí multiškálového přístupu za předpokladu znalosti 
-statistiky mikro puklin. 
-
-
-                         
-
-
+pak postačí provést statický mechanický výpočet bez vlivu hydrauliky.
 
 \subsection{členění EDZ}
-% CONTINUE HERE
+\todo{Členění orientačně vhodné, ale pro účel projektu je třeba vědět max. dosah a pak průběh změn vodivosti se vzdáleností od stěny díla.}
 Pro účely projektu Endorse členění dílčích zón v okolí díla podle 
-\cite{Perras2016}. Směrem od stěny díla definujeme následující zóny (viz. Obrázek \ref{fig:edz_zones}) 
+\cite{Perras2016}. Členění je založeno na numerickém modelu založeném na Hoek-Brown kritériu plasticity \cite{Hoek2002}. Směrem od stěny díla definujeme následující zóny (viz. Obrázek \ref{fig:edz_zones}) 
 s kvalitativně odlišnými změnami:
 \begin{description}
 \item[CDZ] Construction damage zone. Zóna poškození vlivem ražby. Lze omezit přizpůsobením technologie ražby.
@@ -237,8 +221,14 @@ s kvalitativně odlišnými změnami:
 Členění je závislé na rozdělění puklin na ``mikropukliny'' a ``makropukliny''
 Všechny tyto zóny mohou mít zvýšenou hydraulickou vodivost oproti neporušené hornině. Pro EIZ nárůst vodivosti, díky preexistujícím poruchám a změnám porozity.
 
-\subsection{Modely poškození}
-Modely EDZ navržené v této sekci vychází zejména z obsáhlejší rešerše , přehledového článku \cite{Shahbazi2020a} a jejich citací.
+\subsection{Modely poškození a predikce vodivosti}
+Tato kapitola shrnuje možné přístupy k predikci vodivosti EDZ vlivem mechanických změn. Podkladem byl zejména přehledový článek \cite{Shahbazi2020a} na podobné téma. 
+
+Mechaniku lze chápat jako víceškálový model, kde na mikro (mezo) škále je kontinuum rozpukané a velká napětí vedou preferenčně k deformacím a smykům na puklinách případně k jejich propojování. Pro predikcu vodivosti je třeba tyto jevy popsat nad rámec homogenizovaných empirických vztahů pro nelineární mechaniku.
+
+
+
+
 
 
 V této sekci jsou shrnuty práce a modely vzniku EDZ zahrnující hydro-elastické modely, modely plasticity, pevnostní kritéria a modely poškození. Výsledkem těchto modelů může být rozsah jednotlivých zón, rozložení napětí a různé míry poškození.
@@ -258,7 +248,14 @@ TODO:
 - Grimsel v zule + teplo, pomala saturace, nebyla saturace ani po 18letech
 - 
 
-\subsection{Predikce vodivosti - geometrický přístup}
+\subsection{Predikce vodivosti}
+Makroskopické modely (Rutquist, Hoek-Brown) využívají různé empirické indexy popisující poškození horniny:
+
+RMR - rock mass rating, RMQ, GSI -
+
+v principu je asi lze nahradit pomocí multiškálového přístupu za předpokladu znalosti 
+statistiky mikro puklin.
+
 Dělení na podoblasti dle \cite{Perras2016}, lze založit buďto na 
 Hosek-Brown kritériu \cite{}
 \cite{Hajiabdolmajid2002}
@@ -333,18 +330,18 @@ porovnání numerických modelů a empirických dat, fitování empirického vzt
 ($r/R$) v závislosti na maximálním tečným napětím na stěně normalizovaném na CI (crack initiation napětí)
 ,$\sigma_{max} / \sigma_{CI}$. To je nelineární rozšíření vztahu navrženého v
 \cite{Martin1999} a \cite{Diederichs2007}). 
-DISL je založen na Hošek-Brownově kritériu.
+DISL je založen na Hoek-Brownově kritériu.
 
 \noindent{\bf \cite{Martin1999}}\\
-Analýza hloubky poškození v závislosti na napětí a tvaru tunelu, krystalinika, založeno na Hošek-Brown.
+Analýza hloubky poškození v závislosti na napětí a tvaru tunelu, krystalinika, založeno na Hoek-Brown.
 
-
+\noindent{\bf \cite{Dreuzy2012}}\\
+Porovnání DFN s konstantní vodivostí puklin vs. puklin s heterogenní vodivostí (Gaussian distribution, power-law like correlation). Analýza vlivu celkovou vodivost sítě. Pro heterogenní případ pozorováno převážně snížení celkové vodivosti (faktorem 2 - 6). \todo{podrobnější čtení}
 
 
 
 \noindent{\bf \cite{Souley2001}}\\
-Model poškození a model změny permeability, 
-empirické, vazba na experimenty. Implementováno v SW FLAC3D (použito v projektu Hluboké horizonty).
+Model poškození a model změny permeability v závislosti na mechanice, vychází z konceptu paralelních puklin \cite{Snow1965}. Zaměřeno na krystalické horniny, neuvažuje namáhání v tahu.  Implementováno v SW FLAC3D (použit v projektu "Hluboké horizonty").
 
 \noindent{\bf \cite{Rutqvist2003}}\\
 Přehled HM modelů pro rozpukanou horninu s různými konstitutivními 
@@ -371,6 +368,8 @@ přehled jiných numerických přístupů.
 {\bf  \cite{Barton1985}}\\
 Measurement of fracture apperture and "real" apperture used in models.
 
+{\bf \cite{Shao2005}}\\
+Mechanické vlastnosti a permeabilita křehkých hornin, vztahy odvozené na základě sítě mikropuklin, zahrnut vliv propojenosti, porovnání s laboratorními experimenty. Asi nejblíže našemu záměru, netriviální formulace mechaniky pomocí mechanické entalpie a nejasné odvození.
 
 
 \section{Inverzní úlohy a geofyzikální měření}
@@ -395,6 +394,15 @@ Změny v EDZ jsou HM proces a mhou tedy probíhat déle v závislosti na hydraul
 Tato kapitola shrnuje měřící techniky, které mohou poskytnout přímou nebo nepřímou informaci 
 o fyzikálních vlastnostech EDZ. Zejména nás zajímá charakterizace permeability, puklinových statistik a porozity. Ale i mechanické parametry: modul pružnosti, Poissonovo číslo, anisotropie elastického tensoru,  parametry plasticity ...
 Převážně založeno na Vavro (2016) \cite{SURAO_50/2016} a doplněno o méně obvyklá měření.
+
+
+Možná měření na průzkumných vrtech:
+    \begin{itemize}
+        \item optická a ultrazvuková karotáž - identifikace protnutých geologických poruch;
+        \item elektrická odporová tomografie vůči sousední paralelní chodbě
+        \item seismika vůči sousední paralelní chodbě;
+        \item tlakové zkoušky v různých úsecích vrtu.
+    \end{itemize}
 
 {\bf MWD (Measure While Drilling)} \cite{JeroenvanEldert2018}
 
@@ -532,7 +540,7 @@ Proto jádro bude derivací odpovídajícího řešení:
     e^{-\big( \frac{ax+bt}{\sqrt{t}}\big)^2}
     \Big[ ax t^{-\frac32} - b t^{-\frac12}\Big].
 \]
-Tento tvar by měl být použitelný i pro nuerický výpočet.
+Tento tvar by měl být použitelný i pro numerický výpočet.
 
 
 Řešení rovnice s rozpadovým členem na pravé straně
