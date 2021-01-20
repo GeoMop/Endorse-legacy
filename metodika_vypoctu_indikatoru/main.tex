@@ -138,10 +138,11 @@ vzniklé EDZ (viz. sekce \ref{sec:vznik_EDZ}) a dále interakcí s preexistujíc
 Navrhované indikátory jsou proto založeny na modelu transportu skrze blízké okolí jednoho úložného vrtu. 
 Nejprve popíšeme geometrii modelu (Sekce  \ref{sec:transport_geometrie}), model proudění (Sekce \ref{sec:tranport_flow})
 a model transportu konzervativního stopovče (Sekce \ref{sec:stopovac}). Jádrem kapitoly je návrh indikátorů bezpečnosti (Sekce \ref{sec:indikátory}). 
-V záveru pak shrneme parametry modelů \alert{možné způsoby jejich identifikace a přísluěné zdroje nejistot.}
+V záveru pak shrneme parametry modelů, možné způsoby jejich identifikace a příslušné zdroje nejistot.
 
-rychlosti Cílem modelu je postihnout šíření kontaminace z daných úložných pozic do preferenčních cest
 
+%možné pozitivní vlivy EDZ na bezpečnost \cite{Lanyon2011}: hydraulic cage, sorption surface on new fractures, 
+%ventilation of gasses, reduction of local transmissivity??
 
 \subsection{Geometrie}
 \label{sec:transport_geometrie}
@@ -161,7 +162,9 @@ Vzhledem k velmi malým vodivostem je uvažován model nasyceného stacionární
 \[
     \div(\vc v) = 0, \quad \vc q = -\tn K \grad (h + z)
 \]
-kde $\vc q$ je rychlostní pole $[m/s]$, $h$ je tlaková výška $[m]$ a $\tn K$ je tenzor hydraulické vodivosti $[m/s]$. 
+kde $\vc q$ je rychlostní pole $[m/s]$, $h$ je tlaková výška $[m]$. Tenzor hydraulické vodivosti $\tn K =\frac{\kappa \rho g}{\nu}$
+ $[m/s]$ je pro tekutinu s hustotou $\rho$ $[kg\, m^{-3}]$ a vizkozitou $\nu$ $[s^-1]$ vztažen k permeabilitě $\kappa$ $[m^2]$, která již je dána pouze strukturou horniny.
+
 Vnitřní stěny díla budou uvažovány jako nepropustné s předpokladem výplně s řádově menší vodivostí. 
 Proudění je řízeno Dirichletovou okrajovou podmínkou na vnější části hranice, kde pole piezometrické výšky $H = h + z$ 
 bude interpolováno z výsledků regionálního modelu. Bude využit regionální model z paralelního projektu Geotran.
@@ -183,9 +186,13 @@ kde $\theta$ je porozita $[-]$ a $\tn D$ je tenzor hydrodynamické disperze $[m^
 \[
   \tn D = \tau\tn D_m + \abs{\vc v}\Big(\alpha_T \tn I + (\alpha_L - \alpha_T)\frac{\vc v \otimes \vc v}{\abs{\vc v}^2}\Big).
 \]
-Parametry zde jsou $\tn D_m$ tenzor molekulární difúze $[m^2s^{-1}]$ (řádově $10^{-9}$ pro čistou vodu), 
-tortuozita $\tau=\theta^{1/3}$ $[-]$ dle \cite{millington_quirk}, $\alpha_L$ a $\alpha_T$ $[m]$ koeficienty podélné a příčné disperze
-a $\vc v$ je pórová rychlost $\vc v = \vc Q / \theta$.
+Parametry zde jsou:
+\begin{itemize}
+ \item $\tn D_m = d_m \tn I$ tenzor molekulární difúze, pro jednoduchost uvažujeme izotropní s difúzním koeficientem $d_m$ $[m^2s^{-1}]$, řádově $10^{-9}$ pro čistou vodu,
+ \item tortuozita $\tau=\theta^{1/3}$ $[-]$ dle \cite{millington_quirk},
+ \item $\alpha_L$ a $\alpha_T$ $[m]$ koeficienty podélné a příčné disperze,
+ \item $\vc v$ je pórová rychlost $\vc v = \vc Q / \theta$.
+\end{itemize}
 
 V okolí zdrojové pozice bude uvažována časově závislá Neumannova okrajová podmínka $Q(t)$ $[kg\, s^{-1}m^{-2}]$
 určená z modelů transportu bentonitovou obálkou. V závislosti na konkrétních vodivostech odhadujeme časy 
@@ -230,21 +237,21 @@ Pro oba navržené indikátory bezpečnosti $I_1(p)$ a $I_2(p)$ je nutno určit 
 
 
 
-\subsection{Nejistoty v parametrech}
+\subsection{Nejistoty v parametrech transportu}
 Případný zjednodušený model transportu geologickou bariérou v případě indikátoru $I_2$ slouží pouze pro lepší porovnání průběhu koncentrací a bude proto uvažován bez nejistot. Nejistoty uvažujeme pouze pro parametry lokálního modelu proudění a transportu:
 \begin{itemize}
  \item Bude uvažována nejistota o poloze a vlastnostech větších geologických poruch.
- \item Tenzor hydraulické vodivosti bude uvažován jako náhodné korelované pole jehož parametry, zejména střední velikost a anisotropie budou 
- výsledkem modelu EDZ (viz. Sekce \ref{}).
+ \item Tenzor permeability bude uvažován jako náhodné korelované pole jehož parametry, zejména střední velikost a anisotropie budou 
+ výsledkem modelu EDZ (viz. Sekce \ref{sec:micro_EDZ}).
  \item Porozita bude určena podobným způsobem a korelovaná s vodivostí ve smyslu vztahu Carman-Kožený, viz. \cite{Carrier2003}.
- \item Ostatní difúzní parametry $\tn D_m$, $\alpha_L$, $\alpha_T$ budou uvažovány s nejistotami pouze v případě většího vlivu na výsledek.
+ \item Ostatní difúzní parametry $d_m$, $\alpha_L$, $\alpha_T$ budou uvažovány s nejistotami pouze v případě většího vlivu na výsledek.
  \item Předepsaná okrajová podmínka proudění bude zpočátku uvažována bez nejistot. Pro testování bude případně uvažována náhodná fluktuace tlakového pole. Pokud se v rámci projektu Endorse podaří zvládnout efektivní výpočet lokálního modelu proudění a transportu s nejistotami, lze následně uplatnit stejný přístup pro regionální model proudění a vzorkovat okrajovou podmínku pomocí stochastického regionálního modelu proudění.
  \item Zdrojový člen $Q(t)$ bude uvažován jako časově závislá veličina bez neurčitosti, jelikož 
  je nezávislý na vlastnostech EDZ a cílem výsledných indikátorů je specificky charakterizace bezpečnosti EDZ.
 \end{itemize}
 
 \section{Makro model vzniku EDZ}
-\label{sec:model_EDZ}´
+\label{sec:model_EDZ}
 
 Přímým vlivem ražby a díky změně okrajové podmínky na stěně díla dochází v jeho okolí ke změně napěťových poměrů. To způsobuje změny otevření 
 existující sítě puklin a případně vzniku puklin nových. Důsledkem je pak změna mechanických vlastností a změna zejména vodivosti a 
@@ -439,198 +446,9 @@ Modelování porušení (Continuum Damage Mechanics) je poměrně složité, viz
 \end{itemize}
 
 
+\subsection{Nejistoty v parametrech mechaniky}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-\section{Mikro model vzniku EDZ}
-\label{sec:micro_EDZ}
-Kromě zóny mechanického poškození horniny dochází vlivem odčerpávání podzemní vody ke změně hydraulických poměrů ve větším okolí díla nazývaném zóna ovlivnění (excavation disturbance zone). Díky kontaktu s atmosférou v bezprostředním okolí stěny díla dochází k chemickým změnám, které mohou ovlivnit zejména difúzní a sorpční vlastnosti horniny. Tyto jevy nebudou ve výsledné metodice uvažovány, ale pro výsledné použití je třeba posoudit jejich vliv na výsledky modelu.
-
-
-
-Cílem modelu EDZ je predikce vlastností porušené horniny v okolí úložného vrtu ve finálním 
-zatopeném stavu za předpokladu znalosti vlastností horniny před ražbou vrtu. 
-Zejména nás zajímá predikce tenzoru hydraulické vodivosti $\tn K(\vc x)$ 
-a jeho prostorová změna v rámci EDZ a dále transportní parametry: 
-koeficient difúze $d$, podélná disperzivita $\alpha_L$ a příčná disperzivita $\alpha_T$. 
-Omezíme se pouze na změny v zóně poškození vzniklé změnou napěťových poměrů v hornině 
-v důsledku ražby. Zejména nebudeme uvažovat poškození způsobené přímo v důsledku ražby 
-(construction damage zone).
-Jako nejšetrnější se totiž jeví použití (tunnel boring machine - TBM) 
-a v tomto případě je dle \cite{Vavro2016} poškození v důsldku ražby 
-do hloubky cca 30mm od stěny díla. 
-Vliv teploty na vodivost EDZ může být významným faktorem, ale není uvažován pro zachování 
-relativní jednoduchosti modelu. Dále nebudeme uvažovat případné změny hydraulické vodivosti 
-EDZ v důsledku chemických procesů. A konečně nebude uvažována žádná metoda sanace EDZ 
-(např. různé druhy tlakové penetrace). Cílem je tedy predikce vlastností EDZ se 
-zahrnutím vlivu změn napětí a to jak změny v důsledku ražby tak změny v důsledku uzavření 
-(zatopení a bobtnací tlak bentonitu).
-
-\subsection{Modely poškození a predikce vodivosti}
-Tato kapitola shrnuje možné přístupy k predikci vodivosti EDZ vlivem mechanických změn. Podkladem byl zejména přehledový článek \cite{Shahbazi2020a} na podobné téma. 
-
-Mechaniku lze chápat jako víceškálový model, kde na mikro (mezo) škále je kontinuum rozpukané a velká napětí vedou preferenčně k deformacím a smykům na puklinách případně k jejich propojování. Pro predikcu vodivosti je třeba tyto jevy popsat nad rámec homogenizovaných empirických vztahů pro nelineární mechaniku.
-
-
-
-
-
-
-V této sekci jsou shrnuty práce a modely vzniku EDZ zahrnující hydro-elastické modely, modely plasticity, pevnostní kritéria a modely poškození. Výsledkem těchto modelů může být rozsah jednotlivých zón, rozložení napětí a různé míry poškození.
-
-
-
-TODO:
-- otázka zda je difúze zanedbatelná při malých rychlostech
-- zjistit řádově rychlosti na úrovni úložiště
-- pro začátek bychom difúzi zanedbali
-
-- klíčový parametr tenzor počátečního napětí
-  lze měřit a lze získat 
-
-- výpočet 
-- tlak bentonitu 2,5 az 5 MPa, to je zhruba srovnatelne s hg tlakem v 500m cca 5MPa
-- Grimsel v zule + teplo, pomala saturace, nebyla saturace ani po 18letech
-- 
-
-\subsection{Predikce vodivosti}
-Makroskopické modely (Rutquist, Hoek-Brown) využívají různé empirické indexy popisující poškození horniny:
-
-RMR - rock mass rating, RMQ, GSI -
-
-v principu je asi lze nahradit pomocí multiškálového přístupu za předpokladu znalosti 
-statistiky mikro puklin.
-
-Dělení na podoblasti dle \cite{Perras2016}, lze založit buďto na 
-Hosek-Brown kritériu \cite{}
-\cite{Hajiabdolmajid2002}
-Možnosti predikce:
-\begin{enumerate}
-    \item {\bf EIZ - elastický režim} Dokonale vratné malé i velké deformace, pouze změna porozity a tedy změna vodivosti dle Carman-Koženého.
-    \item {\bf EDZ - plastický režim} Nevratné změny, vznik drobných poruch, které nelze rozlišit na modelech v měřítku průměru chodby, elementy cca do 1cm. 
-    
-    Lze použít empirické vztahy \cite{Rutqvist2009} závislosti na deformaci nebo napětí. Dále vztahy závislosti na Rock Mass Rating (z jader) \cite{Liu1999}. Případně jiné. 
-    Asi použitelná první možnost, pokud se provede nějaká kalibrace pomocí vhodného měření in situ. \todo{další empirické nelineární vztahy mezi napětím a vodivostí, kalibrované pomocí 
-    např. DFN modleu REV (zjednodušený víceškálový přístup).}
-    \todo{Podrobněji popsat, uvést odkazy.}
-    
-    
-    Lze uvažovat víceškálový model (snad možno zachytit vznik poruch do velikosti 1um). Na čtverci (1x1cm) uvažujeme náhodné pole mechanických parametrů (elastický tenzor a plastická kritéria). Plastická oblast detekována makro modelem, na ní provedena detailní analýza mikro výpočtem, aplikujeme příslušné pole deformace z makro modelu, v jednoduchém případě počítáme opět plastický model, případně na základě výsledků vygenerujeme nové pukliny a opakujeme výpočet. Následně určíme ekvivalentní tenzor vodivosti. Případně lze průměrovat přes více realizací, resp. lze získat populaci hodnot pro samplování v makro modelech transportu. 
-    
-    Zde by bylo výhodou, že parametry plastických modelů lze snad určit laboratorně na odvrtaných nepoškozených vzorcích.
-    
-    \item {\bf HDZ - makro poruchy, propojené} 
-    Dle \cite{Perras2016} lze detekovat i tuto zónu plastickým modelem. Je otázkou zda ji je nutné uvažovat, jednak se předpokládá šetrný způsob ražby, ideálně pomocí TBM. Dále lze snad tuto zónu   
-    
-    Závislost vodivosti na deformaci (Kožený), dále závislost na napětí (Rutqvist), nutno fitovat empirické konstanty pomocí experimentu. 
-\end{enumerate}
-
-
-Hydraulická vodivost $K$ $[m/s]$ je vztažena k permeabilitě $\kappa$ $[m^2]$:
-\[
-    K =\frac{\kappa \rho g}{\nu}.
-\]
-pro tekutinu o hustotě $\rho$ $[kg\, m^{-3}]$ a hydrodynamické viskozitě $\nu$ $[s^-1]$.
-
-{\bf Závislost permeability na geometrii.} Pro systémy paralelních nezávislých puklin odvozen kubický zákon: Snow (1965) \cite{Snow1965}:
-\[
-    \kappa=\frac{d^3}{12 D},
-\] 
-kde $d$ $[m]$ je rozevření puklin a $D$ $[m]$ je vzdálenost puklin. Pro složitější systémy puklin byly publikovány různé empirické homogenizace, e.g. \cite{Pouya2011}, další možností je použití více škálového modelu, kde je efektivní vodivost rozpukaného média vypočtena na základě mikro modelu. 
-Různé homogenizační techniky pro ekvivalentní vodivost směsi materiálů jsou shrnuty v Renard 1997 \cite{Renard1997}.
-Zde jsou populární DFN (Discrete fracture network) modely. Ovšem zde je opominutý významný příspěvek mikro puklin k celkové vodivosti, proto preferujeme použití continuum-fracture modelu.
-
-
-Závislost vodivosti na porozitě je dána Carman-Koženého vztahem:
-
-Vavro (2016) \cite{Vavro2016}: Shrnutí zahraničních poznatků o vzniku a vývoji EDZ v krystalických horninách. Komplexní rešerše k tématům: definice EDZ, vliv EDZ na bezpečnost, mechanismy vzniku EDZ, metody charakterizace EDZ, přehled experimentálníc dat.
-
-\begin{itemize}
-    \item dělení EDZ, definice - pro model nepoužitelné
-    \item možné pozitivní vlivy EDZ na bezpečnost \cite{Lanyon2011}: hydraulic cage, sorption surface on new fractures, ventilation of gasses, reduction of local transmissivity??
-    \item Zdroje poškození:
-    
-\end{itemize}
-
-
-
-
-\subsection{Rešerše - přehled souvisejících článků}
-{\bf \cite{Shahbazi2020a}}\\
-Přehledový článek o různých analytických a numerických modelech 
-pro prdikci hydraulické vodivosti rozpukaného prostředí i na základě mechaniky. Z numerických přístupů 
-jsou použity převážně DFN (discrete fracture networks) a DEM (distinct element method). 
-TODO: projiít odkazy, hledání multiscale přístupu, jednoduchý model pro jemnou škálu s puklinami, 
-efektivní parametry pro makro škálu
-
-\noindent{\bf \cite{Blaheta2013}}\\
-TH model pilíře v laboratoři \"Asp\"o se zahrnutím plasticity a modelů poškození. 
-Kalibrace na některé měřené veličiny.
-
-
-
-\noindent{\bf \cite{Perras2016}}\\
-Použití DISL - damage initiatin and spalling pro predikci hloubky jednotlivých částí EDZ,
-porovnání numerických modelů a empirických dat, fitování empirického vztahu pro relativní hloubku 
-($r/R$) v závislosti na maximálním tečným napětím na stěně normalizovaném na CI (crack initiation napětí)
-,$\sigma_{max} / \sigma_{CI}$. To je nelineární rozšíření vztahu navrženého v
-\cite{Martin1999} a \cite{Diederichs2007}). 
-DISL je založen na Hoek-Brownově kritériu.
-
-\noindent{\bf \cite{Martin1999}}\\
-Analýza hloubky poškození v závislosti na napětí a tvaru tunelu, krystalinika, založeno na Hoek-Brown.
-
-\noindent{\bf \cite{Dreuzy2012}}\\
-Porovnání DFN s konstantní vodivostí puklin vs. puklin s heterogenní vodivostí (Gaussian distribution, power-law like correlation). Analýza vlivu celkovou vodivost sítě. Pro heterogenní případ pozorováno převážně snížení celkové vodivosti (faktorem 2 - 6). \todo{podrobnější čtení}
-
-
-
-\noindent{\bf \cite{Souley2001}}\\
-Model poškození a model změny permeability v závislosti na mechanice, vychází z konceptu paralelních puklin \cite{Snow1965}. Zaměřeno na krystalické horniny, neuvažuje namáhání v tahu.  Implementováno v SW FLAC3D (použit v projektu "Hluboké horizonty").
-
-\noindent{\bf \cite{Rutqvist2003}}\\
-Přehled HM modelů pro rozpukanou horninu s různými konstitutivními 
-vztahy pro explicitní popis vlastností puklin v závislosti ne tečném a normálovém napětí. 
-Příklady aplikací a porovnání s měřeními.
-Vztah mezi permeabilitou a "confining pressure" 
-(pokles vodivosti s hloubkou. Jsou diskutovány vztahy mezi napětím resp. 
-porozitou a permeabilitou. Matematický popis jevů na puklinách. Rozdíl mezi "apparent aperture" 
-a "real apperture". 
-
-
-
-{\bf \cite{Kelsall1984}}:\\
-Základní článek zabývající se otázkou změny hydrulické vodivosti v EDZ. 
-Odvozeno analytické řešení pro rozložení napětí v okolí ideální kruhové chodby. 
-Změny v hydraulické vodivosti jsou dále odvozeny na základě kubického zákona. 
-Na základě tohoto modelu predikují zvýšení vodivosti o jeden až dva řády pouze vlivem změny napětí. Změna alespoň o jeden řád nejvýše do vzdálenosti dvou průměrů od stěny chodby. Ražba střílením může dále zvýšit hydraulickou vodivost, avšak jen v blízkosti (cca. 0,3 m) stěny chodby.
-
-
-{\bf \cite{Lisjak2014}}\\
-Modelování vzniku puklin v EDZ pomocí \uv{hybrid finite discrete elements method},
-přehled jiných numerických přístupů. 
-
-{\bf  \cite{Barton1985}}\\
-Measurement of fracture apperture and "real" apperture used in models.
-
-{\bf \cite{Shao2005}}\\
-Mechanické vlastnosti a permeabilita křehkých hornin, vztahy odvozené na základě sítě mikropuklin, zahrnut vliv propojenosti, porovnání s laboratorními experimenty. Asi nejblíže našemu záměru, netriviální formulace mechaniky pomocí mechanické entalpie a nejasné odvození.
-
-
-\section{Inverzní úlohy a geofyzikální měření}
-\subsection{Počáteční napětí}
+\subsubsection{Počáteční napětí}
 \label{sec:sigma0}
 Počáteční napětí výrazně ovlivňuje výsledné napěťové pole a tím i charakter EDZ.
 V horninovém masívu s elastickým chováním a s Poissonovou konstantou $\nu$, v hloubce $h$ a s průměrnou hustotou nadložních hornin $\rho_{r}$ a v případě,
@@ -649,10 +467,243 @@ $$
 $$
 viz \cite{Rutqvist2009}. V tomto případě musíme počítat i se smykovými napětími. Počáteční napětí může být velmi proměnné i v rámci jedné lokality, zvláště pokud je navíc ovlivněna více podzemními díly, viz příklad laboratoře GRIMSEL ve Švýcarsku, viz. \cite{Krietsch2019},
 \cite{Stas2016}, \cite{Rutqvist2004}. Pro studium EDZ je proto vhodné uvažovat výpočty pro různé hodnoty počátečního napětí.
+Poznamenejme  ještě, že počáteční napětí $\sigma_0$, může být určeno přímým měřením nebo měřením poloh referenčních bodů 
+a výpočtem pomocí inverzní analýzy, viz. \cite{Malik2021}.
+
+\todo{Heterogenita, nejistoty v tenzorových polích.}
+
+
+\subsubsection{Konstitutivní vztahy}
 
 
 
-Poznamenejme  ještě, že počáteční napětí $\sigma_0$, které může být určeno měřením \alert{nebo výpočtem pomocí inverzní analýzy (viz zaslaný článek od J. Malíka),  může být zavedeno do konstitučního vztahu následovně:} $\sigma = C  : \varepsilon + \sigma_0$ v $\Omega$. Obdobně může být do konstitučního vztahu zaveden pórový tlak podzemní vody.
+\todo{Měření na laboratorních intaktních vzorcích vs. měření in-situ a inverzní metody.}
+
+
+
+
+
+
+\section{Efektivní vlastnosti EDZ}
+\label{sec:micro_EDZ}
+Změny napětí způsobené ražbou resp. zatopením díla vedou ke změnám klíčových parametrů transportního modelu:
+permeability $\kappa$ a porozity $\theta$. V menší míře mohou být ovlivněny i parametry $d_m$, $\alpha_L$, $\alpha_T$.
+
+Kromě mechanických změn mohou mít na hodnotu těchto parametrů vliv i další procesy zjeména změny teploty v důsledku radioaktivního rozpadu a 
+chemické procesy vedoucí k hojení mikrotrhlin. Jakkoliv mohu být významné, nebudou pro zachování jednoduchosti tyto procesy uvažovány.
+Stejně tak nebude uvažována žádná metoda sanace EDZ (např. různé druhy tlakové penetrace).
+
+V této kapitole představíme možné modely závislosti parametrů transportu na napětí a deformaci.
+Nejprve v sekci \ref{sec:emiricke} uvedeme některé publikované empirické vztahy pro vodivost a porozitu.
+Tyto empirické vztahy stejně jako konstitutivní vztahy mechanických modelů z kapitoly \ref{sec:model_EDZ} 
+obsahují volné parametry, které lze sice určit pomocí laboratorních měření, avšak toto měření je provedeno na intaktních vzorcích
+a proto není přímo přenositelné na větší škály s výskytem větších poruch. Jednou možností, jak toto omezení obejít je
+použití víceškálového přístupu popsaného v sekci  \ref{sec:mikroskala}.
+
+
+\subsection{Závislost na mechanice}
+\label{sec:empiricke}
+
+Pro porézní médium složené z částic (písek, štěrk) má poměrně širokou platnost vztah Kožený-Carman \cite{Carman1956}, \cite{Carrier2003}:
+\begin{equation}
+  \label{eq:Kozeny}
+  \kappa = \frac{1}{C_{KC}a^2}\frac{e^3}{1+e},
+\end{equation}
+kde $C_{KC}$ $[-]$ je empirická konstanta, $a$  $[m^{-1}]$ je specifický povrch částic na jednotkový objem a $e$ $[-]$ je  ``void ratio'' -
+poměr volného objemu ku objemu částic. Ten lze zapsat pomocí porozity:
+\[
+   e = \frac{\theta}{1 - \theta}.
+\]
+Změny porozity $\theta$ vůči počáteční porozitě $\theta_0$ jsou dány stopou tenzoru deformace $\eps$:
+\begin{equation}
+   \label{eq:porozity_deformation}
+   \theta = \frac{\theta_0 + tr(\epsilon)}{1 + tr(\epsilon)}.
+\end{equation}
+Tímto dostáváme jednoduchý vztah pro závislost permeability a porozity na deformaci. Pro EDZ je tento přístup nedostatečný kvůli anisotropii
+puklin a nelineární mechanice, t.j.  porušení vztahu \eqref{eq:porozity_deformation}.
+
+Pro systém paralelních rovinných puklin s jednotkovou normálou $\vc n$, rozevřením $d$ $[m]$ a vzdáleností $D$ $[m]$
+byl odvozen kubický zákon \cite{Snow1969}:
+\[
+ \kappa = \frac{d^3}{12 D} (\tn I - \vc n \otimes \vc n).
+\]
+
+Základním článkem studujícím změny vodivosti v EDZ je \cite{Kelsall1984}. Přímou aplikací normálového napětí
+na jednu puklinu a použitím kubického zákona je odvozen empirický vztah pro permeabilitu jedné pukliny:
+\[
+  \kappa = \kappa_0 \Big[A (\frac{\sigma_e}{\eta})^t+1\Big]^{-3},
+\]
+kde $\kappa_0$ je počáteční permeabilita, $\sigma_e$ je normálové napětí a $A$, $\eta$, $t$ jsou empirické parametry.
+V porovnání s uvedeným měřením je však dosaženo pouze hrubé shody. Celkově je pozorováno zvýšení vodivosti v EDZ o jeden až dva řády jen díly změnám napětí.
+Článek dále studuje i vliv ražby na hydraulickou vodivost se závěrem, že vliv ražby převažuje zhruba do 30cm od stěny díla. 
+
+
+V přehledovém článku \cite{Rutqvist2003} věnovanému hydro-mechanickým modelům pro rozpukané horniny
+je pro neporušenou horninu citován vztah Kožený-Carman a několik jednodušších empirických aproximací, např.
+exponenciální model:
+\[
+  \kappa=\kappa_0 \exp(-a_1 P)
+\]
+a 
+mocninný model:
+\[
+  \kappa=\kappa_0 P^{-a_2},
+\]
+kde $a_1$ a $a_2$ jsou empirické konstanty a $P=P_c - p$ je efektivní tlak pro kompresní tlak horniny $P_c$ a proti působící tlak vody $p$.
+Pro vodivost puklin (transmisivitu) je základem kubický zákon, kde je jednak použito různě chápané ``hydraulické'' rozevření pukliny $d_h$ 
+a dále je prezentována celá řada vztahů pro závislost změny reálného rozevření $d$ na normálovém a smykovém napětí. Například logaritmický vztah 
+podle \cite{Kohl1995} pro změnu rozevření pukliny
+\[
+   d - d_0 = - C \ln \frac{\sigma_n}{\sigma_0}
+\]
+kde $d_0$ a $\sigma_0$ jsou počáteční rozevření a počáteční normálové napětí. 
+
+Pro hydro-mechanický model odezvy na ražbu tunelu TSX (URL, Kanada), \cite{Rutqvist2009}, viz. též kapitola \ref{sec:}, byl použit vztah:
+
+$$
+	\kappa = \kappa_0 \mbox{exp}(\beta e_d),
+$$
+kde $\kappa_0$ je permeabilita neporušeného masivu, $\beta$ je empirický parametr, $e_d$ je ekvivalentní
+deviatorická deformace,
+$$
+	e_d = \frac{2}{\sqrt{6}}[(\varepsilon_1 - \varepsilon_2)^2 + (\varepsilon_2 - \varepsilon_3)^2 + (\varepsilon_3 - \varepsilon_2)^2]^{1/2},
+$$
+kde $\varepsilon_1$, $\varepsilon_2$ a $\varepsilon_3$ jsou hlavní deformace.
+
+
+Tento ani předchozí citované vztahy nedávají možnost kombinace smykového a normálového napětí a nepopisují 
+nárůst vodivosti při velkých napětích. Tento efekt je popsáno v \cite{Souley2001}, kde je též navržen model poškození (CDM)a 
+nárůst vodivosti je vysvětlen jako propojení zvětšujících se mikro trhlin do souvislé vodivé sítě.
+je uvažována pouze izotropní vodivost. Tento konceptuální model již je blízko expicitnímu popisu dějů na puklinách 
+pomocí mikro škálového modelu.
+
+Další práce a alternativní přístupy lze nalézt v přehledovém článeku \cite{Shahbazi2020a}. 
+
+
+
+
+\subsection{Víceškálový přístup}
+\label{sec:mikroskala}
+Konstitutivní vztahy mechanických modelů a vztahy závislosti permeability na napětí či deformaci vyžadují určení 
+několika volných parametrů. Tyto parametry není možné určit laboratorním měřením na vzorcích (o rozměru cca 0.1m), 
+jelikož reálné kontinuum ve větší škále (cca 10m) obsahuje systém větších puklin, které laboratorní měření nezachytí. 
+Stanovení volných parametrů z měření in-situ je nákladné a náchylné na systematické chyby, kvůli nemožnosti 
+více nezávislých pozorování. 
+
+
+Navrhujeme proto použít následující víceškálový přístup:
+\begin{itemize}
+ \item Předpokládáme měření (deformace a vodivost při zatížení) na laboratorních vzorcích o rozměru $l=0.1m$ obsahující pukliny do velikosti $r=1cm$.
+ \item Uvažujeme oblast odpovídající laboratorním vzorkům (krychle o straně $l$) se sítí náhodných puklin menších než $r$.
+ \item Na oblasti řešíme úlohu s elastickým kontinuem a diskrétní pukliny s explicitním popisem jejich kontaktů, tření a rozevírání.
+       Plasticita a poškození by měly být postihnuty pomocí procesů na puklinách. Fitujeme parametry $P_f$ puklin (např. model tření nebo závislost vodivosti na rozevření) a parametry kontinua. 
+ \item Na oblasti bez diskrétních puklin řešíme stejnou úlohu s plastickým modelem a fitujeme parametry $P_c$ konstitutivních vztahů kontinua.
+ \item V makro modelu uvažujeme diskrétní pukliny velikosti větší než $r$ a použijeme nafitované parametry $P_f$ pro kontinuum použijeme parametry $P_c$.
+\end{itemize}
+Jelikož je systém puklin statisticky soběpodobný ve velkém rozsahu škál, lze uvažovat jeden statistický model puklin pro všechny škály modelů.
+Parametry statistického modelu pak lze poměrně levně určit mapováním puklin na stěnách díla a z karotáží, viz. \cite{Bonnet2001}.
+Zároveň předpokládáme, že parametry vztahů pro vlastnosti puklin jsou již nezávislé na měřítku, 
+jelikož velikost puklin v nich již vystupuje explicitně. 
+
+Víceškálový přístup v různých podobách byl již využit v řadě prací zabývajících se vztahem mezi mechanikou a vodivosti. 
+Motivující pro nás byla práce \cite{Min2004a}, kde je demonstrováno, jak poměrně jednoduchý model puklin s 
+kontekty třením a rozevíráním při tečném posunutí
+dokáže postihnout růst vodivosti při větším napětí, jak je popsáno, ale vysvětleno jinak v \cite{Souley2001}.
+Navíc je zde demonstrována dobrá shoda s kontinuálním modelem využívajícím empirických vztahů pro popis vodivosti kontinua v závislosti na napětí.
+
+Další motivací je popis mechanického modelu s poškozením \cite{Shao2005}, kde jsou homogenizované konstitutivní vztahy ekvivalentního kontinua
+odvozeny pro síť mikro puklin s daným rozdělením orientací. Pro analytický výpočet ekvivalentního tenzoru permeability je pak využit postup superpozice tenzorů 
+pro různé orientace puklin, viz. \cite{Oda1986a}.
+
+Nakonec lze zmínit novější práci, \cite{Rutqvist2013}, kde je posán hydro-mechanický model s víceškálovým přístupem. Je vygenerována síť (jemných) 
+puklin a pro podoblasti odpovídající elementům makro úlohy jsou stanoveny efektivní parametry kontinua nikoliv pomocí řešení  úlohy na DFN síti, 
+ale pomocí numerické superpozice tenzorů, viz. \cite{Oda1986a}. Celý postup je pak validován vůči výpočtu na jemné DFN síti.
+
+
+
+% TODO:
+% - otázka zda je difúze zanedbatelná při malých rychlostech
+% - zjistit řádově rychlosti na úrovni úložiště
+% - pro začátek bychom difúzi zanedbali
+% 
+% - klíčový parametr tenzor počátečního napětí
+%   lze měřit a lze získat 
+% 
+% - výpočet 
+% - tlak bentonitu 2,5 az 5 MPa, to je zhruba srovnatelne s hg tlakem v 500m cca 5MPa
+% - Grimsel v zule + teplo, pomala saturace, nebyla saturace ani po 18letech
+% - 
+
+
+
+
+
+% \subsection{Rešerše - přehled souvisejících článků}
+% {\bf \cite{Shahbazi2020a}}\\
+% Přehledový článek o různých analytických a numerických modelech 
+% pro prdikci hydraulické vodivosti rozpukaného prostředí i na základě mechaniky. Z numerických přístupů 
+% jsou použity převážně DFN (discrete fracture networks) a DEM (distinct element method). 
+% TODO: projiít odkazy, hledání multiscale přístupu, jednoduchý model pro jemnou škálu s puklinami, 
+% efektivní parametry pro makro škálu
+% 
+% \noindent{\bf \cite{Blaheta2013}}\\
+% TH model pilíře v laboratoři \"Asp\"o se zahrnutím plasticity a modelů poškození. 
+% Kalibrace na některé měřené veličiny.
+% 
+% 
+% 
+% \noindent{\bf \cite{Perras2016}}\\
+% Použití DISL - damage initiatin and spalling pro predikci hloubky jednotlivých částí EDZ,
+% porovnání numerických modelů a empirických dat, fitování empirického vztahu pro relativní hloubku 
+% ($r/R$) v závislosti na maximálním tečným napětím na stěně normalizovaném na CI (crack initiation napětí)
+% ,$\sigma_{max} / \sigma_{CI}$. To je nelineární rozšíření vztahu navrženého v
+% \cite{Martin1999} a \cite{Diederichs2007}). 
+% DISL je založen na Hoek-Brownově kritériu.
+% 
+% \noindent{\bf \cite{Martin1999}}\\
+% Analýza hloubky poškození v závislosti na napětí a tvaru tunelu, krystalinika, založeno na Hoek-Brown.
+% 
+% \noindent{\bf \cite{Dreuzy2012}}\\
+% Porovnání DFN s konstantní vodivostí puklin vs. puklin s heterogenní vodivostí (Gaussian distribution, power-law like correlation). Analýza vlivu celkovou vodivost sítě. Pro heterogenní případ pozorováno převážně snížení celkové vodivosti (faktorem 2 - 6). \todo{podrobnější čtení}
+% 
+% 
+% 
+% \noindent{\bf \cite{Souley2001}}\\
+% Model poškození a model změny permeability v závislosti na mechanice, vychází z konceptu paralelních puklin \cite{Snow1965}. Zaměřeno na krystalické horniny, neuvažuje namáhání v tahu.  Implementováno v SW FLAC3D (použit v projektu "Hluboké horizonty").
+% 
+% \noindent{\bf \cite{Rutqvist2003}}\\
+% Přehled HM modelů pro rozpukanou horninu s různými konstitutivními 
+% vztahy pro explicitní popis vlastností puklin v závislosti ne tečném a normálovém napětí. 
+% Příklady aplikací a porovnání s měřeními.
+% Vztah mezi permeabilitou a "confining pressure" 
+% (pokles vodivosti s hloubkou. Jsou diskutovány vztahy mezi napětím resp. 
+% porozitou a permeabilitou. Matematický popis jevů na puklinách. Rozdíl mezi "apparent aperture" 
+% a "real apperture". 
+% 
+% \noindent{\bf \cite{Rutqvist2009}}\\
+% TSX experiment, calibration of plasticity model and permeability dependance on the strain through the HM-model of stress relaxation
+% 
+% 
+% 
+% {\bf \cite{Kelsall1984}}:\\
+% Základní článek zabývající se otázkou změny hydrulické vodivosti v EDZ. 
+% Odvozeno analytické řešení pro rozložení napětí v okolí ideální kruhové chodby. 
+% Změny v hydraulické vodivosti jsou dále odvozeny na základě kubického zákona. 
+% Na základě tohoto modelu predikují zvýšení vodivosti o jeden až dva řády pouze vlivem změny napětí. Změna alespoň o jeden řád nejvýše do vzdálenosti dvou průměrů od stěny chodby. Ražba střílením může dále zvýšit hydraulickou vodivost, avšak jen v blízkosti (cca. 0,3 m) stěny chodby.
+% 
+% 
+% {\bf \cite{Lisjak2014}}\\
+% Modelování vzniku puklin v EDZ pomocí \uv{hybrid finite discrete elements method},
+% přehled jiných numerických přístupů. 
+% 
+% {\bf  \cite{Barton1985}}\\
+% Measurement of fracture apperture and "real" apperture used in models.
+% 
+% {\bf \cite{Shao2005}}\\
+% Mechanické vlastnosti a permeabilita křehkých hornin, vztahy odvozené na základě sítě mikropuklin, zahrnut vliv propojenosti, porovnání s laboratorními experimenty. Asi nejblíže našemu záměru, netriviální formulace mechaniky pomocí mechanické entalpie a nejasné odvození.
+
+
+\section{Inverzní úlohy a geofyzikální měření}
 
 
 Jelikož cílem projektu je poskytnout predikci indikátorů bezpečnosti 
