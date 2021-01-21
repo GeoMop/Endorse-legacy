@@ -278,11 +278,11 @@ umožní to i predikci parametrů EDZ před vlastní ražbou a lepší identifik
 V literatuře bylo navrženo více druhů členění EDZ na kvalitativně odlišné podoblasti. Pro naše účely se hodí členění podle \cite{Perras2016}, 
 které je založeno na plastickém modelu, konkrétně na Hoekovu-Brownovu kritériu plasticity \cite{Hoek2002}. Směrem od stěny díla definujeme následující zóny (viz Obrázek \ref{fig:edz_zones}) s kvalitativně odlišnými změnami:
 \begin{description}
-\item[CDZ] Construction damage zone. Zóna poškození vlivem ražby. Lze omezit přizpůsobením technologie ražby.
-\item[HDZ] High damage zone. Zóna s propojenými makro puklinami. 
-\item[IDZ] Inner excavation damage zone. Vnitřní zóna s nevratným poškozením (plastické změny), obsahuje propojené mikropukliny.
-\item[ODZ] Outer excavation damage zone. Vnější zóna s nevratným poškozením (plastické změny), obsahuje jednotlivé mikropukliny.
-\item[EIZ] Excavation influence zone. Zóna s elastickými, vratnými změnami.
+\item[CDZ -- Construction Damage Zone.] Zóna poškození vlivem ražby. Lze omezit přizpůsobením technologie ražby.
+\item[HDZ -- High Damage Zone.] Zóna s propojenými makro puklinami. 
+\item[IDZ -- Inner Excavation Damage Zone.] Vnitřní zóna s nevratným poškozením (plastické změny), obsahuje propojené mikropukliny.
+\item[ODZ -- Outer Excavation Damage Zone.] Vnější zóna s nevratným poškozením (plastické změny), obsahuje jednotlivé mikropukliny.
+\item[EIZ -- Excavation Influence Zone.] Zóna s elastickými, vratnými změnami.
 \end{description}
 
 
@@ -475,11 +475,11 @@ popsáno hlavními napětími ve směrech souřadného systému $(\sigma_x, \sig
 \end{equation}
 přičemž $g$ je gravitační konstanta. Pro hloubku 500 m a $\nu = 1/4$ uvedené vyjádření dává hodnoty
 $$
-	\sigma_z = 13.5, \sigma_x = \sigma_y = 4.05\quad [MPa].
+	\sigma_z = 13.5, \sigma_x = \sigma_y = 4.05\quad [\mathrm{MPa}].
 $$
 Reálná počáteční napětí však mohou mít převažující horizontální složky a obecné vlastní vektory (nerovnoběžné se souřadným systémem). Například napětí měřené v hloubce 420 m v Underground Research Laboratory (URL) blízko Lac du Bonnet, Manitoba, Kanada, dosahuje hodnot
 $$
-	\sigma_3 = 11, \sigma_2 = 45, \sigma_1 = 60\quad [MPa]
+	\sigma_3 = 11, \sigma_2 = 45, \sigma_1 = 60\quad [\mathrm{MPa}]
 $$
 viz \cite{Rutqvist2009}. V tomto případě musíme počítat i se smykovými napětími. Počáteční napětí může být velmi proměnné i v rámci jedné lokality, zvláště pokud je navíc ovlivněna více podzemními díly, viz příklad laboratoře GRIMSEL ve Švýcarsku, viz \cite{Krietsch2019},
 \cite{Stas2016}, \cite{Rutqvist2004}. Pro studium EDZ je proto vhodné uvažovat výpočty pro různé hodnoty počátečního napětí.
@@ -525,7 +525,7 @@ Pro porézní médium složené z částic (písek, štěrk) má poměrně širo
   \label{eq:Kozeny}
   \kappa = \frac{1}{C_{KC}a^2}\frac{e^3}{1+e},
 \end{equation}
-kde $C_{KC}$ $[-]$ je empirická konstanta, $a$  $[m^{-1}]$ je specifický povrch částic na jednotkový objem a $e$ $[-]$ je  ``void ratio'' --
+kde $C_{KC}$ $[-]$ je empirická konstanta, $a$  $[\mathrm{m}^{-1}]$ je specifický povrch částic na jednotkový objem a $e$ $[-]$ je  ``void ratio'' --
 poměr volného objemu ku objemu částic. Ten lze zapsat pomocí porozity:
 \[
    e = \frac{\theta}{1 - \theta}.
@@ -538,7 +538,7 @@ Změny porozity $\theta$ vůči počáteční porozitě $\theta_0$ jsou dány st
 Tímto dostáváme jednoduchý vztah pro závislost permeability a porozity na deformaci. Pro EDZ je tento přístup nedostatečný kvůli anizotropii
 puklin a nelineární mechanice, t.j.  porušení vztahu \eqref{eq:porozity_deformation}.
 
-Pro systém paralelních rovinných puklin s jednotkovou normálou $\vc n$, rozevřením $d$ $[m]$ a vzdáleností $D$ $[m]$
+Pro systém paralelních rovinných puklin s jednotkovou normálou $\vc n$, rozevřením $d$ $[\mathrm{m}]$ a vzdáleností $D$ $[\mathrm{m}]$
 byl odvozen kubický zákon \cite{Snow1969}:
 \[
  \kappa = \frac{d^3}{12 D} (\tn I - \vc n \otimes \vc n).
@@ -574,7 +574,7 @@ podle \cite{Kohl1995} pro změnu rozevření pukliny
 \]
 kde $d_0$ a $\sigma_0$ jsou počáteční rozevření a počáteční normálové napětí. 
 
-Pro hydro-mechanický model odezvy na ražbu tunelu TSX (URL, Kanada), \cite{Rutqvist2009}, viz též kapitola \ref{sec:}, byl použit vztah:
+Pro hydro-mechanický model odezvy na ražbu tunelu TSX (URL, Kanada), \cite{Rutqvist2009}, viz též kapitola \ref{sec:} \pe{nevim, kam chces odkazat}, byl použit vztah:
 
 $$
 	\kappa = \kappa_0 \mbox{exp}(\beta e_d),
@@ -726,16 +726,16 @@ Jelikož cílem projektu je poskytnout predikci indikátorů bezpečnosti
 včetně charakterizace nejistot, je třeba standardní inverzní metody při zpracování geofyzikálních a jiných dat nahradit Bayesovskými inverzními metodami. Bayesovský přístup bude nejprve aplikován samostatně na vybrané druhy dat, která umožní nejlépe identifikovat parametry transportního modelu a modelu EDZ. V této sekci jsou shrnuty práce věnované experimentální charakterizaci EDZ s využitím různých metod.
 
 S ohledem na výslednou permeabilitu zavedeme vlastní rozčlenění EDZ na základě mechanických dějů:
-\begin{itemize}
-    \item [Damage zone] - dochází k tvorbě nových makroskopických puklin, poškození
-    \item [Plastic zone] - plastická (mikro trhliny)
-    \item [Elasitic zone] - non-linear elasticity (fracture openning)
-\end{itemize}
+\begin{description}
+    \item [Damage zone] -- dochází k tvorbě nových makroskopických puklin, poškození
+    \item [Plastic zone] -- plastická (mikro trhliny)
+    \item [Elasitic zone] -- nelineární elasticita (otevírání puklin)
+\end{description}
 Není jasné co je v pracech myšleno pojmem "reverzibilní změny", jelikož i elasticky reverzibilní deformace jsou reálně ireverzibilní (nedojde k obnově původního napětí).
 
 
 
-Změny v EDZ jsou HM proces a mohou tedy probíhat déle v závislosti na hydraulické vodivosti. Pro vodivost 1e-9 je čas transport na vzdálenost 1m při tlakovém spádu 1m cca 31 let. Reálné relaxační časy budou výrazně kratší, ale určitě v řádu dnů nebo měsíců. 
+Změny v EDZ jsou HM proces a mohou tedy probíhat déle v závislosti na hydraulické vodivosti. Pro vodivost 1e-9 $\mathrm{m/s}$ je čas transport na vzdálenost 1~m při tlakovém spádu 1~m cca 31 let. Reálné relaxační časy budou výrazně kratší, ale určitě v řádu dnů nebo měsíců. 
 
 \section{Identifikace parametrů}
 \label{sec:parameters}
