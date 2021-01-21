@@ -54,7 +54,7 @@ jehož parametry budou určeny pomocí modelu vzniku EDZ na jemnější prostoro
 Pro stanovení volných parametrů modelů budou na základě rešerše doporučeny vhodné experimentální a měřící metody.
 Budou studovány stochastické výpočetní metody pro aproximaci rozdělení pravděpodobnosti indikátorů
 vzhledem k principiálním nejistotám v popisu horninového prostředí.
-Vyvinuté matematickcé modely a výpočetní software bude možné využít k obecnějímu modelování procesů 
+Vyvinuté matematické modely a výpočetní software bude možné využít k obecnějšímu modelování procesů 
 v EDZ, odhadu citlivosti na parametry a následně tak i optimalizaci měření nebo monitoringu.
 
 
@@ -88,7 +88,7 @@ při budování a provozování úložiště:
     \item \label{item_model1}
         Z měření jsou přímo nebo pomocí inverzních metod stanoveny parametry neporušené horniny.
         Parametry jsou popsány ve smyslu jejich rozdělení pravděpodobnosti, 
-        např. pomocí Bayesovké inverze. Pomocí software (výsledek projektu) je modelován vznik EDZ,
+        např. pomocí Bayesovské inverze. Pomocí software (výsledek projektu) je modelován vznik EDZ,
         příslušné hydraulické parametry a jsou vypočteny indikátory bezpečnosti včetně aproximace 
         jejich hustoty pravděpodobnosti.
     \item Na základě výsledků predikce indikátorů a dle expertního posouzení se určí počet bezpečných
@@ -125,9 +125,9 @@ V kapitole \ref{sec:transport} je popsána koncepce modelu transportu v měřít
 jsou definovány indikátory bezpečnosti jakožto veličiny odvozené z tohoto modelu. Je provedena elementární rozvaha ohledně 
 neurčitosti vstupních parametrů transportního modelu. Kapitola
 \ref{sec:model_EDZ} je věnována makroskopickému modelu mechaniky vzniku EDZ v měřítku jednoho úložného místa. 
-V kapitole \ref{sec:micro_EDZ} jsou navrženy postupy stanovení parametrů makroskopického modelu mechaniky a modelu transporu 
+V kapitole \ref{sec:micro_EDZ} jsou navrženy postupy stanovení parametrů makroskopického modelu mechaniky a modelu transportu 
 na základě mikro modelu dějů na jemných puklinách.
-\pe{Kapitola \ref{sec:inverse_problems} charakterizuje inverzní úlohy a jejich řešení pomocí Bayesovkých metod 
+\pe{Kapitola \ref{sec:inverse_problems} charakterizuje inverzní úlohy a jejich řešení pomocí Bayesovských metod 
 pro získání indikátorů bezpečnosti včetně jejich nejistot.}
 V kapitole \ref{sec:parameters} jsou popsána možná měření vhodná pro identifikaci 
 parametrů modelů. Závěrečná kapitola \ref{sec:experiment} stručně navrhuje experiment pro testování výsledků projektu Endorse.
@@ -142,7 +142,7 @@ transportu kontaminace od bentonitového těsnění do širší geologické bari
 vzniklé EDZ (v kapitole \ref{sec:model_EDZ}) a dále interakcí s preexistujícími poruchami. 
 Navrhované indikátory jsou proto založeny na modelu transportu skrze blízké okolí jednoho úložného vrtu. 
 Nejprve popíšeme geometrii modelu (kapitola  \ref{sec:transport_geometrie}), model proudění (kapitola \ref{sec:transport_flow})
-a model transportu konzervativního stopovče (kapitola \ref{sec:stopovac}). Jádrem této části je návrh indikátorů bezpečnosti (kapitola \ref{sec:indikatory}). 
+a model transportu konzervativního stopovače (kapitola \ref{sec:stopovac}). Jádrem této části je návrh indikátorů bezpečnosti (kapitola \ref{sec:indikatory}). 
 V poslední kapitole \ref{sec:nejistoty} pak shrneme parametry modelů, možné způsoby jejich identifikace a příslušné zdroje nejistot.
 
 
@@ -168,7 +168,7 @@ Vzhledem k velmi malým vodivostem je uvažován model nasyceného stacionární
     \div(\vc v) = 0, \quad \vc q = -\tn K \grad (h + z)
 \]
 kde $\vc q$ je rychlostní pole $[m/s]$, $h$ je tlaková výška $[m]$. Tenzor hydraulické vodivosti $\tn K =\frac{\kappa \rho g}{\nu}$
- $[m/s]$ je pro tekutinu s hustotou $\rho$ $[kg\, m^{-3}]$ a vizkozitou $\nu$ $[s^-1]$ vztažen k permeabilitě $\kappa$ $[m^2]$, která je již dána pouze strukturou horniny.
+ $[m/s]$ je pro tekutinu s hustotou $\rho$ $[kg\, m^{-3}]$ a viskozitou $\nu$ $[s^-1]$ vztažen k permeabilitě $\kappa$ $[m^2]$, která je již dána pouze strukturou horniny.
 
 Vnitřní stěny díla budou uvažovány jako nepropustné, předpokládá se výplň s řádově menší vodivostí. 
 Proudění je řízeno Dirichletovou okrajovou podmínkou na vnější části hranice, kde pole piezometrické výšky $H = h + z$ 
@@ -184,7 +184,7 @@ a na základě vodivosti neporušené horniny.
 
 \subsection{Model transportu}
 \label{sec:stopovac}
-Pro vypočtené rychlostní pole $\vc q$ bude uvažována úloha transportu konzervatiního stopovače (bez zahrnutí sorpce do horniny a radioaktivních rozpadů) 
+Pro vypočtené rychlostní pole $\vc q$ bude uvažována úloha transportu konzervativního stopovače (bez zahrnutí sorpce do horniny a radioaktivních rozpadů) 
 se zahrnutím difúze a disperze. Časový vývoj koncentrace $c$ $[kg\, m^{-3}]$ je popsán rovnicí:
 \[
    \prtl_t (\theta c) + \div( \vc q c - \theta \tn D \grad c) = 0,
@@ -213,7 +213,7 @@ Na základě vypočteného časového pole koncentrace $c_p(t, \vc x)$ chceme ny
 konkrétní úložné pozice $p$. Podstatný přenos kontaminantu z EDZ do širší geologické bariéry bude probíhat podél významných geologických poruch, 
 kde je pravděpodobná vyšší konvekce. 
 \pe{Lze předpokládat, že tato místa budou odpovídat místům na vnější hranici transportního modelu s vysokou koncentrací stopovače. 
-Dále proto budeme uvažovat indikátor ve vybraném bodě s nejvyšší koncetrací, tedy jako veličinu odvozenou od funkce:}
+Dále proto budeme uvažovat indikátor ve vybraném bodě s nejvyšší koncentrací, tedy jako veličinu odvozenou od funkce:}
 
 \pe{trochu jsem to upravil, asi tuším, ale není to srozumitelné: je $C_p$ opravdu indikátor, nebo je jím až $I_1$?}
 \[
@@ -341,7 +341,7 @@ Pro výpočet poškození hornin je vhodné uvažovat hierarchii modelů se zvě
 	\item \label{mod_irev_cdm} {\bf Kombinované modely.} V praxi existuje řada kombinací výše uvedených modelů. Jednak lze uvažovat kombinaci plasticity a Damage Mechanics, která uvažuje jak oslabení, tak i trvalé deformace. Existuje však také mnoho ad-hoc přístupů, které uvažují postupné oslabování materiálových konstant, viz např. \cite{Perras2016}, \cite{Carranza-Torres1999}.
 \end{enumerate}
 U modelů \eqref{mod_elast} a \eqref{mod_plast} máme většinou řadu informací o existenci a jednoznačnosti
-řešení, o stabilitě, tedy spojité závislosti řešení na vstupních datech, o chybě vznikající  při  diskretizaci  úloh  atd.  Složitější je porozumění  modelům CDM, pro které existuje závislost diskretizovaných  modelů na  síti, nejednoznačnost řešení  apod. Proto jsou navrženy CDM modely s regularizací nebo s nelokální definicí deformací a napětí. \pe{v posledni vete vubec netusim, co si podtim predstavit, je to i bez reference. Mimochodem "jsou navrzeny" jako kym a kde?}
+řešení, o stabilitě, tedy spojité závislosti řešení na vstupních datech, o chybě vznikající  při  diskretizaci  úloh  atd.  Složitější je porozumění  modelům CDM, pro které existuje závislost diskretizovaných  modelů na  síti, nejednoznačnost řešení  apod. Proto jsou navrženy CDM modely s regularizací nebo s nelokální definicí deformací a napětí. \pe{v poslední větě vůbec netuším, co si podtim představit, je to i bez reference. Mimochodem "jsou navrženy" jako kým a kde?}
 
 
 
@@ -435,7 +435,7 @@ Samotné modely plasticity neuvažují oslabení materiálu při křehkém poru�
 	\centering
 	\begin{tabular}{ll}
 		\hline
-		zobecněný Hookeův zákon & $\sigma = (1-\omega)C : \varepsilon$\\
+		zobecněný Hookův zákon & $\sigma = (1-\omega)C : \varepsilon$\\
 		vývoj porušení & $\omega = g(\kappa), \dot{\kappa} \geq 0, \kappa(0) = \overline{\varepsilon}_0$\\
 		funkce porušení & $f_d(\varepsilon,\kappa)=\overline{\varepsilon}(\varepsilon)-\kappa$\\
 		podmínka přípustnosti & $f_d(\varepsilon,\kappa)\leq 0$ \\
@@ -504,7 +504,7 @@ a výpočtem pomocí inverzní analýzy, viz \cite{Malik2021}.
 Změny napětí způsobené ražbou resp. zatopením díla vedou ke změnám klíčových parametrů transportního modelu:
 permeability $\kappa$ a porozity $\theta$. V menší míře mohou být ovlivněny i parametry $d_m$, $\alpha_L$, $\alpha_T$.
 
-Kromě mechanických změn mohou mít na hodnotu těchto parametrů vliv i další procesy zjeména změny teploty v důsledku radioaktivního rozpadu a 
+Kromě mechanických změn mohou mít na hodnotu těchto parametrů vliv i další procesy zejména změny teploty v důsledku radioaktivního rozpadu a 
 chemické procesy vedoucí k hojení mikrotrhlin. Jakkoliv mohu být významné, nebudou pro zachování jednoduchosti tyto procesy uvažovány.
 Stejně tak nebude uvažována žádná metoda sanace EDZ (např. různé druhy tlakové penetrace).
 
@@ -589,10 +589,10 @@ kde $\varepsilon_1$, $\varepsilon_2$ a $\varepsilon_3$ jsou hlavní deformace.
 Tento ani předchozí citované vztahy nedávají možnost kombinace smykového a normálového napětí a nepopisují 
 nárůst vodivosti při velkých napětích. Tento efekt je popsáno v \cite{Souley2001}, kde je též navržen model poškození (CDM)a 
 nárůst vodivosti je vysvětlen jako propojení zvětšujících se mikro trhlin do souvislé vodivé sítě.
-je uvažována pouze izotropní vodivost. Tento konceptuální model již je blízko expicitnímu popisu dějů na puklinách 
+je uvažována pouze izotropní vodivost. Tento konceptuální model již je blízko explicitnímu popisu dějů na puklinách 
 pomocí mikro škálového modelu.
 
-Další práce a alternativní přístupy lze nalézt v přehledovém článeku \cite{Shahbazi2020a}. 
+Další práce a alternativní přístupy lze nalézt v přehledovém článku \cite{Shahbazi2020a}. 
 
 
 
@@ -622,7 +622,7 @@ jelikož velikost puklin v nich již vystupuje explicitně.
 
 Víceškálový přístup v různých podobách byl již využit v řadě prací zabývajících se vztahem mezi mechanikou a vodivosti. 
 Motivující pro nás byla práce \cite{Min2004a}, kde je demonstrováno, jak poměrně jednoduchý model puklin s 
-kontekty třením a rozevíráním při tečném posunutí
+kontakty třením a rozevíráním při tečném posunutí
 dokáže postihnout růst vodivosti při větším napětí, jak je popsáno, ale vysvětleno jinak v \cite{Souley2001}.
 Navíc je zde demonstrována dobrá shoda s kontinuálním modelem využívajícím empirických vztahů pro popis vodivosti kontinua v závislosti na napětí.
 
@@ -630,7 +630,7 @@ Další motivací je popis mechanického modelu s poškozením \cite{Shao2005}, 
 odvozeny pro síť mikro puklin s daným rozdělením orientací. Pro analytický výpočet ekvivalentního tenzoru permeability je pak využit postup superpozice tenzorů 
 pro různé orientace puklin, viz \cite{Oda1986a}.
 
-Nakonec lze zmínit novější práci, \cite{Rutqvist2013}, kde je posán hydro-mechanický model s víceškálovým přístupem. Je vygenerována síť (jemných) 
+Nakonec lze zmínit novější práci, \cite{Rutqvist2013}, kde je popsán hydro-mechanický model s víceškálovým přístupem. Je vygenerována síť (jemných) 
 puklin a pro podoblasti odpovídající elementům makro úlohy jsou stanoveny efektivní parametry kontinua nikoliv pomocí řešení  úlohy na DFN síti, 
 ale pomocí numerické superpozice tenzorů, viz \cite{Oda1986a}. Celý postup je pak validován vůči výpočtu na jemné DFN síti.
 
@@ -730,11 +730,11 @@ S ohledem na výslednou permeabilitu zavedeme vlastní rozčlenění EDZ na zák
     \item [Plastic zone] - plastická (mikro trhliny)
     \item [Elasitic zone] - non-linear elasticity (fracture openning)
 \end{itemize}
-Není jasné co je v pracech myšleno pojmem "reverzibilní změny", jelikož i elasticky reverzibilní deformace jsou reálně irreverzibilní (nedojde k obnově původního napětí).
+Není jasné co je v pracech myšleno pojmem "reverzibilní změny", jelikož i elasticky reverzibilní deformace jsou reálně ireverzibilní (nedojde k obnově původního napětí).
 
 
 
-Změny v EDZ jsou HM proces a mhou tedy probíhat déle v závislosti na hydraulické vodivosti. Pro vodivost 1e-9 je čas transport na vzdálenost 1m při tlakovém spádu 1m cca 31 let. Reálné relaxační časy budou výrazně kratší, ale určitě v řádu dnů nebo měsíců. 
+Změny v EDZ jsou HM proces a mohou tedy probíhat déle v závislosti na hydraulické vodivosti. Pro vodivost 1e-9 je čas transport na vzdálenost 1m při tlakovém spádu 1m cca 31 let. Reálné relaxační časy budou výrazně kratší, ale určitě v řádu dnů nebo měsíců. 
 
 \section{Identifikace parametrů}
 \label{sec:parameters}
