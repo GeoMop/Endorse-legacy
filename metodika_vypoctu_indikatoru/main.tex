@@ -22,6 +22,7 @@
 \def\T{\intercal}
 \def\grad{\nabla}
 \def\div{\operatorname{div}}
+\def\tr{\operatorname{tr}}
 \def\vc#1{\mathbf{\boldsymbol{#1}}}     % vector
 \def\tn#1{{\mathbb{#1}}}    % tensor
 \def\todo#1{{TODO:\color{violet}#1}}
@@ -40,7 +41,7 @@ Bezpečnost plánovaného hlubinného úložiště vysoce aktivních jaderných 
 inženýrskými bariérami (obalový soubor, bentonitové utěsnění) a dále geologickou bariérou 
 – horninovým masivem. Pro konstrukci úložiště jsou v horninách raženy chodby, přičemž dochází 
 k narušení okolní horniny na vnitřním okraji geologické bariéry a vzniká tzv. zóna poškození 
-(EDZ - excavation damage zone). 
+(EDZ - Excavation Damage Zone). 
 Zejména v krystalických (křehkých) horninách vzniká síť nových (mikro) puklin, která zvyšuje 
 hydraulickou vodivost a může tvořit preferenční cesty podél 
 chodeb úložiště a dále skrze případné geologické poruchy k povrchu.
@@ -509,7 +510,7 @@ chemické procesy vedoucí k hojení mikrotrhlin. Jakkoliv mohu být významné,
 Stejně tak nebude uvažována žádná metoda sanace EDZ (např. různé druhy tlakové penetrace).
 
 V této kapitole představíme možné modely závislosti parametrů transportu na napětí a deformaci.
-Nejprve v sekci \ref{sec:emiricke} uvedeme některé publikované empirické vztahy pro vodivost a porozitu.
+Nejprve v sekci \ref{sec:empiricke} uvedeme některé publikované empirické vztahy pro vodivost a porozitu.
 Tyto empirické vztahy stejně jako konstitutivní vztahy mechanických modelů z kapitoly \ref{sec:model_EDZ} 
 obsahují volné parametry, které lze sice určit pomocí laboratorních měření, avšak toto měření je provedeno na intaktních vzorcích
 a proto není přímo přenositelné na větší škály s výskytem větších poruch. Jednou možností, jak toto omezení obejít je
@@ -524,7 +525,7 @@ Pro porézní médium složené z částic (písek, štěrk) má poměrně širo
   \label{eq:Kozeny}
   \kappa = \frac{1}{C_{KC}a^2}\frac{e^3}{1+e},
 \end{equation}
-kde $C_{KC}$ $[-]$ je empirická konstanta, $a$  $[m^{-1}]$ je specifický povrch částic na jednotkový objem a $e$ $[-]$ je  ``void ratio'' -
+kde $C_{KC}$ $[-]$ je empirická konstanta, $a$  $[m^{-1}]$ je specifický povrch částic na jednotkový objem a $e$ $[-]$ je  ``void ratio'' --
 poměr volného objemu ku objemu částic. Ten lze zapsat pomocí porozity:
 \[
    e = \frac{\theta}{1 - \theta}.
@@ -532,7 +533,7 @@ poměr volného objemu ku objemu částic. Ten lze zapsat pomocí porozity:
 Změny porozity $\theta$ vůči počáteční porozitě $\theta_0$ jsou dány stopou tenzoru deformace $\eps$:
 \begin{equation}
    \label{eq:porozity_deformation}
-   \theta = \frac{\theta_0 + tr(\epsilon)}{1 + tr(\epsilon)}.
+   \theta = \frac{\theta_0 + \tr(\epsilon)}{1 + \tr(\epsilon)}.
 \end{equation}
 Tímto dostáváme jednoduchý vztah pro závislost permeability a porozity na deformaci. Pro EDZ je tento přístup nedostatečný kvůli anizotropii
 puklin a nelineární mechanice, t.j.  porušení vztahu \eqref{eq:porozity_deformation}.
@@ -549,8 +550,8 @@ na jednu puklinu a použitím kubického zákona je odvozen empirický vztah pro
   \kappa = \kappa_0 \Big[A (\frac{\sigma_e}{\eta})^t+1\Big]^{-3},
 \]
 kde $\kappa_0$ je počáteční permeabilita, $\sigma_e$ je normálové napětí a $A$, $\eta$, $t$ jsou empirické parametry.
-V porovnání s uvedeným měřením je však dosaženo pouze hrubé shody. Celkově je pozorováno zvýšení vodivosti v EDZ o jeden až dva řády jen díly změnám napětí.
-Článek dále studuje i vliv ražby na hydraulickou vodivost se závěrem, že vliv ražby převažuje zhruba do 30cm od stěny díla. 
+V porovnání s uvedeným měřením je však dosaženo pouze hrubé shody. Celkově je pozorováno zvýšení vodivosti v EDZ o jeden až dva řády jen díky změnám napětí.
+Článek dále studuje i vliv ražby na hydraulickou vodivost se závěrem, že vliv ražby převažuje zhruba do 30~cm od stěny díla. 
 
 
 V přehledovém článku \cite{Rutqvist2003} věnovanému hydro-mechanickým modelům pro rozpukané horniny
@@ -587,9 +588,9 @@ kde $\varepsilon_1$, $\varepsilon_2$ a $\varepsilon_3$ jsou hlavní deformace.
 
 
 Tento ani předchozí citované vztahy nedávají možnost kombinace smykového a normálového napětí a nepopisují 
-nárůst vodivosti při velkých napětích. Tento efekt je popsáno v \cite{Souley2001}, kde je též navržen model poškození (CDM)a 
-nárůst vodivosti je vysvětlen jako propojení zvětšujících se mikro trhlin do souvislé vodivé sítě.
-je uvažována pouze izotropní vodivost. Tento konceptuální model již je blízko explicitnímu popisu dějů na puklinách 
+nárůst vodivosti při velkých napětích. Tento efekt je popsán v \cite{Souley2001}, kde je též navržen model poškození (CDM) a 
+nárůst vodivosti je vysvětlen propojením zvětšujících se mikro trhlin do souvislé vodivé sítě.
+Je zde ale uvažována pouze izotropní vodivost. Tento konceptuální model již je blízko explicitnímu popisu dějů na puklinách 
 pomocí mikro škálového modelu.
 
 Další práce a alternativní přístupy lze nalézt v přehledovém článku \cite{Shahbazi2020a}. 
@@ -600,17 +601,17 @@ Další práce a alternativní přístupy lze nalézt v přehledovém článku \
 \subsection{Víceškálový přístup}
 \label{sec:mikroskala}
 Konstitutivní vztahy mechanických modelů a vztahy závislosti permeability na napětí či deformaci vyžadují určení 
-několika volných parametrů. Tyto parametry není možné určit laboratorním měřením na vzorcích (o rozměru cca 0.1m), 
-jelikož reálné kontinuum ve větší škále (cca 10m) obsahuje systém větších puklin, které laboratorní měření nezachytí. 
-Stanovení volných parametrů z měření in-situ je nákladné a náchylné na systematické chyby, kvůli nemožnosti 
+několika volných parametrů. Tyto parametry není možné určit laboratorním měřením na vzorcích (o rozměru cca 0.1~m), 
+jelikož reálné kontinuum ve větší škále (cca 10~m) obsahuje systém větších puklin, které laboratorní měření nezachytí. 
+Stanovení volných parametrů z měření in-situ je nákladné a náchylné na systematické chyby kvůli nemožnosti 
 více nezávislých pozorování. 
 
 
 Navrhujeme proto použít následující víceškálový přístup:
 \begin{itemize}
- \item Předpokládáme měření (deformace a vodivost při zatížení) na laboratorních vzorcích o rozměru $l=0.1m$ obsahující pukliny do velikosti $r=1cm$.
+ \item Předpokládáme měření (deformace a hydraulické vodivosti při zatížení) na laboratorních vzorcích o rozměru $l=0.1\,\mathrm{m}$ obsahujících pukliny do velikosti $r=1\,\mathrm{cm}$.
  \item Uvažujeme oblast odpovídající laboratorním vzorkům (krychle o straně $l$) se sítí náhodných puklin menších než $r$.
- \item Na oblasti řešíme úlohu s elastickým kontinuem a diskrétní pukliny s explicitním popisem jejich kontaktů, tření a rozevírání.
+ \item Na oblasti řešíme úlohu s elastickým kontinuem a diskrétními puklinami s explicitním popisem jejich kontaktů, tření a rozevírání.
        Plasticita a poškození by měly být postihnuty pomocí procesů na puklinách. Fitujeme parametry $P_f$ puklin (např. model tření nebo závislost vodivosti na rozevření) a parametry kontinua. 
  \item Na oblasti bez diskrétních puklin řešíme stejnou úlohu s plastickým modelem a fitujeme parametry $P_c$ konstitutivních vztahů kontinua.
  \item V makro modelu uvažujeme diskrétní pukliny velikosti větší než $r$ a použijeme nafitované parametry $P_f$ pro kontinuum použijeme parametry $P_c$.
