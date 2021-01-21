@@ -252,35 +252,35 @@ Pro oba navržené indikátory bezpečnosti $I_1(p)$ a $I_2(p)$ je nutno určit 
 
 \subsection{Nejistoty v parametrech transportu}
 \label{sec:nejistoty}
-Případný zjednodušený model transportu geologickou bariérou v případě indikátoru $I_2$ slouží pouze pro lepší porovnání průběhu koncentrací a bude proto uvažován bez nejistot. Nejistoty uvažujeme pouze pro parametry lokálního modelu proudění a transportu:
+Zjednodušený model transportu geologickou bariérou \eqref{eq:ad} v případě indikátoru $I_2$ slouží pouze pro lepší porovnání průběhu koncentrací a bude proto uvažován bez nejistot. Nejistoty uvažujeme pouze pro parametry lokálního modelu proudění a transportu:
 \begin{itemize}
  \item Bude uvažována nejistota o poloze a vlastnostech větších geologických poruch.
- \item Tenzor permeability bude uvažován jako náhodné korelované pole jehož parametry, zejména střední velikost a anisotropie budou 
+ \item Tenzor permeability bude uvažován jako náhodné korelované pole, jehož parametry, zejména střední velikost a anizotropie, budou 
  výsledkem modelu EDZ (viz kapitola \ref{sec:micro_EDZ}).
- \item Porozita bude určena podobným způsobem a korelovaná s vodivostí ve smyslu vztahu Carman-Kožený, viz \cite{Carrier2003}.
+ \item Porozita bude určena podobným způsobem a bude korelována s vodivostí ve smyslu vztahu Carman-Kožený, viz \cite{Carrier2003}.
  \item Ostatní difúzní parametry $d_m$, $\alpha_L$, $\alpha_T$ budou uvažovány s nejistotami pouze v případě většího vlivu na výsledek.
  \item Předepsaná okrajová podmínka proudění bude zpočátku uvažována bez nejistot. Pro testování bude případně uvažována náhodná fluktuace tlakového pole. Pokud se v rámci projektu Endorse podaří zvládnout efektivní výpočet lokálního modelu proudění a transportu s nejistotami, lze následně uplatnit stejný přístup pro regionální model proudění a vzorkovat okrajovou podmínku pomocí stochastického regionálního modelu proudění.
  \item Zdrojový člen $Q(t)$ bude uvažován jako časově závislá veličina bez neurčitosti, jelikož 
- je nezávislý na vlastnostech EDZ a cílem výsledných indikátorů je specificky charakterizace bezpečnosti EDZ.
+ je nezávislý na vlastnostech EDZ a smyslem vypočítaných indikátorů bezpečnosti je specificky charakterizace bezpečnosti EDZ.
 \end{itemize}
 
 \section{Makro model vzniku EDZ}
 \label{sec:model_EDZ}
 
-Přímým vlivem ražby a díky změně okrajové podmínky na stěně díla dochází v jeho okolí ke změně napěťových poměrů. To způsobuje změny otevření 
-existující sítě puklin a případně vzniku puklin nových. Důsledkem je pak změna mechanických vlastností a změna zejména vodivosti a 
-porozity v oblasti EDZ. K dalším změnám pak dochází po zatopení díla. Na rozdíl od volných chodeb, které mohou být utěsněny různými inženýrskými postupy (bentonit, beton), není možné EDZ v rozashu celého úložiště efektivně utěsnit a představuje tak hlavní transportní cestu mezi zdrojem kontaminace 
-a případnými geologickými poruchami protínající chodby díla. 
+Přímým vlivem ražby a následné změně okrajové podmínky na stěně díla dochází v jeho okolí ke změně napěťových poměrů. To způsobuje změny rozevření 
+existující sítě puklin a případně vzniku puklin nových. Důsledkem je pak změna mechanických vlastností a zejména změna vodivosti a 
+porozity v oblasti EDZ. K dalším změnám pak dochází po zatopení díla. Na rozdíl od volných chodeb, které mohou být utěsněny různými inženýrskými postupy (bentonit, beton), není možné EDZ v rozsahu celého úložiště efektivně utěsnit a představuje tak hlavní transportní cestu mezi zdrojem kontaminace 
+a případnými geologickými poruchami protínajícími chodby díla. 
 Cílem této a následující kapitoly je navrhnout možné modely změn klíčových parametrů EDZ. To je zásadní pro stanovení parametrů EDZ po zatopení, ale
 umožní to i predikci parametrů EDZ před vlastní ražbou a lepší identifikaci parametrů z měření po ražbě.
 
 V literatuře bylo navrženo více druhů členění EDZ na kvalitativně odlišné podoblasti. Pro naše účely se hodí členění podle \cite{Perras2016}, 
-které je založeno na plastickém modelu, konkrétně na Hoek-Brown kritériu plasticity \cite{Hoek2002}. Směrem od stěny díla definujeme následující zóny (viz Obrázek \ref{fig:edz_zones}) s kvalitativně odlišnými změnami:
+které je založeno na plastickém modelu, konkrétně na Hoekovu-Brownovu kritériu plasticity \cite{Hoek2002}. Směrem od stěny díla definujeme následující zóny (viz Obrázek \ref{fig:edz_zones}) s kvalitativně odlišnými změnami:
 \begin{description}
 \item[CDZ] Construction damage zone. Zóna poškození vlivem ražby. Lze omezit přizpůsobením technologie ražby.
 \item[HDZ] High damage zone. Zóna s propojenými makro puklinami. 
-\item[IDZ] Inner excavation damage zone, inner. Vnitřní zóna s nevratným poškozením, plasticita, propojené mikropukliny.
-\item[ODZ] Outer excavation damage zone, outer. Vnější zóna s nevratným poškozením, plasticita, jednotlivé mikropukliny.
+\item[IDZ] Inner excavation damage zone. Vnitřní zóna s nevratným poškozením (plastické změny), obsahuje propojené mikropukliny.
+\item[ODZ] Outer excavation damage zone. Vnější zóna s nevratným poškozením (plastické změny), obsahuje jednotlivé mikropukliny.
 \item[EIZ] Excavation influence zone. Zóna s elastickými, vratnými změnami.
 \end{description}
 
@@ -292,38 +292,38 @@ které je založeno na plastickém modelu, konkrétně na Hoek-Brown kritériu p
     \label{fig:edz_zones}
 \end{figure}
 
-V projektu nebudeme uvažovat zónu CDZ. V případě použití razícího stroje (TBM) je rozsah této zóny zanedbatelný (okolo 1cm), v případě 
-ražby střílením je rozsah CDZ významný (až 1m), ale je prakticky nemožné ho predikovat modelem. Charakterizaci CDZ je případně nutné provést in-situ.
-Zbylé zóny vznikají v důsldku změny okrajové podmínky na stěně díla. Pro jejich vznik jsou klíčové procesy ve dvou různých škálách. V měřítku rozměru 
+V projektu nebudeme uvažovat zónu CDZ. V případě použití razícího stroje (TBM -- Tunnel Boring Machine) je rozsah této zóny zanedbatelný, okolo 1~cm. V případě 
+ražby střílením je rozsah CDZ významný, až 1~m, ale je prakticky nemožné ho predikovat modelem. Charakterizaci CDZ je případně nutné provést in-situ.
+Zbylé zóny vznikají v důsledku změny okrajové podmínky na stěně díla. Pro jejich vznik jsou klíčové procesy ve dvou různých škálách. V měřítku rozměru 
 díla probíhá hydro-mechanický proces redistribuce napětí a mimo EIZ se jedná o nevratné plastické změny. Ty však jsou v případě křehkých hornin
 způsobeny nelineárními procesy na mikro puklinách, kde dochází k překonání třecích sil mezi stěnami nebo porušení jejich výplní. 
 Změny v rozevření puklin pak způsobují změny porozity a hydraulické vodivosti. 
 
-Mikroskopický model a určení homogenizovaných parametrů EDZ byde diskutováno v následující kapitole.
-V táto kapitole se zaměříme na možné makroskopické modely se zahrnutím plasticity a porušení materiálu.
-Nejprve v popíšeme scénář a geometrii úlohy, následně stručně představíme hierarchii modelů se zvyšující složitostí
-a v dalších sekcích pak popíšeme tyto modely podrobněji.
+Mikroskopický model a určení homogenizovaných parametrů EDZ budou diskutovány v následující kapitole.
+V této kapitole se zaměříme na možné makroskopické modely se zahrnutím plasticity a porušení materiálu.
+Nejprve popíšeme scénář a geometrii úlohy, následně stručně představíme hierarchii modelů se zvyšující se složitostí
+a v dalších kapitolách pak popíšeme tyto modely podrobněji.
 
 \subsection{Konceptuální model ražby}
-Uvažujeme válcovou oblast $\Omega$ sahající do vzdálenosti $R$ od osy vyříznutího úložného vrtu o poloměru $r$, délku oblasti označme $L$. Orientačnní rozměry jsou $R\approx 10m$, $r\approx 2m$, $L\approx 1m$. V případě homogenního materiálu lze využít symetrii vzhledem k posunutí podél osy vrtu a uvažovat výpočet pouze ve 2d řezu. Pro zahrnutí vlivu nehomogenit je nutný plný 3d výpočet. Na této oblasti uvažujeme následujícíc scénář:
+Uvažujeme válcovou oblast $\Omega$ sahající do vzdálenosti $R$ od osy vyříznutého úložného vrtu o poloměru $r$, délku oblasti označme $L$. Orientační rozměry jsou $R\approx 10\,\mathrm{m}$, $r\approx 2\,\mathrm{m}$, $L\approx 1\,\mathrm{m}$. V případě homogenního materiálu lze využít symetrii vzhledem k posunutí podél osy vrtu a uvažovat výpočet pouze ve 2D řezu. Pro zahrnutí vlivu nehomogenit je nutný plný 3D výpočet. Na této oblasti uvažujeme následující scénář:
 
 \begin{enumerate}
 \item {\bf Počáteční stav.} Počáteční tenzor napětí $\sigma_0$, viz kapitola \ref{sec:sigma0}, nulové posunutí, hydrostatický tlak.
                        
-\item {\bf Po vyražení.} Na stěně vrtu změna okrajové podmínky z nulového posunutí na nulovou tečnou sílu a 
-                         atmosférický tlak. Vnější okrajová podmínka nulové posunutí, hydrostatický tlak.
-                         Nutno uvažovat nelineární mechaniku a modely poškození v blízkosti tunelu.                    
+\item {\bf Po vyražení.} Na stěně vrtu se změní okrajová podmínka z nulového posunutí na nulovou tečnou sílu a 
+                         atmosférický tlak. Vnější okrajová podmínka představuje nulové posunutí, hydrostatický tlak.
+                         Je nutné uvažovat nelineární mechanický model a modely poškození v blízkosti tunelu.                    
                          
-\item {\bf Po zatopení.} Změna okrajové podmínky na stěně vrtu na hydrostatický tlak, případně tlak bentonitu. 
-                        Menší změna, lze uvažovat jednodušší mechanický model.
+\item {\bf Po zatopení.} Na stěně vrtu se změní okrajová podmínka na hydrostatický tlak, případně tlak bentonitu. 
+                        Jedná se o menší změnu, lze tedy uvažovat jednodušší mechanický model.
 \end{enumerate}
-Výsledkem makroskopického modelu má být rozložení napětí a deformace po ražbě a po zatopení. Pro výpočet budou použity 
+
+Výsledkem makroskopického modelu bude rozložení napětí a deformace po ražbě a po zatopení. Pro výpočet budou použity 
 parametry konstitutivních vztahů určené pomocí mikro modelu, viz kapitola \ref{sec:micro_EDZ}. 
 
-
 Vlivem přítomnosti podzemní vody a relativně malé hydraulické vodivosti krystalických hornin dochází k redistribuci napětí 
-postupně v horiznotu asi jednoho roku. To je z hlediska stanovení vlastností EDZ po zatopení zanedbatelé a je tedy možné uvažovat 
-pouze stacionární hydro-mechanickou úlohu. Nicméně plný hydro-mechanický model relaxace napětí lze pro stanovení vlastností EDZ (viz kapitola \ref{sec:experiment}).
+postupně v horizontu asi jednoho roku. To je z hlediska stanovení vlastností EDZ po zatopení zanedbatelné a je tedy možné uvažovat 
+pouze stacionární hydro-mechanickou úlohu. Nicméně plný hydro-mechanický model relaxace napětí lze použít pro stanovení vlastností EDZ (viz kapitola \ref{sec:experiment}).
 
 
 
@@ -333,31 +333,31 @@ pouze stacionární hydro-mechanickou úlohu. Nicméně plný hydro-mechanický 
 
 \subsection{Přehled kontinuálních modelů} 
 
-Pro výpočet poškození hornin je vhodné uvažovat hierarchii modelů \cite{Blaheta2013a}, se zvětšující se složitostí a také různou potřebou vstupních parametrů:
+Pro výpočet poškození hornin je vhodné uvažovat hierarchii modelů se zvětšující se složitostí, viz \cite{Blaheta2013a}, a také různou potřebou vstupních parametrů:
 \begin{enumerate}[(i)]
 	\item \label{mod_elast} {\bf Elastický model.} Elastický výpočet napětí a deformací a následně indikace, kde dochází k porušení materiálu podle vhodného pevnostního kritéria.
 	\item \label{mod_plast} {\bf Plastický model.} Výpočet napětí a deformací za předpokladu, že nemůže dojít ke stavům za mezí platnosti vhodného pevnostního kritéria (plastické modely). Lze uvažovat procesy s postupným zatěžováním a monotónní odezvou (deformační teorie plasticity) i modely se zatěžováním a odlehčováním a trvalými (plastickými) deformacemi,
-	\item \label{mod_damage} {\bf CDM} (continuum damage mechanics). Výpočet napětí a deformací za předpokladu, že nemůže dojít ke stavům za mezí platnosti vhodného pevnostního kritéria a zároveň dochází k oslabení (porušování -  damage) materiálu. V případě samotné damage mechanics se neuvažují nevratné deformace.
-	\item \label{mod_irev_cdm} {\bf Kombinované modely.} V praxi existuje řada kombinací výše uvedených modelů. Jednak lze uvažovat kombinaci plasticity a damage mechanics, která uvažuje jak oslabení, tak i trvalé deformace. Existuje však také mnoho ad-hoc přístupů, které uvažují postupné oslabování materiálových konstant, viz např. \cite{Perras2016}, \cite{Carranza-Torres1999}.
+	\item \label{mod_damage} {\bf CDM -- Continuum Damage Mechanics}. Výpočet napětí a deformací za předpokladu, že nemůže dojít ke stavům za mezí platnosti vhodného pevnostního kritéria a zároveň dochází k oslabení (porušování --  damage) materiálu. V případě samotné Damage Mechanics se neuvažují nevratné deformace.
+	\item \label{mod_irev_cdm} {\bf Kombinované modely.} V praxi existuje řada kombinací výše uvedených modelů. Jednak lze uvažovat kombinaci plasticity a Damage Mechanics, která uvažuje jak oslabení, tak i trvalé deformace. Existuje však také mnoho ad-hoc přístupů, které uvažují postupné oslabování materiálových konstant, viz např. \cite{Perras2016}, \cite{Carranza-Torres1999}.
 \end{enumerate}
 U modelů \eqref{mod_elast} a \eqref{mod_plast} máme většinou řadu informací o existenci a jednoznačnosti
-řešení, o stabilitě, tedy spojité závislosti řešení na vstupních datech, o chybě vznikající  při  diskretizaci  úloh  a  pod.  Složitější je porozumění  modelům CDM, pro které existuje závislost diskretizovaných  modelů na  síti, nejednoznačnost řešení  apod. Proto jsou navrženy CDM modely s regularizací nebo s nelokální definicí deformací a napětí.
+řešení, o stabilitě, tedy spojité závislosti řešení na vstupních datech, o chybě vznikající  při  diskretizaci  úloh  atd.  Složitější je porozumění  modelům CDM, pro které existuje závislost diskretizovaných  modelů na  síti, nejednoznačnost řešení  apod. Proto jsou navrženy CDM modely s regularizací nebo s nelokální definicí deformací a napětí. \pe{v posledni vete vubec netusim, co si podtim predstavit, je to i bez reference. Mimochodem "jsou navrzeny" jako kym a kde?}
 
 
 
 \subsection{Elastický model}
 
-Základním modelem pro výpočet napětí a deformací je lineární elasticita s tenzorem malých deformací a Cauchyovým tenzorem napětí, která je popsána trojicí posunutí $\vc u$, deformace $\eps$ a napětí $\sigma$ a vzájemnými vztahy, které platí ve výpočetní oblasti $\Omega$:
+Základním modelem pro výpočet napětí a deformací je lineární elasticita s tenzorem malých deformací a Cauchyovým tenzorem napětí, která je popsána trojicí veličin: posunutí $\vc u$, deformace $\eps$ a napětí $\sigma$, a jejich vzájemnými vztahy, které platí ve výpočetní oblasti $\Omega$:
 \begin{align*}
 	- \div(\sigma) &= \vc f &\mbox{v} \ \Omega, \\
 	\sigma &= \tn C : \eps + \sigma_0 + p\tn I  &\mbox{v} \ \Omega, \\
 	\eps(\vc u) &= (\nabla \vc u + (\nabla \vc u)^\T &\mbox{v} \ \Omega.
 \end{align*}
 Výše, $\vc f$ vyjadřuje hustotu objemových sil, $\tn C$ je elastický tenzor pružnosti, $\sigma_0$ je počáteční napětí a $p$ pórový tlak vody. 
-Dále na hranici $\partial \Omega$ musíme zadat vhodné okrajové podmínky. --
+Dále na hranici $\partial \Omega$ musíme zadat vhodné okrajové podmínky.
 
-V uvedené formulaci jsou kompresní deformace a normálová napětí v tlaku záporná (mechanická konvence). 
-Hlavní napětí (vlastní čísla $\sigma$) pak ozačíme $\sigma_3 \geq \sigma_2 \geq \sigma_1$.
+V uvedené formulaci jsou kompresní deformace a normálová napětí v tlaku záporné (mechanická konvence). 
+Hlavní napětí (vlastní čísla $\sigma$) pak označíme $\sigma_3 \geq \sigma_2 \geq \sigma_1$.
 Pro popis pevnostních veličin se ale v geotechnice užívá opačná konvence, kdy normálová napětí v tlaku jsou kladná (geomechanická konvence).
 Potom budeme uvažovat hlavní napětí $\sigma_3 \leq \sigma_2 \leq \sigma_1$, kde $\sigma_1$ je největší hlavní napětí, které je obvykle kladné v tlaku.
 
@@ -368,7 +368,7 @@ $$
 	F_s = F_s(\sigma, \varepsilon) \leq 0.
 $$
 Kritérii často používanými v mechanice hornin jsou Mohrovo-Coulombovo a  Hoekovo-Brownovo  kritérium, viz např. 
-\cite{Desai1984}, \cite{Goel2011}, \cite{Zang2010} a \cite{Brady2006}. Tato kritéria nyní popíšeme za předpokladu isotropní horniny.
+\cite{Desai1984}, \cite{Goel2011}, \cite{Zang2010} a \cite{Brady2006}. Tato kritéria nyní popíšeme za předpokladu izotropní horniny.
 \begin{itemize}
 	\item Mohrovo-Coulombovo kritérium
 		$$
@@ -391,8 +391,8 @@ Kritérii často používanými v mechanice hornin jsou Mohrovo-Coulombovo a  Ho
 		$$
 			q_{cmass} = \sigma_c = \frac{2c \cos \phi}{1-\sin \phi}, \quad \sigma_t = \frac{2c \cos \phi}{1+ \sin \phi}.
 		$$
-		Další možností je vyjádření kritéria ne pomocí hlavních napětí, ale pomocí invariantů napětí. Viz např. \cite{Desai1984}.
-	\item Mohrovo-Coulombovo kritérium bývá také doplněno podmínkou žádného či částečného nepřipuštění tahových napětí, tension cut-off.
+		Další možností je vyjádření kritéria nikoli pomocí hlavních napětí, ale pomocí invariantů napětí. Viz např. \cite{Desai1984}.
+	\item Mohrovo-Coulombovo kritérium bývá také doplněno podmínkou žádného či částečného nepřipuštění tahových napětí (tension cut-off).
 	\item Hoekovo-Brownovo kritérium je možno považovat za zobecnění Mohrova-Coulombova kritéria. Toto zobecnění bylo určeno empiricky a zohledňuje kvalitu hornin s 						uvažováním jednoosé pevnosti v tlaku (UCS) pro neporušenou horninu $q_c$ na jedné straně, ale parametry charakterizující kvalitu (porušenost) hornin, na straně druhé. 					Kritérium má tvar
 		$$
 			F(\sigma,x)=(\sigma_1 - \sigma_3 ) - q_c \left[m_b \frac{\sigma_3}{q_c} + s \right]^a ,
@@ -425,12 +425,12 @@ Kritérii často používanými v mechanice hornin jsou Mohrovo-Coulombovo a  Ho
 	\alert{kde $\psi$ úhel dilatace (dilation angle), viz \cite{Neto2011}. Poznamenejme, že pro $\phi = \psi$ platí $\partial g_p/\partial \sigma = \partial f_p/\partial \sigma$, a tedy se jedná o asociovaný model. Dále, plastické kritérium $f_p(\sigma)\leq0$ je ekvivalentní s výše uvedeným kritériem, což odvodíme přenásobením funkce
 	$F(\sigma, x) = (\sigma_1 - \sigma_3) - \frac{2c\cos \phi}{1-\sin \phi} - \frac{2\sin \phi}{1-\sin \phi} \sigma_3$ výrazem $\frac{1}{2}(1 - \sin \phi)$.}
 	\item Místo Mohrovy-Coulombovy plasticity lze také použít Druckerův-Pragerův model, jehož popis i vztah k parametrům Mohrovy-Coulombovy plasticity lze najít v \cite{Neto2011}. 
-	\item Plasticita, vycházející z Hoekova-Brownova kritéria je málo obvyklá, ale možná. Viz např. \cite{Carranza-Torres1999}.
+	\item Plasticita vycházející z Hoekova-Brownova kritéria je málo obvyklá, ale možná. Viz např. \cite{Carranza-Torres1999}.
 \end{itemize}
 
 
 \subsection{Modely s poškozením}
-Samotné modely plasticity neuvažují oslabení materiálu při křehkém porušení. K tomu účelu můžeme zavést parametr oslabení (damage parametr) $\omega\in[0,1]$, kde $\omega = 1$ odpovídá neporušenému materiálu a $\omega = 0$ znamená zcela porušený materiál. Nejjednodušší kombinace elasticity a porušení by potom využívala vztahy
+Samotné modely plasticity neuvažují oslabení materiálu při křehkém porušení. K tomu účelu můžeme zavést parametr oslabení (damage parameter) $\omega\in[0,1]$, kde $\omega = 1$ odpovídá neporušenému materiálu a $\omega = 0$ znamená zcela porušený materiál. Nejjednodušší kombinace elasticity a porušení by potom využívala vztahy
 \begin{table}[h!]
 	\centering
 	\begin{tabular}{ll}
@@ -449,11 +449,12 @@ $$
 	\overline{\varepsilon}(\varepsilon) = (\langle\varepsilon_1\rangle^2+\langle\varepsilon_2\rangle^2+\langle\varepsilon_3\rangle^2)^{1/2},
 $$
 kde $\langle\varepsilon_i\rangle$ značí absolutní hodnotu tahových hlavních deformací, deformace v
-tlaku se neuvažují. Všimněme si souvislosti s pevnostními kritérii využívajícími deformace, přehled lze nalézt v (Kwasniewski, Takahashi 2010). Parametr porušení se vyvíjí v závislosti na zavedené ekvivalentní tahové deformaci. Funkci $g$ můžeme volit exponenciálně s adaptací na diskretizační parametr.
+tlaku se neuvažují. Všimněme si souvislosti s pevnostními kritérii využívajícími deformace, přehled lze nalézt v~\cite{kwasniewski_strain_based_2010}.
+Parametr porušení se vyvíjí v závislosti na zavedené ekvivalentní tahové deformaci. Funkci $g$ můžeme volit exponenciálně s adaptací na diskretizační parametr.
 
-Modelování porušení (Continuum Damage Mechanics) je poměrně složité, viz např. \cite{Lemaitre1992}, \cite{Neto2011}. Proto pouze zmíníme některé složitější podrobnosti:
+Modelování porušení CDM je poměrně složité, viz např. \cite{Lemaitre1992}, \cite{Neto2011}. Proto pouze zmíníme některé složitější podrobnosti:
 \begin{itemize}
-	\item porušení nemusí být isotropní a může být také odlišné pro namáhání v tlaku a tahu,
+	\item porušení nemusí být izotropní a může být také odlišné pro namáhání v tlaku a tahu,
 	\item v reálných případech se při porušení objevují trvalé deformace, takže
 	použijeme opět dělení deformací $\varepsilon=\varepsilon^e + \varepsilon^p$, $\overline{\sigma} = C : \varepsilon^e$, $\sigma = (1-\omega)\overline{\sigma} = C : \varepsilon^e$. Navíc propojíme růst poškození s přírůstkem plastické deformace, $\dot{\kappa} = \|\dot{\varepsilon}^p\|^2 = \dot{\varepsilon}^p : \dot{\varepsilon}^p$.
 	\item modely poškození je nutné stabilizovat pro zamezení závislosti na diskretizaci.
@@ -467,7 +468,7 @@ Modelování porušení (Continuum Damage Mechanics) je poměrně složité, viz
 Počáteční napětí výrazně ovlivňuje výsledné napěťové pole a tím i charakter EDZ.
 V horninovém masívu s elastickým chováním a s Poissonovou konstantou $\nu$, v hloubce $h$ a s průměrnou hustotou nadložních hornin $\rho_{r}$ a v případě,
 že na horniny nepůsobí jiné vlivy než váha hornin, je počáteční napětí $\sigma_0$
-popsáno halvními napětími ve směrech souřadného systému $(\sigma_x, \sigma_y, \sigma_z)$ určenými vztahem
+popsáno hlavními napětími ve směrech souřadného systému $(\sigma_x, \sigma_y, \sigma_z)$ určenými vztahem
 \begin{equation}
 	\sigma_z = h\,\rho_{r}\, g, \quad \sigma_x = \sigma_y = \frac{\nu}{1-\nu} \sigma_z,
 \end{equation}
@@ -481,7 +482,7 @@ $$
 $$
 viz \cite{Rutqvist2009}. V tomto případě musíme počítat i se smykovými napětími. Počáteční napětí může být velmi proměnné i v rámci jedné lokality, zvláště pokud je navíc ovlivněna více podzemními díly, viz příklad laboratoře GRIMSEL ve Švýcarsku, viz \cite{Krietsch2019},
 \cite{Stas2016}, \cite{Rutqvist2004}. Pro studium EDZ je proto vhodné uvažovat výpočty pro různé hodnoty počátečního napětí.
-Poznamenejme  ještě, že počáteční napětí $\sigma_0$, může být určeno přímým měřením nebo měřením poloh referenčních bodů 
+Poznamenejme  ještě, že počáteční napětí $\sigma_0$ může být určeno přímým měřením nebo měřením poloh referenčních bodů 
 a výpočtem pomocí inverzní analýzy, viz \cite{Malik2021}.
 
 \todo{Heterogenita, nejistoty v tenzorových polích.}
@@ -533,7 +534,7 @@ Změny porozity $\theta$ vůči počáteční porozitě $\theta_0$ jsou dány st
    \label{eq:porozity_deformation}
    \theta = \frac{\theta_0 + tr(\epsilon)}{1 + tr(\epsilon)}.
 \end{equation}
-Tímto dostáváme jednoduchý vztah pro závislost permeability a porozity na deformaci. Pro EDZ je tento přístup nedostatečný kvůli anisotropii
+Tímto dostáváme jednoduchý vztah pro závislost permeability a porozity na deformaci. Pro EDZ je tento přístup nedostatečný kvůli anizotropii
 puklin a nelineární mechanice, t.j.  porušení vztahu \eqref{eq:porozity_deformation}.
 
 Pro systém paralelních rovinných puklin s jednotkovou normálou $\vc n$, rozevřením $d$ $[m]$ a vzdáleností $D$ $[m]$
@@ -739,7 +740,7 @@ Změny v EDZ jsou HM proces a mhou tedy probíhat déle v závislosti na hydraul
 \label{sec:parameters}
 
 Tato kapitola shrnuje měřící techniky, které mohou poskytnout přímou nebo nepřímou informaci 
-o fyzikálních vlastnostech EDZ. Zejména nás zajímá charakterizace permeability, puklinových statistik a porozity. Ale i mechanické parametry: modul pružnosti, Poissonovo číslo, anisotropie elastického tensoru,  parametry plasticity ...
+o fyzikálních vlastnostech EDZ. Zejména nás zajímá charakterizace permeability, puklinových statistik a porozity. Ale i mechanické parametry: modul pružnosti, Poissonovo číslo, anizotropie elastického tensoru,  parametry plasticity ...
 Převážně založeno na Vavro (2016) \cite{Vavro2016} a doplněno o méně obvyklá měření.
 
 
@@ -800,7 +801,7 @@ Možná měření na průzkumných vrtech:
 
 {\bf Aoyagi and Ishii al. (2018)} \cite{Aoyagi2018}: horní odhad hydraulické vodivosti v EDZ (laboratoř Horonobe, Japonsko) na základě MSI (Mean Stress Index). Model porovnán s měřením z různých metod: průměrné charakteristiky horniny z různých měření, vizuální identifikace puklin v konkrétních vrtech (rozevření nad 0,1 mm), klasifikace puklin v jádrech, měření mechanických posunutí v chodbě, tlakové zkoušky.
 
-{\bf Armand et al. (2014)} \cite{Armand2014}: Charakterizace indukované sítě puklin v EDZ v laboratoři URL (Bure, Francie). Použité metody: 3d sken jader, analýza puklin na jádrech, seismická měření, hydraulické testy a injektáž pryskyřice ve vrtech. 
+{\bf Armand et al. (2014)} \cite{Armand2014}: Charakterizace indukované sítě puklin v EDZ v laboratoři URL (Bure, Francie). Použité metody: 3D sken jader, analýza puklin na jádrech, seismická měření, hydraulické testy a injektáž pryskyřice ve vrtech. 
 
 {\bf Bláha et al. (2017)} \cite{SURAO_184/2014}: přehled geofyzikálních měření na PVP Bukov.
 Podrobná zpráva o ERT a seismických měřeních na PVP Bukov, interpretace s předpokládanou hranicí zóny poškození, resp. zóny ovlivnění.  
