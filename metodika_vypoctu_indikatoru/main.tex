@@ -139,11 +139,11 @@ parametrů modelů. Závěrečná kapitola \ref{sec:experiment} stručně navrhu
 
 Smyslem definice indikátorů bezpečnosti EDZ je kvantifikovat bezpečnost jednotlivých úložných pozic z hlediska 
 transportu kontaminace od bentonitového těsnění do širší geologické bariéry. Ta je ovlivněna jednak hydraulickými vlastnostmi
-vzniklé EDZ (viz. sekce \ref{sec:vznik_EDZ}) a dále interakcí s preexistujícími poruchami. 
+vzniklé EDZ (v kapitole \ref{sec:model_EDZ}) a dále interakcí s preexistujícími poruchami. 
 Navrhované indikátory jsou proto založeny na modelu transportu skrze blízké okolí jednoho úložného vrtu. 
-Nejprve popíšeme geometrii modelu (Sekce  \ref{sec:transport_geometrie}), model proudění (Sekce \ref{sec:tranport_flow})
-a model transportu konzervativního stopovče (Sekce \ref{sec:stopovac}). Jádrem kapitoly je návrh indikátorů bezpečnosti (Sekce \ref{sec:indikátory}). 
-V záveru pak shrneme parametry modelů, možné způsoby jejich identifikace a příslušné zdroje nejistot.
+Nejprve popíšeme geometrii modelu (kapitola  \ref{sec:transport_geometrie}), model proudění (kapitola \ref{sec:transport_flow})
+a model transportu konzervativního stopovče (kapitola \ref{sec:stopovac}). Jádrem této části je návrh indikátorů bezpečnosti (kapitola \ref{sec:indikatory}). 
+V poslední kapitole \ref{sec:nejistoty} pak shrneme parametry modelů, možné způsoby jejich identifikace a příslušné zdroje nejistot.
 
 
 %možné pozitivní vlivy EDZ na bezpečnost \cite{Lanyon2011}: hydraulic cage, sorption surface on new fractures, 
@@ -152,12 +152,12 @@ V záveru pak shrneme parametry modelů, možné způsoby jejich identifikace a 
 \subsection{Geometrie}
 \label{sec:transport_geometrie}
  Pro jednoduchost uvažujeme pouze systém horizontálního ukládání dle pracovního dokumentu SÚRAO \uv{Profily jednotlivých chodeb HÚ}, příloha A. 
- Geometrie transportního modelu bude zahrnovat úložné pozice v jednoho úložného vrtu o předpokládané délce 300 metrů. 
+ Geometrie transportního modelu bude zahrnovat úložné pozice v jednom vrtu o předpokládané délce 300 metrů. 
  Dále jsou uvažovány  struktury, které mohou představovat preferenční cesty do výrazných geologických poruch v okolí úložiště. 
  Konkrétně jsou do geometrie modelu zahrnuty bezprostředně sousedící úložné vrty a hlavní překop. Vzdálenější vrty budou případně 
- uvažovány pouze jako kontinuum s efektivní anizotropní hydraulickou vodivostí zahrnující vliv EDZ. 
-Ještě nevyražené chodby jsou konzervativně předpokládány v plné délce. Do geometrie budou zahrnuty též významné známé pukliny 
-(geologické poruchy) a dále náhodné neznámé pukliny dle předpokládaných rozdělení puklin.
+ uvažovány pouze jako kontinuum s anizotropní efektivní hydraulickou vodivostí zahrnující vliv EDZ. 
+Ještě nevyražené chodby jsou konzervativně předpokládány v plné délce. Do geometrie budou zahrnuty též významné pukliny 
+(známé geologické poruchy) a dále náhodné neznámé pukliny dle předpokládaných statistických rozdělení puklin.
 
 % TODO: zahrnout do plánu prací úpravu algoritmů pro generování puklin aby zahrnuly známé pukliny.
 
@@ -168,21 +168,23 @@ Vzhledem k velmi malým vodivostem je uvažován model nasyceného stacionární
     \div(\vc v) = 0, \quad \vc q = -\tn K \grad (h + z)
 \]
 kde $\vc q$ je rychlostní pole $[m/s]$, $h$ je tlaková výška $[m]$. Tenzor hydraulické vodivosti $\tn K =\frac{\kappa \rho g}{\nu}$
- $[m/s]$ je pro tekutinu s hustotou $\rho$ $[kg\, m^{-3}]$ a vizkozitou $\nu$ $[s^-1]$ vztažen k permeabilitě $\kappa$ $[m^2]$, která již je dána pouze strukturou horniny.
+ $[m/s]$ je pro tekutinu s hustotou $\rho$ $[kg\, m^{-3}]$ a vizkozitou $\nu$ $[s^-1]$ vztažen k permeabilitě $\kappa$ $[m^2]$, která je již dána pouze strukturou horniny.
 
-Vnitřní stěny díla budou uvažovány jako nepropustné s předpokladem výplně s řádově menší vodivostí. 
+Vnitřní stěny díla budou uvažovány jako nepropustné, předpokládá se výplň s řádově menší vodivostí. 
 Proudění je řízeno Dirichletovou okrajovou podmínkou na vnější části hranice, kde pole piezometrické výšky $H = h + z$ 
-bude interpolováno z výsledků regionálního modelu. Bude využit regionální model z paralelního projektu Geotran.
-Bude využit model se zahrnutím diskrétních puklin (\cite{brezina_analysis_2015}, \cite{flow123d}), to umožňuje popsat EDZ buďto jako 2D plochu nebo pomocí 
-tenké vrstvy 3D elementů. V druhém případě lze popsat významnou změnu vodivosti se vzdáleností od stěny díla.
-Vodivost na EDZ bude určena pomocí modelů vzniku EDZ (kapitoly \ref{sec:model_EDZ} a \ref{sec:micro_EDZ}) 
+bude interpolováno z výsledků regionálního modelu. Bude použit regionální model z paralelního projektu Geotran.
+
+Pro řešení problému proudění bude použit dimenzionálně redukovaný model se zahrnutím diskrétních puklin (\cite{brezina_analysis_2015}, \cite{flow123d}),
+což umožňuje popsat EDZ buďto jako 2D plochu nebo jako tenkou vrstvu 3D elementů.
+V druhém případě lze popsat významnou změnu hydraulické vodivosti se vzdáleností od stěny díla.
+Vodivost v EDZ bude určena pomocí modelů vzniku EDZ (kapitoly \ref{sec:model_EDZ} a \ref{sec:micro_EDZ}) 
 a na základě vodivosti neporušené horniny.
 
 
 
 \subsection{Model transportu}
 \label{sec:stopovac}
-Pro vypočtené rychlostní pole $\vc q$ bude uvažována úloha transportu konzervatiního stopovače (bez sorpce do horniny a rozpadů) 
+Pro vypočtené rychlostní pole $\vc q$ bude uvažována úloha transportu konzervatiního stopovače (bez zahrnutí sorpce do horniny a radioaktivních rozpadů) 
 se zahrnutím difúze a disperze. Časový vývoj koncentrace $c$ $[kg\, m^{-3}]$ je popsán rovnicí:
 \[
    \prtl_t (\theta c) + \div( \vc q c - \theta \tn D \grad c) = 0,
@@ -206,17 +208,21 @@ transportu na okraj oblasti v horizontu $10^3$ až $10^5$ let.
 
 
 \subsection{Indikátory bezpečnosti}
+\label{sec:indikatory}
 Na základě vypočteného časového pole koncentrace $c_p(t, \vc x)$ chceme nyní zavést vhodné odvozené veličiny jako indikátory bezpečnosti 
-jedné úložné pozice $p$. Podstatný přenos kontamintu do širší geologické bariéry bude probíhat podél významných geologických poruch, 
-kde je největší konvekce. Lze předpokládat, že tento bod bude odpovídat místu maximální koncentrace na vnější hranici transportního modelu. 
-Dále proto budeme uvažovat indikátor jako veličinu odvozenou od funkce:
+konkrétní úložné pozice $p$. Podstatný přenos kontaminantu z EDZ do širší geologické bariéry bude probíhat podél významných geologických poruch, 
+kde je pravděpodobná vyšší konvekce. 
+\pe{Lze předpokládat, že tato místa budou odpovídat místům na vnější hranici transportního modelu s vysokou koncentrací stopovače. 
+Dále proto budeme uvažovat indikátor ve vybraném bodě s nejvyšší koncetrací, tedy jako veličinu odvozenou od funkce:}
+
+\pe{trochu jsem to upravil, asi tuším, ale není to srozumitelné: je $C_p$ opravdu indikátor, nebo je jím až $I_1$?}
 \[
   C_p(t) = \max_{\vc x} c_p(t, \vc x).
 \]
 
-Přirozenou volbou pak je indikátor daný maximem přes čas:
+Přirozenou volbou pak je indikátor daný maximem v čase:
 \begin{equation}
-    I_1(p) = C_p^{max} = \max_{t\in(0, T)} C_p(t).
+    I_1(p) = C_p^{max} = \max_{t\in[0, T]} C_p(t).
 \end{equation}
 Tato veličina však nemusí být vhodná vzhledem k dalším difúzním procesům při transportu geologickou bariérou.
 Průběh $C_p(t)$ s krátkým pulzem a velkým $C_p^{max}$ může vést na nižší maximální koncentraci na povrchu než v případě konstantního průběhu $C_p(t)$ s menším  $C_p^{max}$. Navrhujeme tedy uvažovat zjednodušený jednorozměrný model transportu geologickou bariérou:
@@ -225,29 +231,32 @@ Průběh $C_p(t)$ s krátkým pulzem a velkým $C_p^{max}$ může vést na niž�
     R\partial_t c + v \partial_x c - d \partial^2_x c = - \lambda c,
 \end{equation}
 kde $c(t,x)$ je koncentrace rozpuštěné látky, $R$ je retardační faktor zahrnující vliv sorpce a difúze do matrice, $v$ je průměrná Darcyovská rychlost, $d$ je difúzní koeficient (zahrnující též disperzi) a $\lambda$ je koeficient rozpadu zahrnující jednak radioaktivní rozpad, zejména však ředění nekontaminovanou vodou. Ačkoliv uvedené parametry mají fyzikální význam, dobré shody s plným modelem lze dosáhnout obvykle až nafitováním 1D modelu pomocí plného modelu.
-Předpokládáme řešení na časovém intervalu  $[0, T)$, s nulovou počáteční podmínku $c(t=0, x) = 0$ a na prostorovém intervalu $[0, \infty)$ se zadaným 
+Předpokládáme řešení na časovém intervalu  $[0, T]$, s nulovou počáteční podmínku $c(t=0, x) = 0$ a na prostorovém intervalu $[0, \infty)$ se zadaným 
 průběhem koncentrace v počátku $c(t, x=0) = c_0(t)$ a nulovým gradientem v nekonečnu.
 Vzhledem k lineárnímu charakteru rovnice lze řešení úlohy v závislosti na $c_0(t)$ zapsat ve tvaru konvoluce
 \begin{equation}
     C_1(t, x) = \int_{0}^\infty c_0(s) g(t - s, x) ds,
 \end{equation}
-s  vhodným jádrem $g(t, x)$, viz. příloha B. Pro pevně zvolené parametry $R, v, d, \lambda$ pak definovat indikátor:
+s  vhodným jádrem $g(t, x)$, viz příloha B. Pro pevně určené parametry $R, v, d, \lambda$ pak definujeme indikátor:
 \begin{equation}
-    I_2(p) =  \max_{t\in(0, T)} C_1(t, x=L)
+    I_2(p) =  \max_{t\in[0, T]} C_1(t, x=L)
 \end{equation}
-Tato hodnota je aproximací maximální koncentrace na povrchu
-při kombinaci jednorozměrného modelu \ref{eq:ad} pro transport geologickou bariérou a podrobného modelu transportu v části úložiště při uvažovaném úniku z úložného místa $p$. 
+\pe{$x=0$ značí tedy vstup do geo bariéry a $x=L$  místo na povrchu? (není přesně řečeno...)}
 
-Pro oba navržené indikátory bezpečnosti $I_1(p)$ a $I_2(p)$ je nutno určit určit práh při jehož překročení nebude pozice $p$ považována za bezpečnou. V případě indikátoru $I_2$ se prahová hodnota určí z vhodného modelu šíření  v biosféře, v případě $I_1$ je nutno prahovou hodnotu určit pomocí plného 3D nebo zjednodušeného 1D modelu transportu v geologické bariéře.
+Tato hodnota je aproximací maximální koncentrace na povrchu (\pe{$x=L$})
+při kombinaci jednorozměrného modelu \eqref{eq:ad} pro transport geologickou bariérou a podrobného modelu transportu v části úložiště při uvažovaném úniku z úložného místa $p$ (\pe{$x=0$}). 
+
+Pro oba navržené indikátory bezpečnosti $I_1(p)$ a $I_2(p)$ je nutno určit práh, při jehož překročení nebude pozice $p$ považována za bezpečnou. V případě indikátoru $I_2$ se prahová hodnota určí z vhodného modelu šíření  v biosféře, v případě $I_1$ je nutno prahovou hodnotu určit pomocí plného 3D modelu nebo zjednodušeného 1D modelu transportu v geologické bariéře.
 
 
 
 \subsection{Nejistoty v parametrech transportu}
+\label{sec:nejistoty}
 Případný zjednodušený model transportu geologickou bariérou v případě indikátoru $I_2$ slouží pouze pro lepší porovnání průběhu koncentrací a bude proto uvažován bez nejistot. Nejistoty uvažujeme pouze pro parametry lokálního modelu proudění a transportu:
 \begin{itemize}
  \item Bude uvažována nejistota o poloze a vlastnostech větších geologických poruch.
  \item Tenzor permeability bude uvažován jako náhodné korelované pole jehož parametry, zejména střední velikost a anisotropie budou 
- výsledkem modelu EDZ (viz. Sekce \ref{sec:micro_EDZ}).
+ výsledkem modelu EDZ (viz kapitola \ref{sec:micro_EDZ}).
  \item Porozita bude určena podobným způsobem a korelovaná s vodivostí ve smyslu vztahu Carman-Kožený, viz. \cite{Carrier2003}.
  \item Ostatní difúzní parametry $d_m$, $\alpha_L$, $\alpha_T$ budou uvažovány s nejistotami pouze v případě většího vlivu na výsledek.
  \item Předepsaná okrajová podmínka proudění bude zpočátku uvažována bez nejistot. Pro testování bude případně uvažována náhodná fluktuace tlakového pole. Pokud se v rámci projektu Endorse podaří zvládnout efektivní výpočet lokálního modelu proudění a transportu s nejistotami, lze následně uplatnit stejný přístup pro regionální model proudění a vzorkovat okrajovou podmínku pomocí stochastického regionálního modelu proudění.
@@ -299,7 +308,7 @@ a v dalších sekcích pak popíšeme tyto modely podrobněji.
 Uvažujeme válcovou oblast $\Omega$ sahající do vzdálenosti $R$ od osy vyříznutího úložného vrtu o poloměru $r$, délku oblasti označme $L$. Orientačnní rozměry jsou $R\approx 10m$, $r\approx 2m$, $L\approx 1m$. V případě homogenního materiálu lze využít symetrii vzhledem k posunutí podél osy vrtu a uvažovat výpočet pouze ve 2d řezu. Pro zahrnutí vlivu nehomogenit je nutný plný 3d výpočet. Na této oblasti uvažujeme následujícíc scénář:
 
 \begin{enumerate}
-\item {\bf Počáteční stav.} Počáteční tenzor napětí $\sigma_0$, viz. sekce \ref{sec:sigma0}, nulové posunutí, hydrostatický tlak.
+\item {\bf Počáteční stav.} Počáteční tenzor napětí $\sigma_0$, viz kapitola \ref{sec:sigma0}, nulové posunutí, hydrostatický tlak.
                        
 \item {\bf Po vyražení.} Na stěně vrtu změna okrajové podmínky z nulového posunutí na nulovou tečnou sílu a 
                          atmosférický tlak. Vnější okrajová podmínka nulové posunutí, hydrostatický tlak.
@@ -309,12 +318,12 @@ Uvažujeme válcovou oblast $\Omega$ sahající do vzdálenosti $R$ od osy vyř�
                         Menší změna, lze uvažovat jednodušší mechanický model.
 \end{enumerate}
 Výsledkem makroskopického modelu má být rozložení napětí a deformace po ražbě a po zatopení. Pro výpočet budou použity 
-parametry konstitutivních vztahů určené pomocí mikro modelu, viz. sekce \ref{sec:micro_EDZ}. 
+parametry konstitutivních vztahů určené pomocí mikro modelu, viz kapitola \ref{sec:micro_EDZ}. 
 
 
 Vlivem přítomnosti podzemní vody a relativně malé hydraulické vodivosti krystalických hornin dochází k redistribuci napětí 
 postupně v horiznotu asi jednoho roku. To je z hlediska stanovení vlastností EDZ po zatopení zanedbatelé a je tedy možné uvažovat 
-pouze stacionární hydro-mechanickou úlohu. Nicméně plný hydro-mechanický model relaxace napětí lze pro stanovení vlastností EDZ (viz. Sekce \ref{sec:experiment}).
+pouze stacionární hydro-mechanickou úlohu. Nicméně plný hydro-mechanický model relaxace napětí lze pro stanovení vlastností EDZ (viz kapitola \ref{sec:experiment}).
 
 
 
