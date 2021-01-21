@@ -28,6 +28,8 @@
 \def\jb#1{{\color{violet}#1}}
 \newcommand{\alert}[1]{{\color{red}#1}}
 
+\newcommand{\pe}[1]{{\color{orange} PE: #1}}
+
 \begin{document}
 
 \maketitle
@@ -35,19 +37,19 @@
 
 \section{Úvod}
 Bezpečnost plánovaného hlubinného úložiště vysoce aktivních jaderných odpadů je zajištěna 
-jednak inženýrskými bariérami (obalový soubor, bentonitové utěsnění) a dále geologickou bariérou 
+inženýrskými bariérami (obalový soubor, bentonitové utěsnění) a dále geologickou bariérou 
 – horninovým masivem. Pro konstrukci úložiště jsou v horninách raženy chodby, přičemž dochází 
 k narušení okolní horniny na vnitřním okraji geologické bariéry a vzniká tzv. zóna poškození 
 (EDZ - excavation damage zone). 
 Zejména v krystalických (křehkých) horninách vzniká síť nových (mikro) puklin, která zvyšuje 
 hydraulickou vodivost a může tvořit preferenční cesty podél 
-chodeb úložiště a dále skrze případné geologické poruchy k povrchu .
+chodeb úložiště a dále skrze případné geologické poruchy k povrchu.
 Důležitost EDZ je všeobecně
-akceptována (viz. \cite{Pusch2008}), a existuje řada experimentálních i teoretických prací, které se snaží o charakterizaci EDZ z hlediska mechanického poškození a návazných hydraulických vlastností, \cite{Vavro2016}.
+akceptována, viz. \cite{Pusch2008}, a existuje řada experimentálních i teoretických prací, které se snaží o charakterizaci EDZ z hlediska mechanického poškození a návazných hydraulických vlastností, \cite{Vavro2016}.
 
 Cílem projektu Endorse je vytvoření metodiky pro predikci odvozených veličin charakterizujících 
-bezpečnost EDZ, tzv. indikátorů bezpečnostních funkcí (dále jen jako indikátory bezpečnosti).
-Výpočet indikátorů bezpečnosti bude založen na modelu transportu skrze EDZ 
+bezpečnost EDZ, tzv. indikátorů bezpečnostních funkcí (dále jen indikátory bezpečnosti).
+Výpočet indikátorů bezpečnosti bude založen na modelu transportu skrze EDZ, 
 jehož parametry budou určeny pomocí modelu vzniku EDZ na jemnější prostorové škále. 
 Pro stanovení volných parametrů modelů budou na základě rešerše doporučeny vhodné experimentální a měřící metody.
 Budou studovány stochastické výpočetní metody pro aproximaci rozdělení pravděpodobnosti indikátorů
@@ -64,11 +66,12 @@ shrnuta základní rešerše zdrojů k dané problematice.
 
 
 
-Tato zpráva jednak definuje indikátory bezpečnosti EDZ včetně modelů, na kterých 
+V dokumentu jsou definovány indikátory bezpečnosti EDZ včetně modelů, na kterých 
 má být založen jejich výpočet. Pro navržené modely jsou popsány klíčové vstupní 
 parametry a je představena základní rešerše existujících měřících metod pro jejich
 stanovení. Ve spolupráci s aplikačním garantem pak předpokládáme upřesnění konkrétních experimentů
-a dat testování výsledků projektu. 
+a dat testování výsledků projektu. \pe{konci poslední věty nerozumím}
+
 
 \subsection{Koncept predikce indikátorů bezpečnosti EDZ}
 
@@ -85,7 +88,7 @@ při budování a provozování úložiště:
     \item \label{item_model1}
         Z měření jsou přímo nebo pomocí inverzních metod stanoveny parametry neporušené horniny.
         Parametry jsou popsány ve smyslu jejich rozdělení pravděpodobnosti, 
-        např. pomocí Bayesovké inverze. Pomocí software (výsledke projektu) je modelován vznik EDZ,
+        např. pomocí Bayesovké inverze. Pomocí software (výsledek projektu) je modelován vznik EDZ,
         příslušné hydraulické parametry a jsou vypočteny indikátory bezpečnosti včetně aproximace 
         jejich hustoty pravděpodobnosti.
     \item Na základě výsledků predikce indikátorů a dle expertního posouzení se určí počet bezpečných
@@ -116,14 +119,16 @@ použity výhradně neintruzivní metody, aby bylo možné využít existující
 
     
 \subsection{Struktura zprávy}
-Struktura zprávy zhruba odpovídá stavbě komplexního modelu, ale postupuje naopak od definice indikátorů bezpečnosti,
-přes model vzniku EDZ až problematice získávání dat z měření. 
+Struktura zprávy zhruba odpovídá stavbě komplexního modelu, ale postupuje naopak --- od definice indikátorů bezpečnosti,
+přes model vzniku EDZ až k problematice získávání dat z měření. 
 V kapitole \ref{sec:transport} je popsána koncepce modelu transportu v měřítku úložné chodby a 
 jsou definovány indikátory bezpečnosti jakožto veličiny odvozené z tohoto modelu. Je provedena elementární rozvaha ohledně 
 neurčitosti vstupních parametrů transportního modelu. Kapitola
 \ref{sec:model_EDZ} je věnována makroskopickému modelu mechaniky vzniku EDZ v měřítku jednoho úložného místa. 
 V kapitole \ref{sec:micro_EDZ} jsou navrženy postupy stanovení parametrů makroskopického modelu mechaniky a modelu transporu 
 na základě mikro modelu dějů na jemných puklinách.
+\pe{Kapitola \ref{sec:inverse_problems} charakterizuje inverzní úlohy a jejich řešení pomocí Bayesovkých metod 
+pro získání indikátorů bezpečnosti včetně jejich nejistot.}
 V kapitole \ref{sec:parameters} jsou popsána možná měření vhodná pro identifikaci 
 parametrů modelů. Závěrečná kapitola \ref{sec:experiment} stručně navrhuje experiment pro testování výsledků projektu Endorse.
 
@@ -704,7 +709,7 @@ ale pomocí numerické superpozice tenzorů, viz. \cite{Oda1986a}. Celý postup 
 
 
 \section{Inverzní úlohy a geofyzikální měření}
-
+\label{sec:inverse_problems}
 
 Jelikož cílem projektu je poskytnout predikci indikátorů bezpečnosti 
 včetně charakterizace nejistot, je třeba standardní inverzní metody při zpracování geofyzikálních a jiných dat nahradit Bayesovskými inverzními metodami. Bayesovský přístup bude nejprve aplikován samostatně na vybrané druhy dat, která umožní nejlépe identifikovat parametry transportního modelu a modelu EDZ. V této sekci jsou shrnuty práce věnované experimentální charakterizaci EDZ s využitím různých metod.
