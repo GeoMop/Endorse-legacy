@@ -18,6 +18,7 @@
 
 \def\abs#1{\lvert#1\rvert}
 \def\prtl{\partial}
+\def\unit#1{\mathrm{#1}}
 \def\eps{\varepsilon}
 \def\T{\intercal}
 \def\grad{\nabla}
@@ -61,7 +62,7 @@ v EDZ, odhadu citlivosti na parametry a~následně tak i optimalizaci měření 
 
 
 Tento pracovní dokument popisuje předběžný návrh metodiky a~přesněji definuje indikátory 
-bezpečnosti. Dále jsou vytipovány hlavní otevřené problémy, na které se musí projekt zaměřit a~je 
+bezpečnosti. Dále jsou vytipovány hlavní otevřené problémy, na které se musí projekt zaměřit, a~je 
 shrnuta základní rešerše zdrojů k dané problematice. 
 
 
@@ -79,7 +80,7 @@ a dat testování výsledků projektu. \pe{konci poslední věty nerozumím}
 
 
 Koncept predikce indikátorů bezpečnosti EDZ vychází z následujícího předpokládaného průběhu prací 
-při budování a~provozování úložiště:
+při budování a~provozování hlubinného úložiště:
 \begin{enumerate}
     \item Z hlavního překopu je proveden horizontální průzkumný vrt v~ose budoucí úložné chodby
         (vertikální ukládání) resp. úložného vrtu (horizontální ukládání).
@@ -166,14 +167,14 @@ Ještě nevyražené chodby jsou konzervativně předpokládány v~plné délce.
 \label{sec:transport_flow}
 Vzhledem k velmi malým vodivostem je uvažován model nasyceného stacionárního Darcyovského proudění:
 \[
-    \div(\vc v) = 0, \quad \vc q = -\tn K \grad (h + z)
+    \div(\vc v) = 0, \quad \vc q = -\tn K \grad (h + z),
 \]
-kde $\vc q$ je rychlostní pole $[m/s]$, $h$ je tlaková výška $[m]$. Tenzor hydraulické vodivosti $\tn K =\frac{\kappa \rho g}{\nu}$
- $[m/s]$ je pro tekutinu s~hustotou $\rho$ $[kg\, m^{-3}]$ a~viskozitou $\nu$ $[s^-1]$ vztažen k permeabilitě $\kappa$ $[m^2]$, která je již dána pouze strukturou horniny.
+kde $\vc q$ je rychlostní pole $[\unit{m\,s^{-1}}]$, $h$ je tlaková výška $[\unit{m}]$. Tenzor hydraulické vodivosti $\tn K =\frac{\kappa \rho g}{\nu}$
+ $[\unit{m\,s^{-1}}]$ je pro tekutinu s~hustotou $\rho$ $[\unit{kg\, m^{-3}}]$ a~viskozitou $\nu$ $[\unit{s^{-1}}]$ vztažen k permeabilitě $\kappa$ $[\unit{m^2}]$, která je již dána pouze strukturou horniny.
 
 Vnitřní stěny díla budou uvažovány jako nepropustné, předpokládá se výplň s~řádově menší vodivostí. 
 Proudění je řízeno Dirichletovou okrajovou podmínkou na vnější části hranice, kde pole piezometrické výšky $H = h + z$ 
-bude interpolováno z výsledků regionálního modelu. Bude použit regionální model z paralelního projektu Geotran.
+bude interpolováno z výsledků regionálního modelu. Bude použit regionální model z paralelně řešeného projektu Geotran.
 
 Pro řešení problému proudění bude použit dimenzionálně redukovaný model se zahrnutím diskrétních puklin (\cite{brezina_analysis_2015}, \cite{flow123d}),
 což umožňuje popsat EDZ buďto jako 2D plochu nebo jako tenkou vrstvu 3D elementů.
@@ -186,23 +187,23 @@ a na základě vodivosti neporušené horniny.
 \subsection{Model transportu}
 \label{sec:stopovac}
 Pro vypočtené rychlostní pole $\vc q$ bude uvažována úloha transportu konzervativního stopovače (bez zahrnutí sorpce do horniny a~radioaktivních rozpadů) 
-se zahrnutím difúze a~disperze. Časový vývoj koncentrace $c$ $[kg\, m^{-3}]$ je popsán rovnicí:
+se zahrnutím difúze a~disperze. Časový vývoj koncentrace $c$ $[\unit{kg\, m^{-3}}]$ je popsán rovnicí:
 \[
    \prtl_t (\theta c) + \div( \vc q c - \theta \tn D \grad c) = 0,
 \]
-kde $\theta$ je porozita $[-]$ a~$\tn D$ je tenzor hydrodynamické disperze $[m^2s^{-1}]$:
+kde $\theta$ je porozita $[-]$ a~$\tn D$ je tenzor hydrodynamické disperze $[\unit{m^2s^{-1}}]$:
 \[
   \tn D = \tau\tn D_m + \abs{\vc v}\Big(\alpha_T \tn I + (\alpha_L - \alpha_T)\frac{\vc v \otimes \vc v}{\abs{\vc v}^2}\Big).
 \]
 Parametry zde jsou:
 \begin{itemize}
- \item $\tn D_m = d_m \tn I$ tenzor molekulární difúze, pro jednoduchost uvažujeme izotropní s~difúzním koeficientem $d_m$ $[m^2s^{-1}]$, řádově $10^{-9}$ pro čistou vodu,
+ \item $\tn D_m = d_m \tn I$ tenzor molekulární difúze, pro jednoduchost uvažujeme izotropní s~difúzním koeficientem $d_m$ $[\unit{m^2s^{-1}}]$, řádově $10^{-9}$ pro čistou vodu,
  \item tortuozita $\tau=\theta^{1/3}$ $[-]$ dle \cite{millington_quirk},
- \item $\alpha_L$ a $\alpha_T$ $[m]$ koeficienty podélné a příčné disperze,
+ \item $\alpha_L$ a $\alpha_T$ $[\unit{m}]$ koeficienty podélné a příčné disperze,
  \item $\vc v$ je pórová rychlost $\vc v = \vc Q / \theta$.
 \end{itemize}
 
-V okolí zdrojové pozice bude uvažována časově závislá Neumannova okrajová podmínka $Q(t)$ $[kg\, s^{-1}m^{-2}]$
+V okolí zdrojové pozice bude uvažována časově závislá Neumannova okrajová podmínka $Q(t)$ $[\unit{kg\, s^{-1}m^{-2}}]$
 určená z modelů transportu bentonitovou obálkou. V závislosti na konkrétních vodivostech odhadujeme časy 
 transportu na okraj oblasti v~horizontu $10^3$ až $10^5$ let. 
 
@@ -269,8 +270,8 @@ Zjednodušený model transportu geologickou bariérou \eqref{eq:ad} v~případě
 \label{sec:model_EDZ}
 
 Přímým vlivem ražby a~následné změně okrajové podmínky na stěně díla dochází v~jeho okolí ke změně napěťových poměrů. To způsobuje změny rozevření 
-existující sítě puklin a~případně vzniku puklin nových. Důsledkem je pak změna mechanických vlastností a~zejména změna vodivosti a~
-porozity v~oblasti EDZ. K dalším změnám pak dochází po zatopení díla. Na rozdíl od volných chodeb, které mohou být utěsněny různými inženýrskými postupy (bentonit, beton), není možné EDZ v~rozsahu celého úložiště efektivně utěsnit a~představuje tak hlavní transportní cestu mezi zdrojem kontaminace 
+existující sítě puklin a~případně vzniku puklin nových. Důsledkem je pak změna mechanických vlastností a~zejména změna vodivosti
+a~porozity v~oblasti EDZ. K dalším změnám pak dochází po zatopení díla. Na rozdíl od volných chodeb, které mohou být utěsněny různými inženýrskými postupy (bentonit, beton), není možné EDZ v~rozsahu celého úložiště efektivně utěsnit a~představuje tak hlavní transportní cestu mezi zdrojem kontaminace 
 a případnými geologickými poruchami protínajícími chodby díla. 
 Cílem této a~následující kapitoly je navrhnout možné modely změn klíčových parametrů EDZ. To je zásadní pro stanovení parametrů EDZ po zatopení, ale
 umožní to i predikci parametrů EDZ před vlastní ražbou a~lepší identifikaci parametrů z měření po ražbě.
@@ -525,7 +526,7 @@ Pro porézní médium složené z částic (písek, štěrk) má poměrně širo
   \label{eq:Kozeny}
   \kappa = \frac{1}{C_{KC}a^2}\frac{e^3}{1+e},
 \end{equation}
-kde $C_{KC}$ $[-]$ je empirická konstanta, $a$  $[\mathrm{m}^{-1}]$ je specifický povrch částic na jednotkový objem a~$e$ $[-]$ je  ``void ratio'' --
+kde $C_{KC}$ $[-]$ je empirická konstanta, $a$  $[\mathrm{m}^{-1}]$ je specifický povrch částic na jednotkový objem a~$e$ $[-]$ je  \uv{void ratio} --
 poměr volného objemu ku objemu částic. Ten lze zapsat pomocí porozity:
 \[
    e = \frac{\theta}{1 - \theta}.
@@ -566,7 +567,7 @@ mocninný model:
   \kappa=\kappa_0 P^{-a_2},
 \]
 kde $a_1$ a $a_2$ jsou empirické konstanty a~$P=P_c - p$ je efektivní tlak pro kompresní tlak horniny $P_c$ a~proti působící tlak vody $p$.
-Pro vodivost puklin (transmisivitu) je základem kubický zákon, kde je jednak použito různě chápané ``hydraulické'' rozevření pukliny $d_h$ 
+Pro vodivost puklin (transmisivitu) je základem kubický zákon, kde je jednak použito různě chápané \uv{hydraulické} rozevření pukliny $d_h$ 
 a dále je prezentována celá řada vztahů pro závislost změny reálného rozevření $d$ na normálovém a~smykovém napětí. Například logaritmický vztah 
 podle \cite{Kohl1995} pro změnu rozevření pukliny
 \[
@@ -609,7 +610,7 @@ více nezávislých pozorování.
 
 Navrhujeme proto použít následující víceškálový přístup:
 \begin{itemize}
- \item Předpokládáme měření (deformace a~hydraulické vodivosti při zatížení) na laboratorních vzorcích o~rozměru $l=0.1\,\mathrm{m}$ obsahujících pukliny do velikosti $r=1\,\mathrm{cm}$.
+ \item Předpokládáme měření (deformace a~hydraulické vodivosti při zatížení) na laboratorních vzorcích o~rozměru $l=0.1\,\unit{m}$ obsahujících pukliny do velikosti $r=1\,\unit{cm}$.
  \item Uvažujeme oblast odpovídající laboratorním vzorkům (krychle o~straně $l$) se sítí náhodných puklin menších než $r$.
  \item Na oblasti řešíme úlohu s~elastickým kontinuem a~diskrétními puklinami s~explicitním popisem jejich kontaktů, tření a~rozevírání.
        Plasticita a~poškození by měly být postihnuty pomocí procesů na puklinách. Fitujeme parametry $P_f$ puklin (např. model tření nebo závislost vodivosti na rozevření) a~parametry kontinua. 
@@ -731,7 +732,7 @@ S ohledem na výslednou permeabilitu zavedeme vlastní rozčlenění EDZ na zák
     \item [Plastic zone] -- plastická (mikro trhliny)
     \item [Elasitic zone] -- nelineární elasticita (otevírání puklin)
 \end{description}
-Není jasné co je v~pracech myšleno pojmem "reverzibilní změny", jelikož i elasticky reverzibilní deformace jsou reálně ireverzibilní (nedojde k obnově původního napětí).
+Není jasné co je v~pracech myšleno pojmem \uv{reverzibilní změny}, jelikož i elasticky reverzibilní deformace jsou reálně ireverzibilní (nedojde k obnově původního napětí).
 
 
 
