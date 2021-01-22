@@ -61,7 +61,9 @@ Tento pracovní dokument popisuje předběžný návrh metodiky a přesněji def
 bezpečnosti. Dále jsou vytipovány hlavní otevřené problémy, na které se musí projekt zaměřit a je 
 shrnuta základní rešerše zdrojů k dané problematice. 
 
-
+\jb{Vymezení pojmu EDZ pro zprávu.}
+\jb{Saturované vs. nesaturované proudění}
+\jb{vymezení uvažovaných vlivů na EDZ již v úvodu ? Self-sealing je zdá se významný.}
 
 
 Tato zpráva jednak definuje indikátory bezpečnosti EDZ včetně modelů, na kterých 
@@ -241,14 +243,31 @@ Pro oba navržené indikátory bezpečnosti $I_1(p)$ a $I_2(p)$ je nutno určit 
 Případný zjednodušený model transportu geologickou bariérou v případě indikátoru $I_2$ slouží pouze pro lepší porovnání průběhu koncentrací a bude proto uvažován bez nejistot. Nejistoty uvažujeme pouze pro parametry lokálního modelu proudění a transportu:
 \begin{itemize}
  \item Bude uvažována nejistota o poloze a vlastnostech větších geologických poruch.
- \item Tenzor permeability bude uvažován jako náhodné korelované pole jehož parametry, zejména střední velikost a anisotropie budou 
+ \item Tenzor permeability $\kappa$ bude uvažován jako náhodné korelované pole jehož parametry, zejména střední velikost a anisotropie budou 
  výsledkem modelu EDZ (viz. Sekce \ref{sec:micro_EDZ}).
- \item Porozita bude určena podobným způsobem a korelovaná s vodivostí ve smyslu vztahu Carman-Kožený, viz. \cite{Carrier2003}.
+ \item Porozita $\theta$ bude určena podobným způsobem a korelovaná s vodivostí ve smyslu vztahu Carman-Kožený, viz. \cite{Carrier2003}.
  \item Ostatní difúzní parametry $d_m$, $\alpha_L$, $\alpha_T$ budou uvažovány s nejistotami pouze v případě většího vlivu na výsledek.
- \item Předepsaná okrajová podmínka proudění bude zpočátku uvažována bez nejistot. Pro testování bude případně uvažována náhodná fluktuace tlakového pole. Pokud se v rámci projektu Endorse podaří zvládnout efektivní výpočet lokálního modelu proudění a transportu s nejistotami, lze následně uplatnit stejný přístup pro regionální model proudění a vzorkovat okrajovou podmínku pomocí stochastického regionálního modelu proudění.
+ \item Předepsaná okrajová podmínka proudění $H(\vc x)$ bude zpočátku uvažována bez nejistot. Pro testování bude případně uvažována náhodná fluktuace tlakového pole. Pokud se v rámci projektu Endorse podaří zvládnout efektivní výpočet lokálního modelu proudění a transportu s nejistotami, lze následně uplatnit stejný přístup pro regionální model proudění a vzorkovat okrajovou podmínku pomocí stochastického regionálního modelu proudění.
  \item Zdrojový člen $Q(t)$ bude uvažován jako časově závislá veličina bez neurčitosti, jelikož 
  je nezávislý na vlastnostech EDZ a cílem výsledných indikátorů je specificky charakterizace bezpečnosti EDZ.
 \end{itemize}
+
+\subsection{Puklinové sítě}
+Náhodná puklina $f$ je určena: velikostí $r_f$, rozevřením $\delta_f$, poměrem stran $a_f$, orientací normály $\alpha_f$, $\beta_f$, otočením okolo normály $\gamma_f$ a polohou $x$, $y$, $z$. Rozdělení velikosti je obvykle uvažováno s hustotou:
+\[
+   f(r) \propto r^{-k},
+\]
+kde $k = 3$ (ve 3d) odpovídá perfektní soběpodobnosti hustoty puklin při změně měřítka. Rozevření je obvykle korelováno s velikostí pukliny, viz. \cite{Olson2003},
+a dále významě ovlivněno mechanikou (viz. sekce \ref{sec:micro_EDZ}. Pro natočení v prostoru se obvykle používá Fisherovo rozdělení (\cite{Fisher1993}) parametrizované střední hodnotou $\alpha_0$, $\beta_0$ a disperzí $d>0$ nebo odvozené smíšené rozdělení. 
+Rotaci okolo normály lze volit uniformní stejně jako rozdělení polohy. Posledním parametrem je hustota puklin daná například pomocí parametru  $P_{32}$
+udávající střední hodnotu celkové plochy puklin na jednotkový objem. Pukliny jsou pak generovány pomocí Poisonova procesu. Novější přístup
+ \cite{Maillot2014} zohledňuje mechanismy vzniku puklin.
+
+Pro případ izotropní a perfektně sobepodobné puklinové sítě vystačíme pouze s parametrem $P_{32}$. Reálná statistická data jsou obvykle aproximována jako sjednocení více populací puklin s parametry 
+$k$, $\alpha_0$, $\beta_0$, $d$, $P_{32}$.
+
+Uvedené parametry stochastického puklinového modelu lze poměrně dobře stanovit pomocí mapování puklin na vrtech nebo na povrchu díla (viz. sekce \ref{sec:mapovani_puklin}. 
+V prvním případě můžeme získat statistiky pro neporušenou horninu ve druhém případě dostáváme statistiky pro nejvíce porušenou část EDZ.
 
 \section{Makro model vzniku EDZ}
 \label{sec:model_EDZ}
@@ -339,11 +358,23 @@ Základním modelem pro výpočet napětí a deformací je lineární elasticita
 	\sigma &= \tn C : \eps + \sigma_0 + p\tn I  &\mbox{v} \ \Omega, \\
 	\eps(\vc u) &= (\nabla \vc u + (\nabla \vc u)^\T &\mbox{v} \ \Omega.
 \end{align*}
-Výše, $\vc f$ vyjadřuje hustotu objemových sil, $\tn C$ je elastický tenzor pružnosti, $\sigma_0$ je počáteční napětí a $p$ pórový tlak vody. 
-Dále na hranici $\partial \Omega$ musíme zadat vhodné okrajové podmínky. --
+Výše, $\vc f$ vyjadřuje hustotu objemových sil (dále neuvažujeme), $\sigma_0$ je počáteční napětí a $p$ pórový tlak vody. 
+Klíčový konstitutivní parametr elastický tenzor pružnosti $\tn C$ má pro izotropní materiály tvar:
+\[
+    \tn C_{ijkl} = 2\mu\delta_{il}\delta_{jk}+\lambda\delta_{lk}\delta_{ij}  
+\]
+kde Lamého parametry 
+\[
+  \lambda = \frac{E\nu}{(1+\nu)(1-2\nu)},\quad \mu=\frac{E}{2(1+\nu)}
+\]
+ jsou dány Youngovým modulem $E$ $[Pa]$ a Poissonovým číslem $\nu$ $[-]$.
+
+
+
+Dále na hranici $\partial \Omega$ musíme zadat vhodné okrajové podmínky. 
 
 V uvedené formulaci jsou kompresní deformace a normálová napětí v tlaku záporná (mechanická konvence). 
-Hlavní napětí (vlastní čísla $\sigma$) pak ozačíme $\sigma_3 \geq \sigma_2 \geq \sigma_1$.
+Hlavní napětí (vlastní čísla tenzoru $\sigma$) pak ozačíme $\sigma_3 \geq \sigma_2 \geq \sigma_1$.
 Pro popis pevnostních veličin se ale v geotechnice užívá opačná konvence, kdy normálová napětí v tlaku jsou kladná (geomechanická konvence).
 Potom budeme uvažovat hlavní napětí $\sigma_3 \leq \sigma_2 \leq \sigma_1$, kde $\sigma_1$ je největší hlavní napětí, které je obvykle kladné v tlaku.
 
@@ -470,17 +501,25 @@ viz \cite{Rutqvist2009}. V tomto případě musíme počítat i se smykovými na
 Poznamenejme  ještě, že počáteční napětí $\sigma_0$, může být určeno přímým měřením nebo měřením poloh referenčních bodů 
 a výpočtem pomocí inverzní analýzy, viz. \cite{Malik2021}.
 
-\todo{Heterogenita, nejistoty v tenzorových polích.}
+Počáteční napětí je klíčový parametr a je nutné jej uvažovat jako náhodnou veličinu se zahrnutím 
+chyby měření (např. v \cite{Herget1973} okolo 10\%). V rámci oblasti $\Omega$ s rozměry do 10m není patrně nutné uvažovat prostorovou 
+závislost $\sigma_0$ a to ani změnu s hloubkou (pro hloubku okolo 500m bude vliv hloubky do 2\% což je pod úrovní chyby měření).
 
 
 \subsubsection{Konstitutivní vztahy}
+Za předpokladu isotropní horniny, bude uvažován modul pružnosti $E$  jako korelované náhodné pole 
+a Poissonovo číslo $\nu$ jako (homogenní) náhodná veličina. Generování korelovaných polí pro případ 
+anisotropní horniny je popsán v \cite{Tang2018}.
 
+Pro plastické modely je třeba zadat další parametry, např. Hoek-Brownovo kritérium obsahuje parametry:
+$\sigma_c$, $m$, $s$, $a$. Jednoosá pevnost v tlaku $\sigma_c$ je patrně ovlivněna nehomogenitami horniny a bude proto vhodné 
+ji modelovat jako  korelované náhodné pole. Ostatní parametry chrakterizují typ a porušení horniny. Lze uvažovat jako pevné konstanty
+a volit dle prací: \cite{Martin1999}, \cite{Hajiabdolmajid2002}, \cite{Hoek2002} s ohledem na konrétní charakterizaci horniny.
 
+V případě použití modelů s poškozením bude nutné spcifikovat vhodné konstitutivní vztahy další rešerší. 
 
-\todo{Měření na laboratorních intaktních vzorcích vs. měření in-situ a inverzní metody.}
-
-
-
+Při použití víceškálového přístupu, viz. sekce \ref{\label{sec:mikroskala}, lze uvažovat parametry jako skalární náhodné veličiny a
+prostorovou nehomogenitu popsat pouze náhodnou sítí puklin.
 
 
 
@@ -703,69 +742,89 @@ ale pomocí numerické superpozice tenzorů, viz. \cite{Oda1986a}. Celý postup 
 % Mechanické vlastnosti a permeabilita křehkých hornin, vztahy odvozené na základě sítě mikropuklin, zahrnut vliv propojenosti, porovnání s laboratorními experimenty. Asi nejblíže našemu záměru, netriviální formulace mechaniky pomocí mechanické entalpie a nejasné odvození.
 
 
-\section{Inverzní úlohy a geofyzikální měření}
+\section{Metody měření parametrů EDZ}
 
+Při využití navrženého víceúrovňového přístupu lze provést výpočty i pouze na základě laboratorních měření avšak měření in-situ budou
+nutná jednak pro validaci celého přístupu i konkrétního modelu a dále pro přesnější celkové nastavení modelu. Tato kapitola představuje
+rešerši existujících metod pro identifikaci vlastností EDZ, zejména: 
 
-Jelikož cílem projektu je poskytnout predikci indikátorů bezpečnosti 
-včetně charakterizace nejistot, je třeba standardní inverzní metody při zpracování geofyzikálních a jiných dat nahradit Bayesovskými inverzními metodami. Bayesovský přístup bude nejprve aplikován samostatně na vybrané druhy dat, která umožní nejlépe identifikovat parametry transportního modelu a modelu EDZ. V této sekci jsou shrnuty práce věnované experimentální charakterizaci EDZ s využitím různých metod.
-
-S ohledem na výslednou permeabilitu zavedeme vlastní rozčlenění EDZ na základě mechanických dějů:
 \begin{itemize}
-    \item [Damage zone] - dochází k tvorbě nových makroskopických puklin, poškození
-    \item [Plastic zone] - plastická (mikro trhliny)
-    \item [Elasitic zone] - non-linear elasticity (fracture openning)
+ \item {\df puklinová síť} - četnosti, orientace, velikost a rozevření puklin
+ \item {\bf mechanika} - modul pružnosti, poissonovo číslo, anisotropie, parametry plastických modelů
+ \item {\bf proudění} - permeabilita a porozita pro jednotlivé pukliny, pro EDZ, pro intaktní horninu
+ \item {\bf transport} - tortuozita, příčná a podélná disperzivita
 \end{itemize}
-Není jasné co je v pracech myšleno pojmem "reverzibilní změny", jelikož i elasticky reverzibilní deformace jsou reálně irreverzibilní (nedojde k obnově původního napětí).
+
+Rešerše vychází zejména ze rešeršních prací \cite{Vavro2016} a \cite{Lanyon2011} a jejich referencí. 
+Pozornosti také zasluhuje \cite{Chandler2002} kde je mimo jiné prezentována řada metod aplikovaných na EDZ v rámci experimentu TSX.
 
 
 
-Změny v EDZ jsou HM proces a mhou tedy probíhat déle v závislosti na hydraulické vodivosti. Pro vodivost 1e-9 je čas transport na vzdálenost 1m při tlakovém spádu 1m cca 31 let. Reálné relaxační časy budou výrazně kratší, ale určitě v řádu dnů nebo měsíců. 
+\subsection{Geologická charakterizace, mapování puklin}
+\label{sec:mapovani_puklin}
+\subsubsection{Mapování na vrtech}
+Před ražbou i po ní je možné provádět charakterizaci hornin a mapování puklin pomocí vrtů. 
+Při získání jader lze charakterizovat porušenost horniny pomocí vhodného indexu (např. RMR nebo GSI), 
+které lze využít k určení některých parametrů plastických modelů \cite{Hoek2002}. 
+Pro mapování puklin je vhodnější akustická (HiRAT) nebo optická (OPTV) karotáž. Získané snímky je možno 
+zpracovat strojově pro identifikaci puklin, \cite{Tammisto2002}, což může odstranit subjektivní vliv při manuálním zpracování.
+Mapování na vrtech považujeme za středně finančně náročné jelikož vrt lze použít k získání většího množství dat 
+a samotné mapování je poměrně nenáročné.
 
-\section{Identifikace parametrů}
-\label{sec:parameters}
+\subsubsection{Mapování na stěnách díla}
+po vyražení díla je možno províst geologickou charakterizaci včetně mapování puklin podobně jako pro vrty, 
+zde je podstatná metodika mapování, \cite{Bossart2002},  pro minimalizaci subjektivních vlivů. 
+V případ ražby odstřelem je možné využít laserové 3d skenování pro kvantitativní hodnocení 
+nadvýlomů a dalších charakteristik kvality ražby \cite{Hudson2009a}. 
+Mapování na stěnách díla je technicky nenáročné, ale vyžaduje pečlivou metodiku a může být časově náročné.
 
-Tato kapitola shrnuje měřící techniky, které mohou poskytnout přímou nebo nepřímou informaci 
-o fyzikálních vlastnostech EDZ. Zejména nás zajímá charakterizace permeability, puklinových statistik a porozity. Ale i mechanické parametry: modul pružnosti, Poissonovo číslo, anisotropie elastického tensoru,  parametry plasticity ...
-Převážně založeno na Vavro (2016) \cite{Vavro2016} a doplněno o méně obvyklá měření.
+Pro získání parametrů statistického modelu (sekce \ref{sec:dfn}) je nutno zohlednit výběrový efekt 
+mapovaných vrtů a mapovacích technik, viz. \cite{Zetterlund2012}, \cite{Torabi2011}. Mapování na vrtech je 
+
+\subsubsection{Injektáž pryskyřicemi}
+Pro lepší identifikaci puklin včetně jejich konektivity je možno do úzkého vrtu pod tlakem aplikovat 
+pryskyřici s přídavkem fluoresceinu. Po vytvrdnutí (cca 3 týdny) je vzorek odvrtán širším průměrem a jádro je pozorováno pod UV světlem.
+Pryskyřice zajistí soudržnost jádra a flourescein umožní velmi dobrou vizualizaci puklinové sítě, \cite{Bossart2002}, \cite{Lanyon2011}
+Metoda je poměrně náročná technicky i časově.
 
 
-Možná měření na průzkumných vrtech:
-    \begin{itemize}
-        \item optická a ultrazvuková karotáž - identifikace protnutých geologických poruch;
-        \item elektrická odporová tomografie vůči sousední paralelní chodbě
-        \item seismika vůči sousední paralelní chodbě;
-        \item tlakové zkoušky v různých úsecích vrtu.
-    \end{itemize}
+\subsection{Geofyzikální měření}
+Geofyzikální měření jsou atraktivní kvůli neinvazivní charakterizaci horniny
+avšak jsou z principu metodami nepřímými, kdy výsledná (prostorová) charakterizace
+horniny je výsledkem inverzní úlohy. Jsou poměrně levné, avšak nelze je obvykle použít k identifikaci 
+hodnot parametrů horniny, spíše k popisu heterogenit a rozhraní. Měření je obvykle možno provádět na stěnách díla nebo 
+vrtu, nebo mezi více vrty (tomografie).
 
+\subsubsection{Zvukové metody}
+Existuje množství metod využívající šíření mechanického vlnění (zvuku) v hornině. Zde popíšeme tři metody použité v \cite{Chandler2002}.
+{\bf Refrakční seismika} umožňuje detekovat rozhraní mezi porušenou vrstvou s nižší vlnovou rychlostí a neporušenou vrstvou s výšší vlnovou rychlostí. Vzruch je vybuzený kladívkem nebo náloží a zaznamenán řadou geofonů. 
+Pozice vzruchu i geofonů musí být přesně známy. Z relativních časů příchodu vzruchu lze vypočíst pozici rozhraní.
+
+{\bf MVP} (microvelocity probe) používá sinusový zdroj a pouze několi geofonů v malých vzdálenostech na sondě zavedené do vrtu. 
+Dobř definovaný zdrojový signál a jednoduchá geometrie umožňuje získat (pseudo) mechanické parametry: Youngův modul a Poisonovo číslo, viz. \cite{Shao2008}. Nepřímo lze také charakterizovat porušení horniny v okolí vrtu.
+
+{\bf Mini-CHARTS} Opět je využit periodický zdroj na slyšitelných i blízkých ultrazvukových frekvencích ale geofony jsou v dalším vrtu ve vzdálenostech až 60m (metoda Mini-CHARTS). Pro různé polohy zdroje a snímače je získáno množství dat umožňujících provést plnou tomografii mezilehlého prostoru.
+
+{\bf  Akustické emise} Sada citlivých geofonů je trvale instalována a kontinuálně snímá přirozené mikroseismické události. Časy příchodu umožnují prostorovou lokalizaci událostí. Z jejich rozložení lze usuzovat na rozsah EDZ.
+
+\subsubsection{Odporová tomografie}
+Na množině elektrod umístěných na stěnách díla nebo ve vrtech je mezi jednu dvojici elektrod přiveden proud a zároveň je na jiné dvojici měřen rozdíl napětí. Toto uspořádání do značné míry eliminuje vliv přechodových odporů na elektrodách a inverzní metodou lze získat prostorové rozložení odporu horniny. Tento odpor lze pak orientačně vztáhnout například k obsahu vody v hornině, \cite{Kull2002}.
+
+\subsubsection{Georadar}
+Umožňuje detekovat rozhraní s výraznou změnou elektrické vodivosti. Pro detekci hranice EDZ nepříliš pozitivní zkušenosti.
+
+\subsection{Hydraulická měření}
+    
+  
 {\bf MWD (Measure While Drilling)} \cite{JeroenvanEldert2018}
 
-{\bf GPR (Ground Penetrating Radar)} 
-
-{\bf ERT (Electrical resistence tomography)}
-
-
-{\bf Seismicity}
 
 {\bf  Borehole Core Drilling and Logging} \cite{Lanyon2011}
-
-{\bf Mapping of the Excavation Surfaces} \cite{Lanyon2011}
-
-{\bf  Resin Injection and Overcoring} \cite{Lanyon2011}
-
-{\bf  Sonic and Ultrasonic Measurements} \cite{Lanyon2011}
-{\bf  Acoustic Emission} \cite{Lanyon2011}
-
-{\bf  Resistivity/Geo-electrical Measurements} \cite{Lanyon2011}
-
-{\bf  Radar Measurements} \cite{Lanyon2011}
-
-{\bf  Hydraulic Characterization} \cite{Lanyon2011}
 
 {\bf  Geomechanical Characterization} \cite{Lanyon2011}
 
 {\bf  Geochemical Characterization} \cite{Lanyon2011}
 
-{\bf MVP - microvelocity probe} \cite{Rutqvist2009} 
 {\bf SEPPI - a permeability measurement} \cite{Rutqvist2009} 
 
 
