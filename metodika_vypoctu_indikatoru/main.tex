@@ -1,7 +1,9 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
-\usepackage{pdfpages} 
 \usepackage[czech]{babel}
+\usepackage[T1]{fontenc}      % T1 kodovani fontu pro babel cestinu
+
+\usepackage{pdfpages} 
 \usepackage{amsmath,amsfonts,amssymb}
 \usepackage{enumerate}
 
@@ -10,11 +12,12 @@
 \bibliographystyle{plainnat}
 \setcitestyle{authoryear}
 
-\usepackage[colorlinks=true]{hyperref}
+\usepackage[unicode, colorlinks=true]{hyperref}
 
 \title{Koncept predikce bezpečnostních indikátorů EDZ}
 \author{Radim Blaheta, Jan Březina}
 \date{2020}
+
 
 \def\abs#1{\lvert#1\rvert}
 \def\prtl{\partial}
@@ -33,6 +36,8 @@
 \newcommand{\alert}[1]{#1}
 
 \newcommand{\pe}[1]{{\color{orange} PE: #1}}
+\newcommand{\js}[1]{{\color{blue} JS: #1}}
+\newcommand{\sy}[1]{{\color{blue} SS: #1}}
 
 \begin{document}
 
@@ -41,7 +46,7 @@
 
 \section{Úvod}
 Bezpečnost plánovaného hlubinného úložiště vysoce aktivních jaderných odpadů je zajištěna 
-inženýrskými bariérami (obalový soubor, bentonitové utěsnění) a~dále geologickou bariérou 
+inženýrskými bariérami (obalový soubor, bentonitové utěsnění) a dále geologickou bariérou 
 – horninovým masivem. Pro konstrukci úložiště jsou v~horninách raženy chodby, přičemž dochází 
 k narušení okolní horniny na vnitřním okraji geologické bariéry a~vzniká tzv. zóna poškození 
 (EDZ - Excavation Damage Zone). 
@@ -80,7 +85,7 @@ shrnuta základní rešerše zdrojů k dané problematice.
 V dokumentu jsou definovány indikátory bezpečnosti EDZ včetně modelů, na kterých 
 má být založen jejich výpočet. Pro navržené modely jsou popsány klíčové vstupní 
 parametry a~je představena základní rešerše existujících měřících metod pro jejich
-stanovení. Ve spolupráci s~aplikačním garantem pak předpokládáme upřesnění 
+stanovení. Ve spolupráci s~aplikačním garantem pak proběhne upřesnění 
 experimentů pro validaci metody predikce indikátorů, která bude výstupem projektu.  
 
 
@@ -175,11 +180,11 @@ Ještě nevyražené chodby jsou konzervativně předpokládány v~plné délce.
 \label{sec:transport_flow}
 Vzhledem k velmi malým vodivostem je uvažován model nasyceného stacionárního Darcyovského proudění:
 \[
-    \div(\vc v) = 0, \quad \vc q = -\tn K \grad (h + z),
+    \div(\vc q) = 0, \quad \vc q = -\tn K \grad (h + z),
 \]
 kde $\vc q$ je rychlostní pole $[\unit{m\,s^{-1}}]$, $h$ je tlaková výška $[\unit{m}]$. Tenzor hydraulické vodivosti $\tn K =\frac{\kappa \rho g}{\nu}$
- $[\unit{m\,s^{-1}}]$ je pro tekutinu s~hustotou $\rho$ $[\unit{kg\, m^{-3}}]$ a~viskozitou $\nu$ $[\unit{s^{-1}}]$ vztažen k permeabilitě $\kappa$ $[\unit{m^2}]$, která je již dána pouze strukturou horniny.
-
+ $[\unit{m\,s^{-1}}]$ je pro tekutinu s~hustotou $\rho$ $[\unit{kg\, m^{-3}}]$ a~viskozitou $\nu$ $[\unit{s^{-1}}]$ vztažen k tenzoru permeability $\kappa$ $[\unit{m^2}]$, která je již dána pouze strukturou horniny.
+ 
 Vnitřní stěny díla budou uvažovány jako nepropustné, předpokládá se výplň s~řádově menší vodivostí. 
 Proudění je řízeno Dirichletovou okrajovou podmínkou na vnější části hranice, kde pole piezometrické výšky $H = h + z$ 
 bude interpolováno z výsledků regionálního modelu. Bude použit regionální model z paralelně řešeného projektu Geotran.
@@ -208,7 +213,7 @@ Parametry zde jsou:
  \item $\tn D_m = d_m \tn I$ tenzor molekulární difúze, pro jednoduchost uvažujeme izotropní s~difúzním koeficientem $d_m$ $[\unit{m^2s^{-1}}]$, řádově $10^{-9}$ pro čistou vodu,
  \item tortuozita $\tau=\theta^{1/3}$ $[-]$ dle \cite{millington_quirk},
  \item $\alpha_L$ a $\alpha_T$ $[\unit{m}]$ koeficienty podélné a příčné disperze,
- \item $\vc v$ je pórová rychlost $\vc v = \vc Q / \theta$.
+ \item $\vc v$ je pórová rychlost $\vc v = \vc q / \theta$.
 \end{itemize}
 
 V okolí zdrojové pozice bude uvažována časově závislá Neumannova okrajová podmínka $Q(t)$ $[\unit{kg\, s^{-1}m^{-2}}]$
@@ -219,8 +224,7 @@ transportu na okraj oblasti v~horizontu $10^3$ až $10^5$ let.
 
 \subsection{Indikátory bezpečnosti}
 \label{sec:indikatory}
-Na základě vypočteného časového pole koncentrace $c_p(t, \vc x)$ chceme nyní zavést vhodné odvozené veličiny jako indikátory bezpečnosti 
-konkrétní úložné pozice $p$. Podstatný přenos kontaminantu z EDZ do širší geologické bariéry bude probíhat podél významných geologických poruch. 
+Na základě časového pole koncentrace $c_p(t, \vc x)$ vypočteného modelem transportu v EDZ chceme nyní zavést vhodné odvozené veličiny jako indikátory bezpečnosti konkrétní úložné pozice $p$. Podstatný přenos kontaminantu z EDZ do širší geologické bariéry bude probíhat podél významných geologických poruch. 
 Lze předpokládat, že tato místa budou odpovídat místům na vnější hranici transportního modelu s~vysokou koncentrací stopovače. 
 Dále proto budeme uvažovat indikátor ve vybraném bodě s~nejvyšší koncentrací, tedy jako veličinu odvozenou od funkce:
 \[
@@ -231,14 +235,18 @@ Přirozenou volbou pak je indikátor daný maximem v~čase:
 \begin{equation}
     I_1(p)  = \max_{t\in[0, T]} C_p(t).
 \end{equation}
-Tato veličina však nemusí být vhodná vzhledem k dalším difúzním procesům při transportu geologickou bariérou.
+Tato veličina však nemusí být vhodná vzhledem k dalším difúzním procesům při transportu geologickou bariérou (regionální model).
 Průběh $C_p(t)$ s~krátkým pulzem a~velkým $I_1(p)$ může vést na nižší maximální koncentraci na povrchu než v~případě konstantního průběhu $C_p(t)$ s~menším  $I_1(p)$. Navrhujeme tedy uvažovat zjednodušený jednorozměrný model transportu geologickou bariérou:
 \begin{equation}
     \label{eq:ad}
     R\partial_t c + v \partial_x c - d \partial^2_x c = - \lambda c,
 \end{equation}
-kde $c(t,x)$ je koncentrace rozpuštěné látky, $R$ je retardační faktor zahrnující vliv sorpce a~difúze do matrice, $v$ je průměrná Darcyovská rychlost, $d$ je difúzní koeficient (zahrnující též disperzi) a~$\lambda$ je koeficient rozpadu zahrnující jednak radioaktivní rozpad, zejména však ředění nekontaminovanou vodou. Ačkoliv uvedené parametry mají fyzikální význam, dobré shody s~plným modelem lze dosáhnout obvykle až nafitováním 1D modelu pomocí plného modelu. Jelikož plánované úložiště má nezanedbatelný horizontální rozměr, bude vhodné parametry $R,\ v,\ d,\ \lambda$ určit 
+kde $c(t,x)$ je koncentrace rozpuštěné látky, $R$ je retardační faktor zahrnující vliv sorpce a~difúze do matrice, $v$ je průměrná Darcyovská rychlost, $d$ je difúzní koeficient (zahrnující též disperzi) a~$\lambda$ je koeficient rozpadu zahrnující jednak radioaktivní rozpad, zejména však ředění nekontaminovanou vodou. Ačkoliv uvedené parametry mají fyzikální význam, dobré shody s~plným modelem lze dosáhnout obvykle až nafitováním 1D modelu pomocí plného regionálního modelu. Jelikož plánované úložiště má nezanedbatelný horizontální rozměr, bude vhodné parametry $R,\ v,\ d,\ \lambda$ určit 
 oděleně pro různá místa úložiště. 
+
+
+\sy{Nedovedu si moc predstavit geometrii 3D modelu a uz vubec ne jeho 1D redukci.}
+\jb{TODO: Někam zařadit obrázkové schéma modelů na různých škálách a co si ty modely předávají.}
 
 Předpokládáme řešení na časovém intervalu  $[0, T]$, s~nulovou počáteční podmínku $c(t=0, x) = 0$ a~na prostorovém intervalu $[0, \infty)$ se zadaným 
 průběhem koncentrace v~počátku $c(t, x=0) = c_0(t)$ a~nulovým gradientem v~nekonečnu. Zde počátek, $x=0$ odpovídá rozhraní lokálního modelu a geologické bariéry a bod $x=L$ odpovídá povrchu.
@@ -282,12 +290,12 @@ Náhodná puklina $f$ je určena: velikostí $r_f$, rozevřením $\delta_f$, pom
    f(r) \propto r^{-k},
 \]
 kde $k = 3$ (ve 3d) odpovídá perfektní soběpodobnosti hustoty puklin při změně měřítka. Rozevření je obvykle korelováno s velikostí pukliny, viz. \cite{Olson2003},
-a dále významě ovlivněno mechanikou (viz. sekce \ref{sec:micro_EDZ}. Pro natočení v prostoru se obvykle používá Fisherovo rozdělení (\cite{Fisher1993}) parametrizované střední hodnotou $\alpha_0$, $\beta_0$ a disperzí $d>0$ nebo odvozené smíšené rozdělení. 
+a dále významně ovlivněno mechanikou (viz. sekce \ref{sec:micro_EDZ}. Pro natočení v prostoru se obvykle používá Fisherovo rozdělení (\cite{Fisher1993}) parametrizované střední hodnotou $\alpha_0$, $\beta_0$ a disperzí $d>0$ nebo odvozené smíšené rozdělení. 
 Rotaci okolo normály lze volit uniformní stejně jako rozdělení polohy. Posledním parametrem je hustota puklin daná například pomocí parametru  $P_{32}$
-udávající střední hodnotu celkové plochy puklin na jednotkový objem. Pukliny jsou pak generovány pomocí Poisonova procesu. Novější přístup
+udávající střední hodnotu celkové plochy puklin na jednotkový objem. Pukliny jsou pak generovány pomocí Poissonova procesu. Novější přístup
  \cite{Maillot2014} zohledňuje mechanismy vzniku puklin.
 
-Pro případ izotropní a perfektně sobepodobné puklinové sítě vystačíme pouze s parametrem $P_{32}$. Reálná statistická data jsou obvykle aproximována jako sjednocení více populací puklin s parametry 
+Pro případ izotropní a perfektně soběpodobné puklinové sítě vystačíme pouze s parametrem $P_{32}$. Reálná statistická data jsou obvykle aproximována jako sjednocení více populací puklin s parametry 
 $k$, $\alpha_0$, $\beta_0$, $d$, $P_{32}$.
 
 Uvedené parametry stochastického puklinového modelu lze poměrně dobře stanovit pomocí mapování puklin na vrtech nebo na povrchu díla (viz. sekce \ref{sec:mapovani_puklin}. 
@@ -298,7 +306,8 @@ V prvním případě můžeme získat statistiky pro neporušenou horninu ve dru
 
 Přímým vlivem ražby a~následné změně okrajové podmínky na stěně díla dochází v~jeho okolí ke změně napěťových poměrů. To způsobuje změny rozevření 
 existující sítě puklin a~případně vzniku puklin nových. Důsledkem je pak změna mechanických vlastností a~zejména změna vodivosti
-a~porozity v~oblasti EDZ. K dalším změnám pak dochází po zatopení díla. Na rozdíl od volných chodeb, které mohou být utěsněny různými inženýrskými postupy (bentonit, beton), není možné EDZ v~rozsahu celého úložiště efektivně utěsnit a~představuje tak hlavní transportní cestu mezi zdrojem kontaminace 
+a~porozity v~oblasti EDZ. K dalším změnám pak dochází v dlouhodobém horizontu po uzavření úložiště a zatopení díla.
+Na rozdíl od volných chodeb, které mohou být utěsněny různými inženýrskými postupy (bentonit, beton), není možné EDZ v~rozsahu celého úložiště efektivně utěsnit a~představuje tak hlavní transportní cestu mezi zdrojem kontaminace 
 a případnými geologickými poruchami protínajícími chodby díla. 
 Cílem této a~následující kapitoly je navrhnout možné modely změn klíčových parametrů EDZ. To je zásadní pro stanovení parametrů EDZ po zatopení, ale
 umožní to i predikci parametrů EDZ před vlastní ražbou a~lepší identifikaci parametrů z měření po ražbě.
@@ -308,11 +317,12 @@ které je založeno na plastickém modelu, konkrétně na Hoekovu-Brownovu krit�
 \begin{description}
 \item[CDZ -- Construction Damage Zone.] Zóna poškození vlivem ražby. Lze omezit přizpůsobením technologie ražby.
 \item[HDZ -- High Damage Zone.] Zóna s~propojenými makro puklinami. 
-\item[IDZ -- Inner Excavation Damage Zone.] Vnitřní zóna s~nevratným poškozením (plastické změny), obsahuje propojené mikropukliny.
-\item[ODZ -- Outer Excavation Damage Zone.] Vnější zóna s~nevratným poškozením (plastické změny), obsahuje jednotlivé mikropukliny.
+\item[IDZ -- Inner excavation Damage Zone.] Vnitřní zóna s~nevratným poškozením (plastické změny), obsahuje propojené mikropukliny.
+\item[ODZ -- Outer excavation Damage Zone.] Vnější zóna s~nevratným poškozením (plastické změny), obsahuje jednotlivé mikropukliny.
 \item[EIZ -- Excavation Influence Zone.] Zóna s~elastickými, vratnými změnami.
 \end{description}
 
+% \js{Pojmenování zón IDZ,ODZ nekoresponduje s obrázkem \ref{fig:edz_zones}, kde je použit 2x tentýž symbol EIZ!}
 
 \begin{figure}
     \centering
@@ -340,11 +350,18 @@ Uvažujeme válcovou oblast $\Omega$ sahající do vzdálenosti $R$ od osy vyř�
 \item {\bf Počáteční stav.} Počáteční tenzor napětí $\sigma_0$, viz kapitola \ref{sec:sigma0}, nulové posunutí, hydrostatický tlak.
                        
 \item {\bf Po vyražení.} Na stěně vrtu se změní okrajová podmínka z nulového posunutí na nulovou tečnou sílu
-                         a~atmosférický tlak. Vnější okrajová podmínka představuje nulové posunutí, hydrostatický tlak.
-                         Je nutné uvažovat nelineární mechanický model a~modely poškození v~blízkosti tunelu.                    
+                         a~atmosférický tlak. Vnější okrajová podmínka v dostatečné vzdálenosti předepisuje nulové posunutí, hydrostatický tlak.
+                         Je nutné uvažovat nelineární mechanický model a~modely poškození v~blízkosti tunelu. 
                          
-\item {\bf Po zatopení.} Na stěně vrtu se změní okrajová podmínka na hydrostatický tlak, případně tlak bentonitu. 
-                        Jedná se o~menší změnu, lze tedy uvažovat jednodušší mechanický model.
+% \sy{Myslím, že je zde nezbytné uvažovat následující kombinaci modelů. 1. Na velké geometrii použijeme lineární pružnost a vypočítáme napěťový stav. 2. Na základě výsledků lineární pružnosti sestavíme menší 2D nebo 3D geometrii s detailem tunelu a na této menší geometrii pak aplikujeme vhodný nelineární model,  viz \cite{Blaheta2013a}.}        
+% \jb{Rozumím, můj návrh je asi příliš zjednodušující. Je zde také otázka vlivu ostatních chodeb.
+% Zatím bych tím nekomplikoval srozumitelnost textu, ale je nutné to uvážit.}
+
+                         
+\item {\bf Po zatopení.} Na stěně vrtu se změní okrajová podmínka na hydrostatický tlak, případně tlak bentonitu. Jedná se o~menší změnu, lze tedy uvažovat jednodušší mechanický model. Další vlivy pro jednoduchost neuvažujeme, viz. \ref{sec:micro_EDZ}.
+                        
+% \sy{Mechanické poškození EDZ může ještě zvýšit šíření tepla od vyhořelého paliva, viz \cite{Blaheta2013a}.}
+% \jb{Ano, těch vlivů je více, ale záměrně uvažujeme jen mechanické vlivy.}
 \end{enumerate}
 
 Výsledkem makroskopického modelu bude rozložení napětí a~deformace po ražbě a~po zatopení. Pro výpočet budou použity 
@@ -464,7 +481,7 @@ Kritérii často používanými v~mechanice hornin jsou Mohrovo-Coulombovo a~Hoe
 		f_p(\sigma) &=& \frac{1}{2} (\sigma_1 - \sigma_3) + \frac{1}{2} (\sigma_1 + \sigma_3)\sin \phi - c \cos \phi, \\
 		g_p(\sigma) &=& \frac{1}{2} (\sigma_1 - \sigma_3) + \frac{1}{2} (\sigma_1 + \sigma_3)\sin \psi,
 	\end{eqnarray*}
-	\alert{kde $\psi$ úhel dilatace (dilation angle), viz \cite{Neto2011}. Poznamenejme, že pro $\phi = \psi$ platí $\partial g_p/\partial \sigma = \partial f_p/\partial \sigma$, a~tedy se jedná o~asociovaný model. Dále, plastické kritérium $f_p(\sigma)\leq0$ je ekvivalentní s~výše uvedeným kritériem, což odvodíme přenásobením funkce
+	\alert{kde $\psi$ je úhel dilatace (dilation angle), viz \cite{Neto2011}. Poznamenejme, že pro $\phi = \psi$ platí $\partial g_p/\partial \sigma = \partial f_p/\partial \sigma$, a~tedy se jedná o~asociovaný model. Dále, plastické kritérium $f_p(\sigma)\leq0$ je ekvivalentní s~výše uvedeným kritériem, což odvodíme přenásobením funkce
 	$F(\sigma, x) = (\sigma_1 - \sigma_3) - \frac{2c\cos \phi}{1-\sin \phi} - \frac{2\sin \phi}{1-\sin \phi} \sigma_3$ výrazem $\frac{1}{2}(1 - \sin \phi)$.}
 	\item Místo Mohrovy-Coulombovy plasticity lze také použít Druckerův-Pragerův model, jehož popis i vztah k parametrům Mohrovy-Coulombovy plasticity lze najít v~\cite{Neto2011}. 
 	\item Plasticita vycházející z Hoekova-Brownova kritéria je málo obvyklá, ale možná. Viz např. \cite{Carranza-Torres1999}.
@@ -472,7 +489,8 @@ Kritérii často používanými v~mechanice hornin jsou Mohrovo-Coulombovo a~Hoe
 
 
 \subsection{Modely s poškozením}
-Samotné modely plasticity neuvažují oslabení materiálu při křehkém porušení. K tomu účelu můžeme zavést parametr oslabení (damage parameter) $\omega\in[0,1]$, kde $\omega = 1$ odpovídá neporušenému materiálu a~$\omega = 0$ znamená zcela porušený materiál. Nejjednodušší kombinace elasticity a~porušení by potom využívala vztahy
+Samotné modely plasticity neuvažují oslabení materiálu při křehkém porušení. K tomu účelu můžeme zavést parametr oslabení (damage parameter) $\omega\in[0,1]$, kde $\omega = 0$ odpovídá neporušenému materiálu a~$\omega = 1$ znamená zcela porušený materiál.
+Nejjednodušší kombinace elasticity a~porušení by potom využívala vztahy
 \begin{table}[h!]
 	\centering
 	\begin{tabular}{ll}
@@ -494,7 +512,7 @@ kde $\langle\varepsilon_i\rangle$ značí absolutní hodnotu tahových hlavních
 v~tlaku se neuvažují. Všimněme si souvislosti s~pevnostními kritérii využívajícími deformace, přehled lze nalézt v~\cite{kwasniewski_strain_based_2010}.
 Parametr porušení se vyvíjí v~závislosti na zavedené ekvivalentní tahové deformaci. Funkci $g$ můžeme volit exponenciálně s~adaptací na diskretizační parametr.
 
-Modelování porušení CDM je poměrně složité, viz např. \cite{Lemaitre1992}, \cite{Neto2011}. Proto pouze zmíníme některé složitější podrobnosti:
+Modelování porušení CDM je poměrně složité, viz např. \cite{Lemaitre1992}, \cite{Neto2011}, \cite{GJ06}, \cite{UH15}. Proto pouze zmíníme některé složitější podrobnosti:
 \begin{itemize}
 	\item porušení nemusí být izotropní a~může být také odlišné pro namáhání v~tlaku a~tahu,
 	\item v~reálných případech se při porušení objevují trvalé deformace, takže
@@ -525,7 +543,8 @@ $$
 viz \cite{Rutqvist2009}. V tomto případě musíme počítat i se smykovými napětími. Počáteční napětí může být velmi proměnné i~v~rámci jedné lokality, zvláště pokud je navíc ovlivněna více podzemními díly, viz příklad laboratoře GRIMSEL ve Švýcarsku, viz \cite{Krietsch2019},
 \cite{Stas2016}, \cite{Rutqvist2004}. Pro studium EDZ je proto vhodné uvažovat výpočty pro různé hodnoty počátečního napětí.
 Poznamenejme  ještě, že počáteční napětí $\sigma_0$ může být určeno přímým měřením nebo měřením poloh referenčních bodů 
-a výpočtem pomocí inverzní analýzy, viz \cite{Malik2021}.
+a výpočtem pomocí inverzní analýzy, viz \cite{Malik2021}, \cite{Soucek2017}.
+
 
 Počáteční napětí je klíčový parametr a je nutné jej uvažovat jako náhodnou veličinu se zahrnutím 
 chyby měření (např. v \cite{Herget1973} okolo 10\%). V rámci oblasti $\Omega$ s rozměry do 10m není patrně nutné uvažovat prostorovou 
@@ -539,10 +558,11 @@ anisotropní horniny je popsán v \cite{Tang2018}.
 
 Pro plastické modely je třeba zadat další parametry, např. Hoek-Brownovo kritérium obsahuje parametry:
 $\sigma_c$, $m$, $s$, $a$. Jednoosá pevnost v tlaku $\sigma_c$ je patrně ovlivněna nehomogenitami horniny a bude proto vhodné 
-ji modelovat jako  korelované náhodné pole. Ostatní parametry chrakterizují typ a porušení horniny. Lze uvažovat jako pevné konstanty
-a volit dle prací: \cite{Martin1999}, \cite{Hajiabdolmajid2002}, \cite{Hoek2002} s ohledem na konrétní charakterizaci horniny.
+ji modelovat jako  korelované náhodné pole. Ostatní parametry charakterizují typ a porušení horniny. Lze uvažovat jako pevné konstanty
+a volit dle prací: \cite{Martin1999}, \cite{Hajiabdolmajid2002}, \cite{Hoek2002} s ohledem na konkrétní charakterizaci horniny.
 
-V případě použití modelů s poškozením bude nutné spcifikovat vhodné konstitutivní vztahy další rešerší. 
+V případě použití modelů s poškozením bude nutné specifikovat vhodné konstitutivní vztahy další rešerší.
+
 
 Při použití víceškálového přístupu, viz. sekce \ref{sec:mikroskala}, lze uvažovat parametry jako skalární náhodné veličiny a
 prostorovou nehomogenitu popsat pouze náhodnou sítí puklin.
@@ -554,15 +574,15 @@ prostorovou nehomogenitu popsat pouze náhodnou sítí puklin.
 Změny napětí způsobené ražbou resp. zatopením díla vedou ke změnám klíčových parametrů transportního modelu:
 permeability $\kappa$ a~porozity $\theta$. V menší míře mohou být ovlivněny i parametry $d_m$, $\alpha_L$, $\alpha_T$.
 
-Kromě mechanických změn mohou mít na hodnotu těchto parametrů vliv i~další procesy zejména změny teploty v~důsledku radioaktivního rozpadu
+Kromě mechanických změn mohou mít na hodnotu těchto parametrů vliv i~další procesy zejména změny teploty v~důsledku radioaktivního rozpadu, viz. \cite{Blaheta2013a}, 
 a~chemické procesy vedoucí k hojení mikrotrhlin. Jakkoliv mohu být významné, nebudou pro zachování jednoduchosti tyto procesy uvažovány.
 Stejně tak nebude uvažována žádná metoda sanace EDZ (např. různé druhy tlakové penetrace).
 
 V této kapitole představíme možné modely závislosti parametrů transportu na napětí a~deformaci.
 Nejprve v~sekci \ref{sec:empiricke} uvedeme některé publikované empirické vztahy pro vodivost a~porozitu.
 Tyto empirické vztahy stejně jako konstitutivní vztahy mechanických modelů z kapitoly \ref{sec:model_EDZ} 
-obsahují volné parametry, které lze sice určit pomocí laboratorních měření, avšak toto měření je provedeno na intaktních vzorcích
-a proto není přímo přenositelné na větší škály s~výskytem větších poruch. Jednou možností, jak toto omezení obejít je
+obsahují volné parametry, které lze sice určit pomocí laboratorních měření, avšak toto měření je provedeno na intaktních vzorcích,
+a proto není přímo přenositelné na větší škály s~výskytem větších poruch. Jednou možností, jak toto omezení obejít, je
 použití víceškálového přístupu popsaného v~sekci  \ref{sec:mikroskala}.
 
 
@@ -619,7 +639,7 @@ Pro vodivost puklin (transmisivitu) je základem kubický zákon, kde je jednak 
 a dále je prezentována celá řada vztahů pro závislost změny reálného rozevření $d$ na normálovém a~smykovém napětí. Například logaritmický vztah 
 podle \cite{Kohl1995} pro změnu rozevření pukliny
 \[
-   d - d_0 = - C \ln \frac{\sigma_n}{\sigma_0}
+   d - d_0 = - C \ln \frac{\sigma_n}{\sigma_0},
 \]
 kde $d_0$ a $\sigma_0$ jsou počáteční rozevření a~počáteční normálové napětí. 
 
@@ -795,18 +815,17 @@ Při získání jader lze charakterizovat porušenost horniny pomocí vhodného 
 které lze využít k určení některých parametrů plastických modelů \cite{Hoek2002}. 
 Pro mapování puklin je vhodnější akustická (HiRAT) nebo optická (OPTV) karotáž. Získané snímky je možno 
 zpracovat strojově pro identifikaci puklin, \cite{Tammisto2002}, což může odstranit subjektivní vliv při manuálním zpracování.
-Mapování na vrtech považujeme za středně finančně náročné jelikož vrt lze použít k získání většího množství dat 
+Mapování na vrtech považujeme za středně náročné jelikož vrt lze použít k získání většího množství dat 
 a samotné mapování je poměrně nenáročné.
 
 \subsubsection{Mapování na stěnách díla}
-po vyražení díla je možno províst geologickou charakterizaci včetně mapování puklin podobně jako pro vrty, 
+Po vyražení díla je možno províst geologickou charakterizaci včetně mapování puklin podobně jako pro vrty, 
 zde je podstatná metodika mapování, \cite{Bossart2002},  pro minimalizaci subjektivních vlivů. 
 V případ ražby odstřelem je možné využít laserové 3d skenování pro kvantitativní hodnocení 
 nadvýlomů a dalších charakteristik kvality ražby \cite{Hudson2009a}. 
-Mapování na stěnách díla je technicky nenáročné, ale vyžaduje pečlivou metodiku a může být časově náročné.
-
 Pro získání parametrů statistického modelu (sekce \ref{sec:dfn}) je nutno zohlednit výběrový efekt 
-mapovaných vrtů a mapovacích technik, viz. \cite{Zetterlund2012}, \cite{Torabi2011}. Mapování na vrtech je 
+mapovaných vrtů a mapovacích technik, viz. \cite{Zetterlund2012}, \cite{Torabi2011}. 
+Mapování na stěnách díla je technicky nenáročné, ale vyžaduje pečlivou metodiku a může být časově náročné.
 
 \subsubsection{Injektáž pryskyřicemi}
 Pro lepší identifikaci puklin včetně jejich konektivity je možno do úzkého vrtu pod tlakem aplikovat 
@@ -825,35 +844,38 @@ vrtu, nebo mezi více vrty (tomografie).
 \subsubsection{Seismické a akustické metody}
 Existuje množství metod využívající šíření mechanického vlnění (zvuku) v hornině. Zde popíšeme čtyři metody použité v rámci experimentu TSX, URL, Kanada,  \cite{Chandler2002}.
 
-{\bf Refrakční seismika} umožňuje detekovat rozhraní mezi porušenou vrstvou s nižší vlnovou rychlostí a neporušenou vrstvou s výšší vlnovou rychlostí. Vzruch je vybuzený kladívkem nebo náloží a zaznamenán řadou geofonů. 
+{\bf Refrakční seismika} umožňuje detekovat rozhraní mezi porušenou vrstvou s nižší vlnovou rychlostí a neporušenou vrstvou s vyšší vlnovou rychlostí. Vzruch je vybuzený kladívkem nebo náloží a zaznamenán řadou geofonů. 
 Pozice vzruchu i geofonů musí být přesně známy. Z relativních časů příchodu vzruchu lze vypočíst pozici rozhraní.
 
-{\bf MVP} (microvelocity probe) používá sinusový zdroj a pouze několi geofonů v malých vzdálenostech na sondě zavedené do vrtu. 
-Dobř definovaný zdrojový signál a jednoduchá geometrie umožňuje získat (pseudo) mechanické parametry: Youngův modul a Poisonovo číslo, viz. \cite{Shao2008}. Nepřímo lze také charakterizovat porušení horniny v okolí vrtu.
+{\bf MVP} (microvelocity probe) používá sinusový zdroj a pouze několik geofonů v malých vzdálenostech na sondě zavedené do vrtu. 
+Dobře definovaný zdrojový signál a jednoduchá geometrie umožňuje získat (pseudo) mechanické parametry: Youngův modul a Poisonovo číslo, viz. \cite{Shao2008}. Nepřímo lze také charakterizovat porušení horniny v okolí vrtu.
 
 {\bf Mini-CHARTS}, opět využívá periodický zdroj na slyšitelných i blízkých ultrazvukových frekvencích ale geofony jsou v dalším vrtu ve vzdálenostech až 60m (metoda Mini-CHARTS). Pro různé polohy zdroje a snímače je získáno množství dat umožňujících provést plnou tomografii mezilehlého prostoru.
 
-{\bf  Akustické emise} v okolí EDZ (ve vrtech) je trvale instalována soustava citlivých geofonů a kontinuálně snímá přirozené mikroseismické události. Časy příchodu umožnují prostorovou lokalizaci událostí. Z jejich rozložení lze usuzovat na rozsah EDZ.
+{\bf  Akustické emise} v okolí EDZ (ve vrtech) je trvale instalována soustava citlivých geofonů a kontinuálně snímá přirozené mikroseismické události. Časy příchodu umožňují prostorovou lokalizaci událostí. Z jejich rozložení lze usuzovat na rozsah EDZ.
 
 \subsubsection{Odporová tomografie}
 Na množině elektrod umístěných na stěnách díla nebo ve vrtech je mezi jednu dvojici elektrod přiveden proud a zároveň je na jiné dvojici měřen rozdíl napětí. Toto uspořádání do značné míry eliminuje vliv přechodových odporů na elektrodách a inverzní metodou lze získat prostorové rozložení odporu horniny. Tento odpor lze pak orientačně vztáhnout například k obsahu vody v hornině, \cite{Kull2002}.
 
-% \subsubsection{Georadar}
-% Umožňuje detekovat rozhraní s výraznou změnou elektrické vodivosti. Pro detekci hranice EDZ nepříliš pozitivní zkušenosti.
+\subsubsection{Georadar}
+Při měření pomocí GPR (Ground penetrating radar) jsou vysílány radiové vlny v pásmu od 10MHz do 2.6 GHz, vlny se mohou odrazit of rozhraní prostředí s rozdílnou prmitivitou (elektrickou vodivostí) a následně jsou detoekovány přijímací anténou. Dosah radaru je snižuje celková vodivost horniny, vysoké frekvence nemají velký dosah díky difrakci, nízké frekvence mohou mít větší dosah avšak nesou méně energie což snižuje rozlišení. Reálné dosahy jsou až tisíce metrů pro led, okolo 15 metrů pro suché horniny a do jednotek metrů pro nasycené horniny s velkým obsahem vody (půdy, jíly). 
+Radarová měření mohou být použita k odhadu struktury EDZ, případně k určení statistik puklin, viz. měření v ONKALO \cite{Silvast2008} a měření v \"ASP\"O \cite{Walton2015}. Určení dosahu EDZ může být limitováno dosahem GPR.
+Radarová měření jsou realivně levná avšak vyhodnocování (velkého množství) získaných dat je neintuitivní. Je zde prostor k aplikaci nových výpočetních metod a strojového učení pro získání strukturálních informací.   
 
-% \subsection{Hydraulická měření}
-    
-  
-% {\bf MWD (Measure While Drilling)} \cite{JeroenvanEldert2018}
-% 
-% 
-% {\bf  Borehole Core Drilling and Logging} \cite{Lanyon2011}
-% 
-% {\bf  Geomechanical Characterization} \cite{Lanyon2011}
-% 
-% {\bf  Geochemical Characterization} \cite{Lanyon2011}
-% 
-% {\bf SEPPI - a permeability measurement} \cite{Rutqvist2009} 
+
+\subsection{Hydraulická měření}
+Pro charakterizaci EDZ bylo vyvinuto několik specializovaných hydrologických systémů:
+
+{\bf SEPPI} sonda vyvinutá organizací ANDRA, \cite{Bauer1995}, umožňuje realtivně rychle proměřit hydraulické vlastnosti horniny v různých hloubkách vrtu. Kvůli krátkým testovacím komorám (50mm)
+a pakrům (70mm) lze podrobně charakterizovat průběh hydraulické vodivosti s hloubkou. Metoda byla použita v řadě experimentůmna různých lokalitách: Kanada,  \cite{Souley2001} AECL URL, Kanada;
+ \cite{Emsley1997} \"ASP\"O, Švédsko; \cite{Bossart2002} Mont Terri URL, Švýcarsko. Metoda poskytuje podrobná, ale pouze lokální data.
+
+{\bf MMPS } (modular mini packer syste) vyvinuto Nagra, \cite{Frieg1999}. Principiálně podobný systému SEPPI, delší komory (100mm) a pakry (85mm), použito v: \cite{Marschall1999}, \cite{Martin2004}, \cite{Matray2007}.
+
+{\bf BGR povrchový pakr} \cite{Marschall1999} byl vyvinut pro charakterizaci hydraulické vodivosti EDZ při povrchu. Testovací komora o průměru 130mm je přitěsněna k povrchu díla pomocí epoxidového lepidla, určeno pro dlouhodobou instalaci.
+
+
+
 
 
 % \subsection{Rešerše prací}
@@ -885,15 +907,32 @@ Na množině elektrod umístěných na stěnách díla nebo ve vrtech je mezi je
 
 \section{Možnosti validace na experimentálních datech}
 \label{sec:experiment}
-Tato kapitola obsahuje rámcový návrh experimentu inspirovaného pracemi \cite{Rutqvist2004} (FEBEX, Grimsel, Švýcarsko) a
+
+
+V přihlášce projektu se počítalo s validací zejména vůči datům z exprimentu TAS04 v ASPO. 
+Kalibrování hydro-mechanických modelů pro tento experiment bylo předmětem Task G projektu DECOVALEX 2019, 
+avšak žádnému z řešitelských týmů se nepodařilo dosáhnout dobré shody s měřením. 
+
+Pro validaci modelů projektu proto navrhujeme použít přístup inspirovaný pracemi \cite{Rutqvist2004} (FEBEX, Grimsel, Švýcarsko) 
 a \cite{Rutqvist2009} (TSX, URL, Kanada). Základní myšlenkou obou prací je získání parametrů EDZ z kontinuálního 
 měření pórového tlaku během a po ražbě díla pomocí inverzní úlohy založené na hydro-mechanickém modelu relaxace napěťových 
-poměrů v okolí nově vyraženého díla. Podrobněji popíšeme měření a modely použité v druhé práci v rámci rozsáhlého experimentu TSX 
-, \cite{Chandler2002}.
+poměrů v okolí nově vyraženého díla. Podrobněji popíšeme  modely použité v druhé práci, která je výsledkem projektu 
+DECOVALEX-THMC (2004–2007), Task A. Následně stručně popíšeme plán využití stejného měření a dále možnosti rozšířené validace 
+vůči případnému novému experiemntu v PVP Bukov.
 
-Měření probíhalo v horizontálním vrtu HGT2 a vertikálním vrtu HGT1 oba vrty byly vyraženy z dříve existujících chodeb tak, aby směřovaly do středu nově raženého úseku a to kolmo na jeho osu. Z většího množství měřících sond byly použity pouze signály ze čtyř sond ve vzdálenostech 1.5m a 4m od stěny vyražené chodby (viz. schéma v Obr. \ref{fig:TSX}) ostatní sondy vykazovaly výrazně nižší změny tlaku v reakci na ražbu. Výhodou kontinuálního měření získání většího množství dat i s malým množstvím senzorů. 
+\subsection{DECOVALEX-THMC}
 
-V rámci projektu DECOVALEX-THMC project (2004–2007), Task A bylo toto měření modelováno čtyřmi týmy s použitím různě složitých hydro-mechanických 
+
+Hydromechanické modely byly kalibrovány na koninuální měření pórových tlaků při ražbě rozsáhlého experimentu TSX, \cite{Chandler2002}.
+Měření probíhalo v horizontálním vrtu HGT2 a vertikálním vrtu HGT1 oba vrty byly vyraženy z dříve existujících chodeb tak, aby směřovaly do středu nově raženého úseku a to kolmo na jeho osu. Z většího množství měřících sond byly použity pouze signály ze čtyř sond ve vzdálenostech 1.5m a 4m od stěny vyražené chodby (viz. schéma v Obr. \ref{fig:TSX}) ostatní sondy vykazovaly výrazně nižší změny tlaku v reakci na ražbu. Výhodou kontinuálního měření je získání většího množství dat i s relativně malým množstvím senzorů. 
+
+\begin{figure}
+\label{fig:TSX}
+\includegraphics[width=\textwidth]{graphics/TSX_measurement.png}
+\caption{Průběh měřeného a simulovaného pórového tlaku v okolí nově vyražené chodby, zdroj \cite{Rutqvist2009}.}
+\end{figure}
+
+V rámci projektu DECOVALEX-THMC pak bylo toto měření modelováno čtyřmi týmy s použitím různě složitých hydro-mechanických 
 modelů. Na Obr. \ref{fig:TSX} je prezentována velmi dobrá shoda měření a nafitovaného modelu realizovaného týmem LBNL-SKI s využitím kódu ROCMAS. Je použito Mohr-Coulombovo kritérium a empirický vztah 
 pro permeabilitu:
 \[
@@ -909,28 +948,35 @@ kde $\kappa_r,\ \kappa_{max}, \beta, \gamma$ jsou fitované parametry a
 jsou střední a deviatorické napětí pro hlavní napětí $\sigma_1,\ \sigma_2,\ \sigma_3$ vypočtené mechanickým modelem.
 
 Bohužel není úplně zřejmé zda bylo použito pouze dat z měření pórového tlaku nebo bylo využito i dalších měření v rámci projektu TSX.
-Zdá se však, že další měření zejména výsledky MVP a SEPPI byla použita pouze k počítečním odhadům mechanických a hydraulických parametrů neporušené horniny.
+Zdá se však, že další měření zejména výsledky MVP a SEPPI byla použita pouze k počátečním odhadům mechanických a hydraulických parametrů neporušené horniny.
 
 
-\subsubsection{Závěry}
-\begin{itemize}
- \item Modely projektu Endorse lze částečně validovat vůči existujícím datům z projektu TSX, za předpokladu možnosti jejich získání. 
- Po zopakování výše uvedených výsledků lze provést stochastické výpočty pro zahrnutí vlivu nejistot a ověřit citlivost měření vůči parametrům modelu.
- Následně lze provést porovnání s víceškálovým přístupem.
- \item Uvedené měření i modely byly realizovány v jednom řezu kolmo na osu díla není tak možno predikovat anizotropii EDZ s výrazně vyšší vodivostí ve směru parallelním s osou díla. Pro postižení této anisotropie by bylo nutné realizovat měření ve vrtech umístěných na různých metrážích raženého díla, nebo i těsně před ním. Předchozí modelování by mělo teoreticky ověřit citlivost takového postupu vůči anisotroii permeability.
- \item Výše uvedené měření vyžadovalo sondy ve speciálně situavaných vrtech. V případě realizace podobného experimentu na PVP Bukov lze ověřit
+\subsection{Možnosti validace na datech z TSX}
+Modely projektu Endorse lze částečně validovat vůči existujícím datům z projektu TSX, 
+za předpokladu možnosti jejich získání. 
+
+{\bf Kalibrace modelů.} Po zopakování výše uvedených výsledků lze testvat Bayesovkou inverzi, provést
+stochastické výpočty pro zahrnutí vlivu nejistot a ověřit citlivost měření vůči 
+parametrům modelu zejména vodivosti v EDZ. 
+
+{\bf Slepá validace.} Vzhledem k velkému množství dalších dat z experimentu TSX lze testovat predikci modelů ENDORSE před ražbou.
+V tomto případě by se pro kalibraci modelů (s více škálovým přístupem) využila pouze data o neporušené hornině a 
+testovala by se shoda stochastických předpovědí s měřením pórových tlaků. Porovnání s předchozí variantou umožní posoudit 
+přínos měření pórového tlaku.
+
+
+\subsection{Přínosy nového experimentu}
+Podobný experiment na PVP Bukov s modifikovaným uspořádáním by pomohl ověřit přínos podobného měření při reálném budování úložiště.
+
+{\bf Anisotropie.} Výše uvedená měření i modely byly realizovány v jednom řezu kolmo na osu díla a není tak možno predikovat anizotropii EDZ s výrazně vyšší vodivostí ve směru paralelním s osou díla. Pro existenci takové anisotropie mluví pozorované uspořádání puklin v EDZ. Pro postižení této anisotropie by bylo nutné realizovat měření ve vrtech umístěných na různých metrážích raženého díla, nebo i těsně před ním. Předchozí modelování by mělo teoreticky ověřit citlivost takového postupu vůči anisotropii permeability.
+
+{\bf Reálné uspořádání.} Měření TSX vyžadovalo sondy ve speciálně situavaných vrtech. V případě realizace podobného experimentu na PVP Bukov lze ověřit
  použitelnost metody i při umístění sond v ukloněných vrtech vedoucích paralelně s osou díla, které je možno realizovat i bez přítomnosti dalších paralelních chodeb. 
-\end{itemize}
 
 
 
 
 
-\begin{figure}
-\label{fig:TSX}
-\includegraphics[width=\textwidth]{graphics/TSX_measurement.png}
-\caption{Průběh měřeného a simulovaného pórového tlaku v okolí nově vyražené chodby, zdroj \cite{Rutqvist2009}.}
-\end{figure}
 
 
 
