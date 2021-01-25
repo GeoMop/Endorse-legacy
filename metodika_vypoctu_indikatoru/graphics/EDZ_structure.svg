@@ -15,7 +15,7 @@
    version="1.1"
    id="svg8"
    inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
-   sodipodi:docname="EDZ_strucute.svg">
+   sodipodi:docname="EDZ_structure.svg">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -25,17 +25,17 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.7"
-     inkscape:cx="561.10624"
-     inkscape:cy="414.22164"
+     inkscape:zoom="1.4"
+     inkscape:cx="185.97123"
+     inkscape:cy="324.37561"
      inkscape:document-units="mm"
-     inkscape:current-layer="layer4"
+     inkscape:current-layer="layer7"
      showgrid="false"
      inkscape:snap-global="false"
-     inkscape:window-width="1920"
-     inkscape:window-height="1043"
-     inkscape:window-x="1920"
-     inkscape:window-y="0"
+     inkscape:window-width="1848"
+     inkscape:window-height="1016"
+     inkscape:window-x="72"
+     inkscape:window-y="27"
      inkscape:window-maximized="1" />
   <metadata
      id="metadata5">
@@ -45,7 +45,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -339,7 +339,7 @@
          id="tspan994"
          x="28.257408"
          y="220.44627"
-         style="fill:#000000;fill-opacity:0.99215686;stroke-width:0.44010901">EOZ</tspan></text>
+         style="fill:#000000;fill-opacity:0.99215686;stroke-width:0.44010901">ODZ</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:6.29048824px;line-height:80.00000119%;font-family:ArialNarrow;-inkscape-font-specification:'ArialNarrow, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;display:inline;opacity:0.95999995;fill:#000000;fill-opacity:0.99267399;stroke:none;stroke-width:0.44010901;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:0.99633699"
@@ -350,7 +350,7 @@
          id="tspan998"
          x="44.939129"
          y="227.75369"
-         style="fill:#000000;stroke-width:0.44010901">EIZ</tspan></text>
+         style="fill:#000000;stroke-width:0.44010901">IDZ</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:6.29048824px;line-height:80.00000119%;font-family:ArialNarrow;-inkscape-font-specification:'ArialNarrow, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;display:inline;opacity:0.95999995;fill:#000000;fill-opacity:0.99267399;stroke:none;stroke-width:0.4401091;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:0.99633699"
