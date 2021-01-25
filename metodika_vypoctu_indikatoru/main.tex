@@ -426,7 +426,7 @@ Pevnostní kritéria vychází z vypočteného napětí, případně deformace. 
 $$
 	F_s = F_s(\sigma, \varepsilon) \leq 0.
 $$
-Kritérii často používanými v~mechanice hornin jsou Mohrovo-Coulombovo a~Hoekovo-Brownovo kritérium, viz např. 
+Kritérii často používanými v~mechanice hornin jsou Mohrovo-Coulombovo a Hoekovo-Brownovo kritérium, viz např. 
 \cite{Desai1984}, \cite{Goel2011}, \cite{Zang2010} a~\cite{Brady2006}. Tato kritéria nyní popíšeme za předpokladu izotropní horniny.
 \begin{itemize}
 	\item Mohrovo-Coulombovo kritérium
@@ -446,9 +446,14 @@ Kritérii často používanými v~mechanice hornin jsou Mohrovo-Coulombovo a~Hoe
 		$$
 			F(\sigma, x) = (\sigma_1 - \sigma_3) - (q_{cmass} + A\sigma_3) \leq 0
 		$$
-		kde $q_{cmass}$ je jednoosá pevnost v~tlaku (UCS) pro masiv, $q_{cmass} = 2c \cos \phi / (1-\sin \phi)$ a~$A = 2 \sin \phi / (1-\sin \phi)$. UCS lze interpretovat jako Uniaxial Compressive Strength (značí se obvykle $\sigma_c$), nebo Unconfined Compressive Strength ($q_c$). Lze také využít pevnost v~tahu (tensile strength $\sigma_t$),
+		kde $q_{cmass}$ je jednoosá pevnost v~tlaku (UCS) pro masiv,
 		$$
-			q_{cmass} = \sigma_c = \frac{2c \cos \phi}{1-\sin \phi}, \quad \sigma_t = \frac{2c \cos \phi}{1+ \sin \phi}.
+		q_{cmass} = \sigma_c = \frac{2c \cos \phi}{1-\sin \phi}, \quad 
+		A = \frac{2 \sin \phi}{1-\sin \phi}.
+		$$ 
+		UCS lze interpretovat jako Uniaxial Compressive Strength (značí se obvykle $\sigma_c$), nebo Unconfined Compressive Strength ($q_c$). Lze také využít pevnost v~tahu (tensile strength $\sigma_t$),
+		$$
+             \sigma_t = \frac{2c \cos \phi}{1+ \sin \phi}.
 		$$
 		Další možností je vyjádření kritéria nikoli pomocí hlavních napětí, ale pomocí invariantů napětí. Viz např. \cite{Desai1984}.
 	\item Mohrovo-Coulombovo kritérium bývá také doplněno podmínkou žádného či částečného nepřipuštění tahových napětí (tension cut-off).
@@ -468,7 +473,7 @@ Kritérii často používanými v~mechanice hornin jsou Mohrovo-Coulombovo a~Hoe
 		rozklad tenzoru deformace & $\varepsilon = \varepsilon^e + \varepsilon^p$\\
 		Cauchyho napětí & $\sigma = C : \varepsilon^e$\\
 		\alert{plastické kritérium} & \alert{$f_p(\sigma)\leq0$}\\
-		plastický potenciál & $g_p,\;\;$ \alert{pro asociovanou plasticitu platí} $\partial g_p/\partial \sigma = \partial f_p/\partial \sigma$  \\
+		plastický potenciál & $g_p,\;\;$ daný vztahem: $\partial g_p/\partial \sigma = \partial f_p/\partial \sigma$  \\
 		plastické tečení & \alert{$\dot{\varepsilon}^p = \dot{\gamma}(\partial g_p/\partial \sigma), \dot\gamma \geq 0$,}\\
 		podmínka duality & $\dot{\gamma} f_p =0$\\
 		\hline
