@@ -5,6 +5,7 @@
 \usepackage[czech]{babel}
 \usepackage[T1]{fontenc}      % T1 kodovani fontu pro babel cestinu
 
+\usepackage[unicode, colorlinks=true, citecolor=blue]{hyperref}
 
 %\usepackage[T1]{fontenc}
 %\usepackage{uarial}
@@ -126,6 +127,7 @@
 \def\vphi{\vc\phi}
 
 \newcommand{\jb}[1]{{\color{violet} JB: #1}}
+\newcommand{\sy}[1]{{\color{blue} SS: #1}}
 \newenvironment{old}{%
     \leavevmode\color{gray}\ignorespaces%
 }{%
@@ -134,7 +136,10 @@
 
 
 
-
+%TODO:
+% články Bayes do referencí
+% sjednotit Obr obraze
+% update od Jakuba
 
 \begin{document}
 \begin{onehalfspacing} 
@@ -176,10 +181,11 @@
 
 
 \section{Úvod}
-V roce 2020 bylo řešení projektu poznamenáno pandemií COVID-19 jednak sníženou kapacitou, kvůli nutnosti řešit online vzdělávání a zejména pak v závěru roku onemocněním prof. Blahety s velmi vážným průběhem. Tato situace bohužel 
-ovlivní řešení projektu i v příštím roce a to i přes značné nasazení dalších kolegů z UGN. 
+Projekt je řešen od 07/2019, tato zpráva shrnuje postup prací za rok 2020, což byl druhý rok řešení projektu. Řešení projektu bylo významně poznamenáno pandemií COVID-19 jednak sníženou kapacitou na obou pracovištích z důvodu přechodu na online vzdělávání, ale zejména pak v závěru roku vážným onemocněním spoluřešitele, prof. R. Blahety. Vzhledem k tomu, že není v tuto chvíli možné odhadnout délku nepřítomnosti spoluřešitele, lze očekávat, že tato situace bohužel ovlivní řešení projektu i v příštím roce. 
 
-Ve druhém roce projektu byly řešeny následující aktivity:
+
+V roce 2020 byly dle harmonogramu projektu řešeny
+aktivity:
 \begin{itemize}
 \item Definice vstupních dat a indikátorů bezpečnostních funkcí EDZ. (07/2019 - 07/2020)
 
@@ -188,51 +194,58 @@ Ve druhém roce projektu byly řešeny následující aktivity:
 \item Matematické modely EDZ a související inverzní úlohy (1/2020 - 6/2021)
 
 \item Knihovny pro stochastické přímé a inverzní metody (07/2019 - 12/2021)
-
-
 \end{itemize}
-V tomto pořadí jsou popsány v následujících kapitolách \ref{sec:indikatory} až \ref{sec:stochastic}. První aktivita byla zakončena milníkem v podobě
-rešeršní zprávy, viz. příloha. Milník druhé aktivity byl splněn částečně. 
-Dle plánu byl implementován hydro-mechanický model s diskrétními puklinami. 
-Pro správnou predikci hydraulické vodivosti je však na puklinách nutné uvažovat složitější model, jehož implementace bude pokračovat v následujícím roce.
-Řešení třetí aktivity bylo nejvíce zasaženo nedostatkem kapacit. Během roku se teprve upřesňovala její přesná náplň a proto 
-se tým zatím věnoval ostatním aktivitám. S předstihem tak byl vytvořen model transportu popsaný v kapitole \ref{sec:transport}. 
-V rámci poslední aktivity byla dokončena další verze knihovny pro MLMC a byly testovány pokročilejší metody rekonstrukce hustoty 
-pravděpodobnosti. Efektivní algoritmy pro Bayesovskou inverzi byly testovány na jednoduchých hydro-mechanických úlohách.
 
+ První aktivita, kapitola \ref{sec:indikatory}, byla zakončena milníkem v podobě rešeršní zprávy (v příloze). 
+
+Milník druhé aktivity, kapitola \ref{sec:smisene_site} byl splněn dle rozsahu definovaného v harmonogramu.
+Dle plánu byl implementován hydro-mechanický model s diskrétními puklinami. 
+Pro správnou predikci hydraulické vodivosti však bude potřeba složitější model kontatků a tření na puklinách. V tomto směru bude probíhat další vývoj v rámci ostatních aktivit. 
+
+Řešení třetí aktivity, kapitola \ref{sec:hm_modely}, se mírně zpozdilo kvůli sníženým pracovním kapacitám. Během roku se teprve upřesňovala její přesná náplň Tým TUL
+se proto zatím věnoval s předstihem vývoji transportního modelu. Tým ÚGN otestoval 
+použití existujícího plastického modelu a aplikaci Bayesovských metod na složitější hydro-mechanickou úlohu.
+
+V rámci poslední aktivity, kapitola \ref{sec:stochastic}, byla dokončena další verze knihovny MLMC (multilevel Monte Carlo) pro stochastické výpočty a byly testovány pokročilejší metody rekonstrukce hustoty 
+pravděpodobnosti. Vyvinuté metamodely (surogate) akceleraci Bayesovské inverze byly testovány na hydro-mechanických úlohách.
+
+S předstihem byly sestaveny modely transportu, kapitola \ref{sec:transport}. Jednak zjednodušený model transportu geobariérou a zejména model transportu v EDZ s reálnou geometrií úložiště a vlivem náhodných geologických zlomů.
+ 
 
 \section[Definice indikátorů bezpečnostních funkcí EDZ.]{Definice vstupních dat 
 a indikátorů bezpečnostních funkcí~EDZ.}
 \label{sec:indikatory}
 {\it Období aktivity:}  07/2019 - 07/2020
 
-\subsection{Popis aktivity dle přihlášky}
-V úzké spolupráci s aplikačním garantem budou navrženy indikátory bezpečnosti pro EDZ v okolí úložiště. Indikátory budou
+\subsection{Popis aktivity dle přihlášky projektu}
+{\it V úzké spolupráci s aplikačním garantem budou navrženy indikátory bezpečnosti pro EDZ v okolí úložiště. Indikátory budou
 definovány buďto jako přímo měřitelné veličiny nebo jako veličiny odvozené od stavových veličin relevantních procesů (mechanika,
 proudění, transport). Další řešení projektu pak bude zaměřeno na predikci těchto indikátorů pomocí vhodných modelů příslušných
 procesů. Indikátory budou chápány jako náhodné veličiny
 vzhledem k nejistotám v parametrech modelů a budou predikovány jejich hustoty pravděpodobnosti. Pro určení klíčových parametrů
 zamýšlených modelů bude provedena rešerše dostupných apriorních dat (zejména dat pro Task G projektu Decovalex a data z
 podzemní laboratoře Bukov). Dále bude ve spolupráci s aplikačním garantem sestaven přehled geofyzikálních měření aplikovatelných
-v prostorách úložiště a bude odhadnuta jejich citlivost vůči parametrům modelů a finanční náročnost.
+v prostorách úložiště a bude odhadnuta jejich citlivost vůči parametrům modelů a finanční náročnost.}
 
 
 \subsection{Řešení}
 Na základě konzultací s aplikačním garantem byla navržena definice indikátorů bezpečnosti EDZ. Indikátory jsou 
-odvozeny od výsledků modelu popisujícího proudění a transport v okolí jednoho úložného vrtu. Je popsáno mechanický model 
+odvozeny od výsledků modelu popisujícího proudění a transport v okolí jednoho úložného vrtu. Je popsán mechanický model 
  na škále průměru úložného vrtu a jsou představeny různé varianty konstitutivních vztahů pro popis vzniku EDZ. 
  Další kapitola je věnována empirickým vztahům pro závislost vodivosti a porozity na napětí a je představen možný
  víceškálový model, který by mohl umožnit přenos parametrů změřených v laboratorním měřítku na větší škály.
- V předposlední kapitole je uvedena rešerše měřících metod pro charakterizaci vlastností EZD a v závěrečné kapitole je 
+ V předposlední kapitole je uvedena rešerše měřících metod pro charakterizaci vlastností EDZ a v závěrečné kapitole je 
  popsán návrh validační úlohy pro modely vyvíjené v rámci projektu s využitím existujících zahraničních dat
  a jsou stručně nastíněny možnosti realizace validačního experimentu na PVP Bukov. 
 
 
 \section{Vývoj modelu proudění a mechaniky na smíšených sítích}
+\label{sec:smisene_site}
 {\it Období aktivity:}  07/2019 - 12/2020
 
 
-\subsection{Popis aktivity}
+\subsection{Popis aktivity dle přihlášky projektu}
+{ \it
 Cílem aktivity je vývoj výpočetních kódů pro modely proudění a mechaniky v EDZ. Pro efektivní implementaci různých vazeb mezi
 procesy bude existující simulátor Flow123d významně upraven s využitím knihovny FEniCS, to zahrnuje též implementaci podpory
 smíšených sítí do knihovny FEniCS. V SW Flow123d budou dále implementovány modely proudění a mechaniky na smíšených sítích s
@@ -240,13 +253,17 @@ předpokladem malých deformací na puklinách.
 Bude vyvinut model pro sdružené hydro-mechanické (HM) úlohy založený na iteračním přístupu a vhodném předpodmínění.
 Budou vyvinuty modely mechaniky s explicitním popisem puklin založené na SW GEM a PERMON. V první fázi půjde o mechanický
 model na smíšených sítích s pružným chováním matrice a s kontaktní formulací na trhlinách. Nerovnostní podmínka nepronikání na
-trhlinách bude řešena zavedením Lagrangeových multiplikátorů.
+trhlinách bude řešena zavedením Lagrangeových multiplikátorů.}
 
 Aktivita má být zakončena milníkem: \uv{Modely proudění a mechaniky na smíšených sítích} zahrnujícím~modely pro testování různých způsobů popisu proudění a mechaniky rozpukaného porézního média. Zejména bylo plánováno následující rozšíření existujících simulátorů:
 \begin{itemize}
 \item Simulátor Flow123d s podporou pro pro sdružené hydro-mechanické úlohy na smíšených sítích.
 \item Simulátor PERMON pro mechanický model na smíšených sítích s možností externího vstupu pórového tlaku a teplotní změny.
 \end{itemize}
+
+Lze konstatovat, že milník byl dle plánovaného rozsahu splněn což je demonstrováno níže na testovacích úlohách. Na základě další rešerše však předpokládáme 
+nutnost použít pro realizaci víceškálového přístupu složitější model nelineárních procesů na puklinách proto bude jeho vývoj pokračovat během roku 2021. Nicméně cílů projektu lze dosáhnout i s použitím konzervativnějších modelů.
+
 
 \subsection{Poroelastický modul ve Flow123d (TUL)}
 V roce 2020 byl dokončen matematický model poroelasticity na smíšených sítí včetně jeho existenční analýzy.
@@ -257,7 +274,7 @@ volbě relaxačního parametru a opravě chyby při výpočtu polí předávaný
 Simulátor Flow123d tak nyní umožňuje řešení 3d úloh lineární poroelasticity s diskrétní reprezentací puklin.
 
 Pro demonstraci hydro-mechanického modelu ve Flow123d byla zvolena 2D úloha s 2 puklinami:
-Pukliny mají 1000krát vyšší hydraulickou vodivost a 1000krát nižší Youngův modul než okolní prostředí.
+Pukliny mají 1000krát vyšší hydraulickou vodivost a 1000krát nižší Youngův modul než okolní prostředí, takto zvolené parametry řádově odpovídají změnám uvedených parametrů v EDZ oproti hodnotám v intaktní hornině.
 Skrz pukliny je do oblasti vtláčena tekutina, viz obr. \ref{fig:hm_bc} s popisem okrajových podmínek.
 Na obrázku \ref{fig:hm_results} je pak zobrazeno pole tlaku a posunutí.
 Vzhledem k různým rozevřením puklin je deformace větší v okolí pukliny s větším rozevřením.
@@ -287,9 +304,8 @@ Newtonovou metodou. Předběžné výsledky testu na jednoduché 2D oblasti s 1 
 a při volbě dostatečně malého regularizačního parametru dochází k zanedbatelnému porušení kontaktní podmínky. Zhoršuje 
 se však podmíněnost úlohy, což může být limitující při řešení rozsáhlých úloh.
 
-Lze konstatovat, že podstatná část plánovaného milníku byla splněna. Model nelineárních procesů na puklinách je nutný pro
-realizaci víceškálového přístupu a bude snaha jej proto dokončit v následujícím roce. Nicméně cílů projektu lze dosáhnout
-i s použitím konzervativnějších modelů.
+% \sy{Ze své vlastní zkušenosti bych Vám doporučil kombinovat regularizační metodu s kontinuací přes regularizační parametr. Když regularizační parametr adaptivně navyšujeme/redukujeme, není to zas tak pomalé, jak by se na první pohled mohlo zdát. Třeba v plastické limitní analýze se bez této kontinuace neobejdu.}
+
 
 
 \subsection{Hydro-mechanický model s kontakty (UGN)}
@@ -312,41 +328,46 @@ omezení. Vzniklá úloha kvadratického programování je za pomoci knihovny
 PERMON dualizována a vyřešena algoritmem MPRGP. 
 Výsledek řešení testovací úlohy je na obrázku \ref{fig:ugn_pull}.
 
-
-
+% \sy{ÚGN tým se také věnoval vývoji experimentálních kódů v Matlabu na řešení nelineárních hydro-mechanických problémů s puklinami, a to v úzké souvislosti s aktivitami popsanými v následujících dvou kapitolách. Uvažované modely a metody budou popsány níže. Při implementaci byly mimo jiné použity algoritmy dostupné v knihovně PERMON.}
 
 \section{ Matematické modely EDZ a související inverzní úlohy}
 \label{sec:hm_modely}
  {\it Období aktivity:}  1/2020 - 6/2021
-\subsection{Popis aktivity dle přihlášky}
+\subsection{Popis aktivity dle přihlášky projektu}
+{\it 
 Hlavní náplní aktivity bude testování modelů hydro-mechanických procesů v EDZ se zahrnutím vlivu puklin různých škál. K testování budou využita zejména data z Task G projektu Decovalex (experiment TAS04 v ASPO) případně též dostupná data z podzemní
 laboratoře Bukov. Mechanické a hydraulické vlastnosti EDZ budou nejprve odhadnuty pomocí výpočtu napětí v EDZ a použitím modelů poškození. Bude též studován vztah mezi napětím a statistikami mikro puklin. Následně budou uvažovány jednak kontinuální poroelastické modely založené na duální pórovitosti a dále modely založené na kombinaci ekvivalentního porézního média a diskrétní puklinové sítě. Pro různě komplexní modely budou řešeny inverzní úlohy jak pomocí klasických optimalizačních metod tak pomocí
-Bayesovského přístupu, který popisuje hledané parametry pomocí statistického rozdělení pravděpodobnosti. Tento přístup vyžaduje výpočetně velmi náročné metody, je však robustnější a přináší více informací(např. kvalitu odhadu hledaných parametrů
+Bayesovského přístupu, který popisuje hledané parametry pomocí statistického rozdělení pravděpodobnosti. Tento přístup vyžaduje výpočetně velmi náročné metody, je však robustnější a přináší více informací(např. kvalitu odhadu hledaných parametrů).}
 
-\subsection{Řešení}
+\subsection{Upřesnění plánu řešení}
 Tato aktivita představuje koncepčně nejnáročnější část projektu. Na základě rešerše v rámci aktivity \ref{sec:indikatory} 
 a po diskuzi v řešitelském týmu navrhujeme drobné změny a upřesnění postupu z přihlášky. Zaměřili bychom se na reprodukci a rozšíření 
-hydro-mechanického modelu a inverzních úloh řešených v rámci projektu DECOVALEX-THMC project (2004–2007), Task A. 
+hydro-mechanického modelu a inverzních úloh řešených v rámci projektu DECOVALEX-THMC project (2004–2007), Task A, viz. \cite{Rutqvist2009}. 
 V první fázi by šlo o zvládnutí jednoduchého modelu s využitím empirických konstitučních vztahů a založeného na existujících řešičích. 
 Rychlé zvládnutí jednoduchého dopředného modelu umožní testování metod Bayesovské inverze. Metamodely, sloužící k urychlení 
 výpočtu, lze pak využít k posouzení citlivosti měření na jednotlivé parametry modelu. Jednoduchý dopředný model lze následně nahradit 
 víceškálovým modelem, jehož rozvoj závisí na zvládnutí nelinearit na puklinách a nástrojích pro generování regulárních sítí pro náhodné pukliny.  
 Paralelně by probíhal vývoj robustnějšího simulačního nástroje v rámci Flow123d,
-který by zvládl i výpočet 3d úloh se zahrnutím heterogenity nebo složitějších experimentálních uspořádání.  
+který by zvládl i výpočet 3d úloh se zahrnutím heterogenity nebo složitějších experimentálních uspořádání.
 
-V roce 2020 byly realizovány pouze testovací výpočty s využitím Druckerova-Pragerova kritéria. 
+\subsection{Nelineární hydro-mechanické modely (ÚGN)}
+V souladu s popisem této aktivity se ÚGN tým věnoval vývoji nelineárních hydro-mechanických modelů s puklinami, jejich implementací a kombinací s Bayesovskou inverzní analýzou, viz \cite{blaheta2020bayesian}. Konkrétně byly uvažovány dva typy nelinearit: podmínky nepronikání na trhlinách a nelineární závislost hydraulické vodivosti na rozevření trhlin. Podmínka nepronikání byla iteračně řešena pomocí Lagrangeových multiplikátorů, duality a pomocí metody rozkladu oblasti. Druhý typ nelinearity byl linearizován na základě Picardova iteračního schématu. Bayesovská inverzní analýza byla provedena za účelem identifikace neznámých parametrů trhlin a její detailní popis lze najít v následující kapitole. V navazujících publikacích \cite{berevs2021numerical, BBDHH2020} byl popsán další rozvoj těchto modelů a metod.
+
+Dále byl připraven interní dokument "S. Sysala: Investigation of tunnel EDZ by perfect plasticity and mesh
+adaptivity", ve kterém byly studovány možnosti mechanického modelování EDZ ve 2D pomocí perfektní plasticity, limitní analýzy zatížení a adaptivity konečněprvkové sítě. Konkrétně bylo zvoleno Drucker-Pragerovo plastické kritérium a dva různé profily tunelů. Ačkoliv limitní parametr zatížení je výrazně vyšší než jedna, odpovídající zóny poškození by mohly určovat směr možného šíření trhlin způsobených ražbou tunelů nebo vrtů.
 
 \section{Knihovny pro stochastické přímé a inverzní metody}
 \label{sec:stochastic}
 {\it Období aktivity:}  07/2019 - 12/2021
 
-\subsection{Popis aktivity dle přihlášky}
+\subsection{Popis aktivity dle přihlášky projektu}
+{\it 
 Aktivita je zaměřena na vývoj a aplikaci stochastických metod v úlohách simulujících hydro-mechanické procesy v EDZ. V první fázi
 bude formulován stochastický popis parametrů uvažovaných modelů včetně popisu rozdělení puklin. Následovat bude implementace
 víceúrovňové metody Monte-Carlo (MLMC) se zahrnutím různě detailního popisu puklinových sítí. Bude vyvinut nástroj pro tvorbu
 statisticky generovaných puklin a příslušných smíšených výpočetních sítí. Současně budou implementovány specifické metody pro
 Bayesovské inverze s využitím metody Metropolis-Hastings pro generování Markovského řetězce. Pro podstatné zvýšení efektivity se
-využije přibližný, náhradní (surrogate) model a příslušná varianta Metropolis-Hastings algoritmu (algoritmus se zpožděním).
+využije přibližný, náhradní (surrogate) model a příslušná varianta Metropolis-Hastings algoritmu (algoritmus se zpožděním).}
 
 
 \subsection{Víceúrovňová metoda Monte Carlo a výpočty na puklinách (TUL)}
@@ -379,43 +400,43 @@ V rámci paralelně řešeného projektu TAČR (GeoPax) byla dokončena první r
 
 Bayesovská inverze je přirozeným nástrojem pro odhad neznámých parametrů matematického modelu na základě odezvy modelu zatížené nejistotami způsobenými například chybami měření. V roce 2020 tým ÚGN pokračoval ve vývoji metod pro efektivní numerickou realizaci Bayesovské inverze. Numerická realizace spočívá v generování snímků  z aposteriorního rozdělení neznámých parametrů, což vyžaduje vysoký počet vyhodnocení modelu. Pro zvýšení efektivity používáme algoritmus Metropolis-Hastings se zpožděným přijetím (DAMH), ve kterém jsou některá vyhodnocení modelu nahrazena vyhodnocením výpočetně levnějšího zástupného modelu ({\it eng. surrogate model}). V případě velmi vysoké výpočetní náročnosti matematického modelu je rovněž možné přejít k plnému nahrazení zástupným modelem.
 
-Hlavním výsledkem je vývoj a implementace zástupných modelů, které lze využít v přímých i inverzních úlohách s nejistotami. Věnovali jsme se efektivní implementací stochastické Galerkinovy metody, která slouží řešení k lineárních úloh s nejistotami. Dále jsme implementovali polynomiální zástupný model, který je v průběhu DAMH algoritmu dále zpřesňován pomocí nově získaných vyhodnocení původního modelu. Model je neintruzivní a tedy široce využitelný. Při využití snímků ke zpřesňování modelu se nabízí více strategií, které budou dále testovány.
+Hlavním výsledkem je vývoj a implementace zástupných modelů, které lze využít v přímých i inverzních úlohách s nejistotami. Mimo jiné jsme implementovali polynomiální zástupný model, který je v průběhu DAMH algoritmu dále zpřesňován pomocí nově získaných vyhodnocení původního modelu. Model je neintruzivní a tedy široce využitelný. Při využití snímků ke zpřesňování modelu se nabízí více strategií, které budou dále testovány.
 
-Popsaný přístup byl aplikován na vybrané hydro-mechanické úlohy, byl proveden odhad hydraulické vodivosti a parametrů trhliny na základě nepřesných měření toku na hranici oblasti. Dále byly navrženy inverzní úlohy, které je možné řešit v rámci analýzy propustnosti EDZ. Aplikace vyvinutých metod na navržené úlohy je umožněna díky neintruzivnímu charakteru používaných algoritmů a je součástí plánu na příští rok. Efektivita je dána vlastnostmi a výpočetní náročností konkrétního modelu; rovněž závisí na tom, jak přesnou aproximaci daného modelu je možné sestrojit.
+Popsaný přístup byl aplikován na vybrané hydro-mechanické úlohy, byl proveden odhad hydraulické vodivosti a parametrů trhliny na základě nepřesných měření toku na hranici oblasti, viz \cite{blaheta2020bayesian, BBDHH2020, berevs2021numerical}. Dále byly navrženy inverzní úlohy, které je možné řešit v rámci analýzy propustnosti EDZ, viz \cite{domesova2021efficient}. Další vývoj v této oblasti je očekáván i v roce 2021.
 
-\vspace{2ex}
-\noindent{\it Publikované články:}
+ÚGN tým se navíc věnoval efektivní implementací stochastické Galerkinovy metody, která slouží k řešení  lineárních úloh s nejistotami a lze rovněž využít jako zástupný model, viz \cite{berevs2020comparison}.
 
-\noindent
 
-R. Blaheta, M. Béreš, S. Domesová, J. Haslinger, D. Horák. Inverse problems for identification of the hydraulic conductivity of rocks, fractures and excavation damage zones (EDZ). Proceedings of Geotechnika 2020, Soláň, September 10-11, 2020.
-
-Příspěvek se věnuje řešení inverzních úloh identifikace materiálových parametrů hornin (např. hydraulické vodivosti). Je uvažován porézní materiál s trhlinami, které mohou být zahrnuty v~kontinuálním modelu, nebo modelovány explicitně. Jsou navrženy dva přístupy k analýze propustnosti EDZ. Dále je porovnáno použití deterministických a stochastických metod. Stochastický (Baysovský) přístup je robustnější, poskytuje více informací o neznámých parametrech, ale je výpočetně velice náročný, vyžaduje tedy další výzkum v oblasti efektivní numerické realizace.
+% \bigskip
+% \sy{Honzo, předpokládám, že níže uvedené popisy publikací jsou pro Tvou potřebu. Kdybys to ale chtěl nechat ve zprávě, nemám s tím problém. Jinak výše uvedený text od Simony jsem trochu poupravil a přeuspořádal.}
 
 \vspace{2ex}
-\noindent
-M. Béreš. A comparison of approaches for the construction of reduced basis for stochastic Galerkin matrix equations. Applications of Mathematics, 65(2), 191-225, 2020.
+% \noindent{\it Publikované články:}
 
-Stochastická Galerkinova metoda umožňuje řešení lineárních úloh s nejistotami v parametrech v rámci monolitické soustavy lineárních rovnic v tenzorovém formátu. Článek se zabývá efektivní implementací stochastické Galerkinovy metody, porovnává několik přístupů ke konstrukci redukované báze. Tento přístup přirozeně slouží k řešení přímých úloh s nejistotami a také může být použit jako zástupný model pro Bayesovskou inverzi.
+% \noindent
 
-\vspace{2ex}
-\noindent
-S. Domesová, M. Béreš, R. Blaheta. Efficient implementation of the Bayesian inversion by MCMC with acceleration of posterior sampling using surrogate models. Proceedings of IACMAG 2020. LNCE 125, Springer (přijato)
+% \cite{BBDHH2020} - Příspěvek se věnuje řešení inverzních úloh identifikace materiálových parametrů hornin (např. hydraulické vodivosti). Je uvažován porézní materiál s trhlinami, které mohou být zahrnuty v~kontinuálním modelu, nebo modelovány explicitně. Jsou navrženy dva přístupy k analýze propustnosti EDZ. Dále je porovnáno použití deterministických a stochastických metod. Stochastický (Baysovský) přístup je robustnější, poskytuje více informací o neznámých parametrech, ale je výpočetně velice náročný, vyžaduje tedy další výzkum v oblasti efektivní numerické realizace.
 
-Příspěvek je zaměřen na využití neintruzivních zástupných modelů ke zvýšení efektivity Markov chain Monte Carlo metod. Výsledkem je proces generování vzorků z aposteriorního rozdělení, který má díky neintruzivnímu charakteru obecné využití. Zde byl přístup aplikován na dvě modelové úlohy hydromechaniky (odhad hydraulické vodivosti, odhad rozevření trhliny).
+% \vspace{2ex}
+% \noindent
+% \cite{berevs2020comparison} - Stochastická Galerkinova metoda umožňuje řešení lineárních úloh s nejistotami v parametrech v rámci monolitické soustavy lineárních rovnic v tenzorovém formátu. Článek se zabývá efektivní implementací stochastické Galerkinovy metody, porovnává několik přístupů ke konstrukci redukované báze. Tento přístup přirozeně slouží k řešení přímých úloh s nejistotami a také může být použit jako zástupný model pro Bayesovskou inverzi.
 
-\vspace{2ex}
-\noindent
-M. Béreš, R. Blaheta, S. Domesová, D. Horák. Numerical methods for simulation of coupled hydro-mechanical processes in fractured porous media. Proceedings of IACMAG 2020. LNCE 125, Springer (přijato)
+% \vspace{2ex}
+% \noindent
+% \cite{domesova2021efficient} - Příspěvek je zaměřen na využití neintruzivních zástupných modelů ke zvýšení efektivity Markov chain Monte Carlo metod. Výsledkem je proces generování vzorků z aposteriorního rozdělení, který má díky neintruzivnímu charakteru obecné využití. Zde byl přístup aplikován na dvě modelové úlohy hydromechaniky (odhad hydraulické vodivosti, odhad rozevření trhliny).
 
-Témata, kterým se věnuje ÚGN (vývoj hydro-mechanického modelu s kontakty v trhlinách a Bayesovské inverzní metody) spolu úzce souvisí. Tento příspěvek je zaměřen na numerické řešení hydro-mechanických úloh v porézním prostředí s trhlinami modelovanými explicitně. Hlavním výsledkem je zajištění podmínky nepronikání a řešení kontaktu v trhlinách pomocí Lagrangeových multiplikátorů. Dále jsme pokročili ve vývoji iteračních metod pro řešení výsledných sdružených úloh. Výsledný model slouží jako aplikační úloha pro Bayesovskou inverzi.
+% \vspace{2ex}
+% \noindent
+% \cite{berevs2021numerical} - M. Béreš, R. Blaheta, S. Domesová, D. Horák. Numerical methods for simulation of coupled hydro-mechanical processes in fractured porous media. Proceedings of IACMAG 2020. LNCE 125, Springer (přijato)
+
+% Témata, kterým se věnuje ÚGN (vývoj hydro-mechanického modelu s kontakty v trhlinách a Bayesovské inverzní metody) spolu úzce souvisí. Tento příspěvek je zaměřen na numerické řešení hydro-mechanických úloh v porézním prostředí s trhlinami modelovanými explicitně. Hlavním výsledkem je zajištění podmínky nepronikání a řešení kontaktu v trhlinách pomocí Lagrangeových multiplikátorů. Dále jsme pokročili ve vývoji iteračních metod pro řešení výsledných sdružených úloh. Výsledný model slouží jako aplikační úloha pro Bayesovskou inverzi.
 
 
 
 \section{Modely transportu (TUL)}
 \label{sec:transport}
 
-Jelikož se pozdrželo plánování aktivity \ref{sec:hm_modely}, byl zatím s předstihem realizován model proudění a transportu, 
+Jelikož se pozdrželo plánování aktivity \ref{sec:hm_modely}, byl zatím týmem TUL s předstihem realizován model proudění a transportu, 
 viz. příloha \uv{model\_transportu.pdf}, který byl plánován jako součást aktivity "Vývoj specializovaného nástroje pro predikci indikátorů bezpečnosti" začínající v roce 2021. Model zahrnující stacionární proudění a transport konzervativního stopovače s difúzí a disperzí je realizován simulátorem Flow123d a bude sloužit k vlastnímu výpočtu indikátorů bezpečnosti. Celý model včetně procedurálně generované geometrie a výpočetní sítě je parametrizován a umožní tak jednak snadnou úpravu s ohledem na konkrétní 
 lokalitu, tak stochastické výpočty nebo inverzní úlohy pro použité parametry.
 
@@ -499,15 +520,6 @@ a pokud se osvědčí bude možno v rámci projektu realizovat víceškálový m
     \item Realizace aktivity "Predikce indikátorů bezpečnosti" bude validována s využitím dat z experimentu TSX.
 \end{itemize}
 
-https://www.overleaf.com/project/5f96de4f6737be000157632c
-
-
-
-\jb{TODO: aktualizovat}
-První půlrok řešení byl věnován rešerši, komunikaci mezi partnery a upřesnění postupu řešení projektu.
-Nebyly plánovány žádné milníky, první milník je plánován v polovině roku 2020 má zahrnovat především definici indikátorů bezpečnosti, ale to zahrnuje i upřesnění plánovaných modelů a rozvahu o dostupnosti vstupních dat modelů. Předběžná podoba tohoto dokumentu je v příloze \verb'koncept_metodiky.pdf'.
-
-Pro rok 2020 budeme postupovat v souladu s plánovanými aktivitami. Nicméně na základě předběžných experimentů s knihovnou FEniCS se zvládnutí její integrace s Flow123d jeví jako velmi nereálné. V tomto úsilí budeme pokračovat, ale plánované HM modely budou zatím vyvíjeny nezávisle.
 
 \bibliographystyle{plain}
 %\bibliographystyle{dinat-etal}
