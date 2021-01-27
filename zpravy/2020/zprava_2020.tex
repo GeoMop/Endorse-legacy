@@ -200,9 +200,9 @@ aktivity:
 
 Milník druhé aktivity, kapitola \ref{sec:smisene_site} byl splněn dle rozsahu definovaného v harmonogramu.
 Dle plánu byl implementován hydro-mechanický model s diskrétními puklinami. 
-Pro správnou predikci hydraulické vodivosti však bude potřeba složitější model kontatků a tření na puklinách. V tomto směru bude probíhat další vývoj v rámci ostatních aktivit. 
+Pro správnou predikci hydraulické vodivosti však bude potřeba složitější model kontaktů a tření na puklinách. V tomto směru bude probíhat další vývoj v rámci ostatních aktivit. 
 
-Řešení třetí aktivity, kapitola \ref{sec:hm_modely}, se mírně zpozdilo kvůli sníženým pracovním kapacitám. Během roku se teprve upřesňovala její přesná náplň Tým TUL
+Řešení třetí aktivity, kapitola \ref{sec:hm_modely}, se mírně zpozdilo kvůli sníženým pracovním kapacitám. Během roku se teprve upřesňovala její přesná náplň. Tým TUL
 se proto zatím věnoval s předstihem vývoji transportního modelu. Tým ÚGN otestoval 
 použití existujícího plastického modelu a aplikaci Bayesovských metod na složitější hydro-mechanickou úlohu.
 
@@ -444,7 +444,7 @@ Na základě realizovaných výpočtu byly identifikovány následující probl�
 \begin{itemize}
     \item Program GMSH použitý pro přípravu geometrie a výpočetní sítě má problémy s tvorbou sítě pro větší počet puklin, nebo v případě složitějších průniků s geometrií chodeb. Zdá se, že pro řešení problému je třeba najít způsob jak přesněji definovat 
     krok sítě, tak abychom dosáhli adaptivního zjemnění pouze v okolí chodeb a jejich průsečíků s vrty.
-    \item EDZ je popsána pouze jednou vrstvou elementů o tloušťce 2m. Je třeba zvládnou přesnější popis EDZ aniž by došlo k výraznému nárůstu počtu elementů. Bude snaha využít anisotropních elementů pro zjemnění pouze ve směru kolmém na stěnu chodeb.
+    \item EDZ je popsána pouze jednou vrstvou elementů o tloušťce 2m. Je třeba zvládnout přesnější popis EDZ aniž by došlo k výraznému nárůstu počtu elementů. Bude snaha využít anisotropních elementů pro zjemnění pouze ve směru kolmém na stěnu chodeb.
     \item Při použití větších časových kroků vykazuje použité DG výpočetní schéma transportu výrazné oscilace. Tomu snad lze zabránit
     pečlivější volbou regularizačního parametru, nebo použitím metody vyššího řádu.
     \item Pro účely vyhodnocení indikátorů bude třeba simulátor Flow123d doplnit o výstup některých hodnot na hranici oblasti.
