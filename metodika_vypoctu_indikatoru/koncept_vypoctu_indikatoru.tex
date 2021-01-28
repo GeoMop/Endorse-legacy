@@ -12,7 +12,8 @@
 \bibliographystyle{plainnat}
 \setcitestyle{authoryear}
 
-\usepackage[unicode, colorlinks=true]{hyperref}
+\usepackage[unicode, colorlinks=true, citecolor=blue]{hyperref}
+
 
 \title{Koncept predikce bezpečnostních indikátorů EDZ}
 \author{Radim Blaheta, Jan Březina}
@@ -29,7 +30,6 @@
 \def\tr{\operatorname{tr}}
 \def\vc#1{\mathbf{\boldsymbol{#1}}}     % vector
 \def\tn#1{{\mathbb{#1}}}    % tensor
-
 
 %\newcommand{\alert}[1]{{\color{red}#1}}
 \newcommand{\alert}[1]{#1}
@@ -180,7 +180,6 @@ Celkové schéma použitých modelů je znázorněno na obrázku \ref{fig:main_s
 Nejprve popíšeme geometrii modelu (kapitola  \ref{sec:transport_geometrie}), model proudění (kapitola \ref{sec:transport_flow})
 a model transportu konzervativního stopovače (kapitola \ref{sec:stopovac}). Jádrem této části je návrh indikátorů bezpečnosti (kapitola \ref{sec:indikatory}). 
 V poslední kapitole \ref{sec:nejistoty} pak shrneme parametry modelů, možné způsoby jejich identifikace a~příslušné zdroje nejistot.
-
 
 
 %možné pozitivní vlivy EDZ na bezpečnost \cite{Lanyon2011}: hydraulic cage, sorption surface on new fractures, 
