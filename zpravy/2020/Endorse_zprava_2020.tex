@@ -17,7 +17,6 @@
 \usepackage{amsfonts,amsmath}
 \usepackage{etoolbox}
 \usepackage{graphicx}
-\usepackage[unicode]{hyperref}
 \usepackage{multirow}
 \usepackage{titlesec}
 \setcounter{secnumdepth}{3}
@@ -151,7 +150,7 @@
 \begin{titlepage}
     \includegraphics[width=2cm]{logo_TACR_zakl.pdf}
 
-    \vspace{6cm}
+    \vspace{5cm}
     {\centering	
       {\scshape\bf\huge Odborná zpráva - \\
       řešení projektu Endorse v roce 2020\par}
@@ -163,7 +162,8 @@
         {\bfseries }\par}
       \vspace{2ex}
       {\noindent Název projektu: \\
-        {\bfseries Predikce vlastností EDZ s vlivem na bezpečnost a spolehlivost
+        {\bfseries Predikce vlastností EDZ s vlivem \\
+        na bezpečnost a spolehlivost\\
          hlubinného úložiště radioaktivního odpadu.} \par}
       \vspace{2ex}
       {\noindent Předkládá: \\
@@ -309,12 +309,6 @@ se však podmíněnost úlohy, což může být limitující při řešení rozs
 
 
 \subsection{Hydro-mechanický model s kontakty (UGN)}
-\begin{figure}
-    \centering
-    \includegraphics[width=0.6\textwidth]{graphics/ugn_permon_pull.png}
-    \caption{}
-    \label{fig:ugn_pull}
-\end{figure}
 
 V rámci vývoje knihovny PERMON byl implementován generátor problémů lineární
 elasticity s puklinami. Funkčnost je prozatím omezena na 2D úlohy. K
@@ -328,6 +322,15 @@ omezení. Vzniklá úloha kvadratického programování je za pomoci knihovny
 PERMON dualizována a vyřešena algoritmem MPRGP. 
 Výsledek řešení testovací úlohy je na obrázku \ref{fig:ugn_pull}.
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.45\textwidth]{graphics/ugn_permon_pull2.png}
+    \includegraphics[width=0.45\textwidth]{graphics/ugn_permon_pullpush.png}
+    \caption{Úloha lineární elasticity s puklinami a podmínkou nepronikání. Vlevo:Uniformní síla působící na horní hranici, část pukliny se otevírá, část zůstává uzavřena. Vpravo: Dodatečný tlak na pravé hranici, jedna puklina uzavřena, druhá otevřena.
+}
+    \label{fig:ugn_pull}
+\end{figure}
+
 % \sy{ÚGN tým se také věnoval vývoji experimentálních kódů v Matlabu na řešení nelineárních hydro-mechanických problémů s puklinami, a to v úzké souvislosti s aktivitami popsanými v následujících dvou kapitolách. Uvažované modely a metody budou popsány níže. Při implementaci byly mimo jiné použity algoritmy dostupné v knihovně PERMON.}
 
 \section{ Matematické modely EDZ a související inverzní úlohy}
@@ -335,7 +338,7 @@ Výsledek řešení testovací úlohy je na obrázku \ref{fig:ugn_pull}.
  {\it Období aktivity:}  1/2020 - 6/2021
 \subsection{Popis aktivity dle přihlášky projektu}
 {\it 
-Hlavní náplní aktivity bude testování modelů hydro-mechanických procesů v EDZ se zahrnutím vlivu puklin různých škál. K testování budou využita zejména data z Task G projektu Decovalex (experiment TAS04 v ASPO) případně též dostupná data z podzemní
+Hlavní náplní aktivity bude testování modelů hydro-mechanických procesů v EDZ se zahrnutím vlivu puklin různých škál. K testování budou využita zejména data z Task G projektu Decovalex (experiment TAS04 v \"ASP\"O) případně též dostupná data z podzemní
 laboratoře Bukov. Mechanické a hydraulické vlastnosti EDZ budou nejprve odhadnuty pomocí výpočtu napětí v EDZ a použitím modelů poškození. Bude též studován vztah mezi napětím a statistikami mikro puklin. Následně budou uvažovány jednak kontinuální poroelastické modely založené na duální pórovitosti a dále modely založené na kombinaci ekvivalentního porézního média a diskrétní puklinové sítě. Pro různě komplexní modely budou řešeny inverzní úlohy jak pomocí klasických optimalizačních metod tak pomocí
 Bayesovského přístupu, který popisuje hledané parametry pomocí statistického rozdělení pravděpodobnosti. Tento přístup vyžaduje výpočetně velmi náročné metody, je však robustnější a přináší více informací(např. kvalitu odhadu hledaných parametrů).}
 
@@ -516,7 +519,7 @@ hlediska umožňuje značnou flexibilitu ve volbě konkrétního konstitutivníh
 a pokud se osvědčí bude možno v rámci projektu realizovat víceškálový model EDZ.
     \item Aktivita "Matematické modely EDZ a související inverzní úlohy" bude prodloužena až do konce roku 2021 s 
     cílem reprodukovat výsledky HM modelů pro data z experimentu TSX (za předpokladu přístupu k datům). Pro co nejjednodušší 
-    model bude otestováno použití metod pro Bayesovskou inverzi s cílem získat informaci o rozdělení parametrů modelu. Původně zamýšlené využití dat z experimentu TAS04 v ASPO nebude realizováno, předchozí snahy více týmů postihnout naměřená data byly neúspěšné.  
+    model bude otestováno použití metod pro Bayesovskou inverzi s cílem získat informaci o rozdělení parametrů modelu. Původně zamýšlené využití dat z experimentu TAS04 v \"ASP\"O nebude realizováno, předchozí snahy více týmů postihnout naměřená data byly neúspěšné.  
     \item Realizace aktivity "Predikce indikátorů bezpečnosti" bude validována s využitím dat z experimentu TSX.
 \end{itemize}
 
