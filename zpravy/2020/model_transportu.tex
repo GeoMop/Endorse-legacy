@@ -162,7 +162,7 @@
 
 Model transportu popisuje šíření kontaminantu oblastí úložiště se zahrnutím EDZ a stochasticky generované puklinové sítě. Předpokladem je, že EDZ kolem úložných vrtů zesiluje průtoky podzemní vody podél těchto vrtů.
 
-V hierarchii kontejner/bentonit/edz/úložiště/masiv/biosféra se model nachází mezi úrovněmi rozhraní bentonit/edz a vnější hranicí úložiště (či spíše ještě několika desítek metru dále). Pracuje s výsledky modelů dalších úrovní \obraz{schema_modelu}: a) jako zdrojový člen kontaminace slouží výsledky samostatného modelu blízkého pole \cite{blizkepole}, b) hydraulické podmínky na hranici oblasti úložiště jsou převzaty z regionálního hydrogeologického modelu \cite{riha_hradek}. 
+V hierarchii kontejner/bentonit/edz/úložiště/masiv/biosféra se model nachází mezi úrovněmi rozhraní bentonit/edz a vnější hranicí úložiště (či spíše ještě několika desítek metru dále). Pracuje s výsledky modelů dalších úrovní \obraz{schema_modelu}: a) jako zdrojový člen kontaminace slouží výsledky samostatného modelu blízkého pole (převzato), b) hydraulické podmínky na hranici oblasti úložiště jsou převzaty z regionálního hydrogeologického modelu \cite{riha_hradek}. 
 
 Hlavním výstupem modelu by měla být časová řada koncentrace kontaminantu na vnější hranici úložiště,
 na které jsou založeny indikátory bezpečnosti EDZ navžené v rámci projektu.
@@ -228,7 +228,7 @@ na které jsou založeny indikátory bezpečnosti EDZ navžené v rámci projekt
 
 V současném stavu zahrnuje geometrie modelu výřez masivu úložiště s jednou hlavní a~třemi bočními rozrážkami, na které navazují horizontální ukládacími vrty. Vlastní objemy rozrážek a~vrtů nejsou součástí výpočetní sítě (tvoří prázdný prostor v~masivu). Rozměry modelované oblasti a jejích částí \obraz{geom_okotovana} jsou volitelnými parametry. Použité rozměry rozrážek odpovídají předpokládaným skutečným rozměrům. Tloušťka EDZ (2~m) je v~současné verzi nadhodnocena z~důvodu snazší diskretizace\footnote{Současná verze geometrie modelu se potýká s několika nedostatky. Východiska a plán dalších prací jsou diskutovány samostatně v odstavci \ref{detskenemoci} na konci této kapitoly.}.
 
-K tvorbě sítě je využita knihovna BGEM (vlastní vývoj) zpřístupňující procedury programového rozhraní balíku GMSH \cite{Geuzaine2009b}. 
+K tvorbě sítě je využita knihovna BGEM (vlastní vývoj) zpřístupňující procedury programového rozhraní balíku GMSH \cite{gmsh}. 
 
 Celý proces zatím nebyl odladěn tak, aby vysíťování oblasti bylo dostatečně robustní. Úspěšnost síťování (s~parametry v tabulce \ref{kroky_site}) geometrie pro různé varianty stochasticky generované puklinové sítě o~několika desítkách puklin se pohybovala pouze okolo 10-20~\% \pozn{detskenemoci}. K~výpočtům byly použity geometrie s~cca 10 puklinami o~velikosti mezi 400 - 500 tis. elementy. 
 
@@ -448,7 +448,7 @@ Vybrané časy simulace jsou znázorněny na obr. \ref{var3}. Charakter šířen
 \newpage
 \subsection{Současná verze modelu - nedostatky a možná řešení}
 \label{detskenemoci}
-Jak již bylo uvedeno v předchozím textu, současná verze modelu transportu se potýká s několika problémy, jejichž řešení však zároveň poskytuje prostor pro další rozvoj modelu. První dva mají společný jmenovatel ve využití knihoven síťovacího algoritmu GMSH \cite{Geuzaine2009b} v našem kódu.
+Jak již bylo uvedeno v předchozím textu, současná verze modelu transportu se potýká s několika problémy, jejichž řešení však zároveň poskytuje prostor pro další rozvoj modelu. První dva mají společný jmenovatel ve využití knihoven síťovacího algoritmu GMSH \cite{gmsh} v našem kódu.
 \begin{itemize}
  \item {\bf Reprezentace EDZ.} Je třeba nalézt způsob lepší reprezentace EDZ buďto specficky zjemněnou sítí, přepočtem efektivní vodivosti, nebo rozdělením modelu na dvě samostatné škály.
  \item {\bf Stabilita síťování.} Soušasné řízení kroku sítě vynucuje velká krok na celých puklinách což způsobuje neúspěch síťovače
