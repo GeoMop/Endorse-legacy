@@ -1,6 +1,10 @@
 from typing import *
 from abc import *
 
+import warnings
+import logging
+
+
 import os
 import sys
 import numpy as np
@@ -26,6 +30,12 @@ import fracture
 import matplotlib.pyplot as plt
 import copy
 import skgstat
+
+
+logging.getLogger('bgem').disabled = True
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings('ignore')
 
 
 def in_file(base):
@@ -336,7 +346,6 @@ class FlowProblem:
     def make_fine(cls, i_level, fr_range, fractures, finer_level_path, config_dict):
         level_dict = config_dict['levels'][i_level]
         bulk_conductivity = level_dict['bulk_conductivity']
-        print("bulk conductivity ", bulk_conductivity)
 
         if bulk_conductivity.get('choose_from_finer_level', False):
             bulk_model = BulkChoose(finer_level_path)
@@ -377,13 +386,9 @@ class FlowProblem:
         """
         pd = polygons.PolygonDecomposition(tol)
         last_pt = outer_polygon[-1]
-        print("last pt ", last_pt)
-
         side_regions = []
         for i_side, pt in enumerate(outer_polygon):
             reg = self.add_region(".side_{}".format(i_side), dim=1, mesh_step=self.mesh_step, boundary=True)
-            print("reg ", reg)
-            print("i side ", i_side)
 
             reg.sub_reg = self.add_region(".side_fr_{}".format(i_side), dim=0, mesh_step=self.mesh_step, boundary=True)
             diff = np.array(pt) - np.array(last_pt)
@@ -391,12 +396,7 @@ class FlowProblem:
             reg.normal = normal / np.linalg.norm(normal)
             side_regions.append(reg)
 
-            # print("last pt ", last_pt)
-            # print("pt ", pt)
-
             sub_segments = pd.add_line(last_pt, pt, deformability=0)
-
-            #print("sub segments ", sub_segments)
 
             if not (type(sub_segments) == list and len(sub_segments) == 1):
                 from bgem.polygons.plot_polygons import plot_decomp_segments
@@ -409,9 +409,6 @@ class FlowProblem:
         assert len(pd.polygons) == 2
         pd.polygons[1].attr = bulk_reg
 
-        print("side regions ", side_regions)
-
-        print("pd.points ", pd.points)
 
         return pd, side_regions
 
@@ -485,8 +482,6 @@ class FlowProblem:
     def make_fracture_network(self):
         self.mesh_step = self.fr_range[0]
 
-        print("self. fr range ", self.fr_range)
-
         # Init regions
         self.none_reg = self.add_region('none', dim=-1)
         bulk_reg = self.add_region('bulk_2d', dim=2, mesh_step=self.mesh_step)
@@ -506,15 +501,8 @@ class FlowProblem:
         #self.outer_polygon = [[-10, -10], [10, -10], [10, 10], [-10, 10]]
         #self.outer_polygon = [[-500, 0], [0, 0], [0, 500], [-500, 500]]
 
-        print("self outer polygon ", self.outer_polygon)
-
         pd, self.side_regions = self.init_decomposition(self.outer_polygon, bulk_reg, tol=self.mesh_step)
         self.group_positions[0] = np.mean(self.outer_polygon, axis=0)
-
-        print("group positions ", self.group_positions)
-
-        # extract fracture lines larger then the mesh step
-        print("self.fr range ", self.fr_range)
 
         square_fr_range = [self.fr_range[0], np.min([self.fr_range[1], self.outer_polygon[1][0] - self.outer_polygon[0][0]])]
         print("square fr range ", square_fr_range)
@@ -528,7 +516,6 @@ class FlowProblem:
         self.decomp = pd
 
     def _make_mesh_window(self):
-        print("make mesh window")
         import geometry_2d as geom
 
         self.skip_decomposition = False
@@ -536,12 +523,10 @@ class FlowProblem:
         self.make_fracture_network()
 
         gmsh_executable = self.config_dict["gmsh_executable"]
-        print("len self.regions ", len(self.regions))
 
         g2d = geom.Geometry2d("mesh_window_" + self.basename, self.regions)
         g2d.add_compoud(self.decomp)
         g2d.make_brep_geometry()
-        print("self mesh step ", self.mesh_step)
         step_range = (self.mesh_step * 0.9, self.mesh_step * 1.1)
         g2d.call_gmsh(gmsh_executable, step_range)
         self.mesh = g2d.modify_mesh()
@@ -549,10 +534,7 @@ class FlowProblem:
     def make_mesh(self):
         import geometry_2d as geom
         mesh_file = "mesh_{}.msh".format(self.basename)
-        print("mesh file ", mesh_file)
         self.skip_decomposition = os.path.exists(mesh_file)
-
-        print("self.skip decomposition ", self.skip_decomposition)
 
         #print("self regions ", self.regions)
         if not self.skip_decomposition:
@@ -760,7 +742,7 @@ class FlowProblem:
         :return: {group_id: conductivity_tensor} List of effective tensors.
         """
         bulk_regions = self.reg_to_group
-        print("bulk regions ", bulk_regions)
+        #print("bulk regions ", bulk_regions)
 
         out_mesh = gmsh_io.GmshIO()
         with open(os.path.join(self.basename, "flow_fields.msh"), "r") as f:
@@ -773,7 +755,7 @@ class FlowProblem:
         assert len(field_cs) == len(ele_reg_vol)
         velocity_field = out_mesh.element_data['velocity_p0']
 
-        print("velocity field ", velocity_field)
+        #print("velocity field ", velocity_field)
 
         loads = self.pressure_loads
         group_idx = {group_id: i_group for i_group, group_id in enumerate(set(bulk_regions.values()))}
@@ -903,11 +885,11 @@ class BothSample:
         # h_fine_step
         # seedm
         # i_level
-        print("sample config ", sample_config)
+        #print("sample config ", sample_config)
 
         self.__dict__.update(sample_config)
 
-        print("self levels ", self.levels)
+        #print("self levels ", self.levels)
 
         self.i_level = 1
         self.finer_level_path = None  # It should be set if config param 'choose_from_finer_level' is True
@@ -957,9 +939,6 @@ class BothSample:
         print("total mean size: ", pop.mean_size())
         print("size range:", pop.families[0].size.sample_range)
 
-        print("pop families ", pop.families[0].size)
-
-
         pos_gen = fracture.UniformBoxPosition(fracture_box)
         fractures = pop.sample(pos_distr=pos_gen, keep_nonempty=True)
 
@@ -976,7 +955,6 @@ class BothSample:
 
     def calculate(self):
         fractures = self.generate_fractures()
-        print("fractures ", fractures)
 
         # fine problem
         fine_flow = FlowProblem.make_fine(self.i_level, (self.h_fine_step, self.config_dict["geometry"]["fr_max_size"]), fractures, self.finer_level_path,
@@ -1217,9 +1195,6 @@ def run_samples(work_dir, sample_dict):
     subdomain_box = sample_dict["geometry"]["subdomain_box"]
     subdomain_overlap = np.array([0, 0])  # np.array([50, 50])
 
-    print("domain box ", domain_box)
-    print("subdomain box ", subdomain_box)
-
     lx, ly = domain_box
 
     bottom_left_corner = [-lx / 2, -ly / 2]
@@ -1240,14 +1215,13 @@ def run_samples(work_dir, sample_dict):
     k = 0
     for i in range(n_subdomains):
         center_x = subdomain_box[0] / 2 + (lx - subdomain_box[0]) / (n_subdomains - 1) * i - lx / 2
-        print("center_x ", center_x)
         for j in range(n_subdomains):
             k += 1
             print("i: {}, j:{}, k:{}".format(i, j, k))
-            # if k != 24:
+            # if k != 24:pop
             #     continue
-            if k != 6: #@TODO: zkusit jeste zmensit velikost elementu
-                continue
+            # if k != 6: #@TODO: zkusit jeste zmensit velikost elementu
+            #     continue
             center_y = subdomain_box[1] / 2 + (lx - subdomain_box[1]) / (n_subdomains - 1) * j - lx / 2
 
             bl_corner = [center_x - subdomain_box[0] / 2, center_y - subdomain_box[1] / 2]
@@ -1257,7 +1231,7 @@ def run_samples(work_dir, sample_dict):
 
             outer_polygon = [copy.deepcopy(bl_corner), copy.deepcopy(br_corner), copy.deepcopy(tr_corner),
                              copy.deepcopy(tl_corner)]
-            print("outer polygon ", outer_polygon)
+            #print("outer polygon ", outer_polygon)
 
 
             plt.scatter(*zip(*outer_polygon))
@@ -1283,7 +1257,7 @@ def run_samples(work_dir, sample_dict):
             except:
                 pass
 
-    plt.show()
+    #plt.show()
 
     # bottom_left_corner = [-lx / 2, -ly / 2]
     # bottom_right_corner = [+lx / 2, -ly / 2]
