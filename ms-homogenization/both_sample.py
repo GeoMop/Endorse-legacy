@@ -15,23 +15,29 @@ import pandas
 import scipy.spatial as sc_spatial
 import scipy.interpolate as sc_interpolate
 import atexit
+from scipy import stats
+from scipy.spatial import distance
 
 src_path = os.path.dirname(os.path.abspath(__file__))
 
 from bgem.gmsh import gmsh_io
 from bgem.polygons import polygons
 import fracture
+import matplotlib.pyplot as plt
+import copy
+import skgstat
 
 
 def in_file(base):
     return "flow_{}.yaml".format(base)
 
+
 def mesh_file(base):
     return "mesh_{}.msh".format(base)
 
+
 def fields_file(base):
     return "fields_{}.msh".format(base)
-
 
 
 def substitute_placeholders(file_in, file_out, params):
@@ -91,7 +97,6 @@ class FlowThread(threading.Thread):
         conv_check = self.check_conv_reasons(os.path.join(out_dir, "flow123.0.log"))
         print("converged: ", conv_check)
         return status  # and conv_check
-
 
     def check_conv_reasons(self, log_fname):
         with open(log_fname, "r") as f:
@@ -157,15 +162,15 @@ class BulkFields(BulkBase):
     angle_concentration: float = attr.ib(converter=float)
 
     def element_data(self, mesh, eid):
-
         # Unrotated tensor (eigenvalues)
         if self.cov_log_conductivity is None:
             log_eigenvals = self.mean_log_conductivity
         else:
             log_eigenvals = np.random.multivariate_normal(
                 mean=self.mean_log_conductivity,
-                cov=self.cov_log_conductivity
+                cov=self.cov_log_conductivity,
                 )
+
         unrotated_tn = np.diag(np.power(10, log_eigenvals))
 
         # rotation angle
@@ -269,10 +274,13 @@ def write_fields(mesh, basename, bulk_model, fracture_model):
         elem_ids.append(el_id)
         el_type, tags, node_ids = ele
         n_nodes = len(node_ids)
+
         if n_nodes == 2:
             cs, cond_tn = fracture_model.element_data(mesh, el_id)
         else:
+            # n_nodes == 3
             cs, cond_tn = bulk_model.element_data(mesh, el_id)
+
         cs_field.append(np.array(cs))
         cond_tn_field.append(tensor_3d_flatten(cond_tn))
 
@@ -328,6 +336,7 @@ class FlowProblem:
     def make_fine(cls, i_level, fr_range, fractures, finer_level_path, config_dict):
         level_dict = config_dict['levels'][i_level]
         bulk_conductivity = level_dict['bulk_conductivity']
+        print("bulk conductivity ", bulk_conductivity)
 
         if bulk_conductivity.get('choose_from_finer_level', False):
             bulk_model = BulkChoose(finer_level_path)
@@ -382,12 +391,12 @@ class FlowProblem:
             reg.normal = normal / np.linalg.norm(normal)
             side_regions.append(reg)
 
-            print("last pt ", last_pt)
-            print("pt ", pt)
+            # print("last pt ", last_pt)
+            # print("pt ", pt)
 
             sub_segments = pd.add_line(last_pt, pt, deformability=0)
 
-            print("sub segments ", sub_segments)
+            #print("sub segments ", sub_segments)
 
             if not (type(sub_segments) == list and len(sub_segments) == 1):
                 from bgem.polygons.plot_polygons import plot_decomp_segments
@@ -408,7 +417,7 @@ class FlowProblem:
 
     def add_fractures(self, pd, fracture_lines, eid):
         outer_wire = pd.outer_polygon.outer_wire.childs
-        print("outer wire ", outer_wire)
+        #print("outer wire ", outer_wire)
 
         assert len(outer_wire) == 1
         outer_wire = next(iter(outer_wire))
@@ -439,16 +448,23 @@ class FlowProblem:
 
             # remove segments out of the outer polygon
             if type(sub_segments) == list:
+                #print("sub segments ", sub_segments)
+                #exit()
                 for seg in sub_segments:
                     if seg.attr is None:
                         seg.attr = reg
                     # remove segments poking out of outer polygon
                     if seg.wire[0] == seg.wire[1] and (seg.wire[0].parent == pd.outer_polygon.outer_wire):
                         points = seg.vtxs
-                        pd.delete_segment(seg)
-                        for pt in points:
-                            if pt.is_free():
-                                pd._rm_point(pt)
+                        # print("pd segments ", pd.segments.keys())
+                        # print("seg ", seg)
+                        if seg.id in pd.segments.keys():
+                            pd.delete_segment(seg)
+                            for pt in points:
+                                if pt.is_free():# and pt.id in pd.points.keys():
+                                    pd._rm_point(pt)
+                                # else:
+                                #     print("not rm pt.id ", pt.id)
 
         #plot_decomp_segments(pd, [p0, p1])
         # assign boundary region to outer polygon points
@@ -468,6 +484,8 @@ class FlowProblem:
 
     def make_fracture_network(self):
         self.mesh_step = self.fr_range[0]
+
+        print("self. fr range ", self.fr_range)
 
         # Init regions
         self.none_reg = self.add_region('none', dim=-1)
@@ -493,10 +511,12 @@ class FlowProblem:
         pd, self.side_regions = self.init_decomposition(self.outer_polygon, bulk_reg, tol=self.mesh_step)
         self.group_positions[0] = np.mean(self.outer_polygon, axis=0)
 
+        print("group positions ", self.group_positions)
+
         # extract fracture lines larger then the mesh step
         print("self.fr range ", self.fr_range)
 
-        square_fr_range = [self.fr_range[0], self.outer_polygon[1][0] - self.outer_polygon[0][0]]
+        square_fr_range = [self.fr_range[0], np.min([self.fr_range[1], self.outer_polygon[1][0] - self.outer_polygon[0][0]])]
         print("square fr range ", square_fr_range)
         #self.fracture_lines = self.fractures.get_lines(self.fr_range)
         self.fracture_lines = self.fractures.get_lines(square_fr_range)
@@ -753,6 +773,8 @@ class FlowProblem:
         assert len(field_cs) == len(ele_reg_vol)
         velocity_field = out_mesh.element_data['velocity_p0']
 
+        print("velocity field ", velocity_field)
+
         loads = self.pressure_loads
         group_idx = {group_id: i_group for i_group, group_id in enumerate(set(bulk_regions.values()))}
         n_groups = len(group_idx)
@@ -924,12 +946,19 @@ class BothSample:
         if pow_law_sample_range:
             pop.set_sample_range(pow_law_sample_range)
         elif n_frac_limit:
-            pop.set_sample_range([None, max(lx, ly)], sample_size=n_frac_limit)
+            # pop.set_sample_range([None, np.min([lx, ly, self.config_dict["geometry"]["fr_max_size"]])],
+            #                      sample_size=n_frac_limit)
+            # pop.set_sample_range([None, max(lx, ly)],
+            #                      sample_size=n_frac_limit)
+
+            pop.set_sample_range(fr_size_range,
+                                 sample_size=n_frac_limit)
 
         print("total mean size: ", pop.mean_size())
         print("size range:", pop.families[0].size.sample_range)
 
         print("pop families ", pop.families[0].size)
+
 
         pos_gen = fracture.UniformBoxPosition(fracture_box)
         fractures = pop.sample(pos_distr=pos_gen, keep_nonempty=True)
@@ -941,6 +970,7 @@ class BothSample:
 
     def make_summary(self, done_list):
         results = {problem.basename: problem.summary() for problem in done_list}
+
         with open("summary.yaml", "w") as f:
             yaml.dump(results, f)
 
@@ -949,7 +979,7 @@ class BothSample:
         print("fractures ", fractures)
 
         # fine problem
-        fine_flow = FlowProblem.make_fine(self.i_level, (self.h_fine_step, np.inf), fractures, self.finer_level_path,
+        fine_flow = FlowProblem.make_fine(self.i_level, (self.h_fine_step, self.config_dict["geometry"]["fr_max_size"]), fractures, self.finer_level_path,
                                           self.config_dict)
         fine_flow.make_mesh()
         fine_flow.make_fields()
@@ -994,98 +1024,353 @@ def finished(start_time):
         f.write(f"done\n{sample_time}")
 
 
-if __name__ == "__main__":
-    start_time = time.time()
-    atexit.register(finished, start_time)
-    sample_config = sys.argv[1]
-    #try:
-    with open(sample_config, "r") as f:
-        sample_dict = yaml.load(f, Loader=yaml.FullLoader)
-    #except Exception as e:
-    #    print("cwd: ", os.getcwd(), "sample config: ", sample_config)
-
-
+def compute_variogram(cond_field_xy, scalar_cond_log, dir):
     import matplotlib.pyplot as plt
-    import copy
+    import itertools
+    import skgstat as skg
 
+    # Select pairs to sample various point distances
+    #radius = 0.5 * np.linalg.norm(points.max_pt - points.min_pt, 2)
+    n_samples = len(cond_field_xy)
+    assert len(scalar_cond_log) == n_samples
+
+    #all_combinations = list(itertools.combinations(cond_field_xy, 2))
+
+    cond_field_xy_arr = np.squeeze(np.array(cond_field_xy))
+    scalar_cond_log_arr = np.squeeze(np.array(scalar_cond_log))
+
+    print(cond_field_xy_arr.shape)
+
+    print(scalar_cond_log_arr.shape)
+
+    #print("cond_field_values_arr[:,0] ", cond_field_values_arr[:, 0,0].shape)
+
+
+    #V1 = skg.Variogram(cond_field_xy_arr, scalar_cond_log_arr, use_nugget = True, n_lags=100)
+    #V1 = skg.Variogram(cond_field_xy_arr, scalar_cond_log_arr, n_lags=50, maxlag=0.8)
+    fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+    fig2, ax2 = plt.subplots(1, 1, figsize=(8, 6))
+    V1 = skg.Variogram(cond_field_xy_arr, scalar_cond_log_arr)
+    v1_figure = V1.plot(axes=ax, hist=True)
+    print("v1 figure ", v1.figure)
+    fig.savefig(os.path.join(dir, "variogram.pdf"))
+    #V1.scattergram()
+    V1.distance_difference_plot(ax=ax2)
+    fig2.savefig(os.path.join(dir, "dist_differences.pdf"))
+
+
+
+
+    # print("V1 coordinates ", V1.coordinates)
+    #
+    # print("len(lag groups)", len(V1.lag_groups()))
+    # print("lag groups", V1.lag_groups())
+    # print("V1.data()", V1.data())
+    # print("V1.bins", V1.bins)
+    # print("V1.diff() ", V1._diff)
+    # print("V.metric_space ", V1.metric_space.dist_metric)
+    #
+    #
+    # print("mode V1 distance matrix ", stats.mode(V1.distance_matrix, axis=None))
+    #
+    # distances = distance.cdist(cond_field_xy_arr, cond_field_xy_arr, 'euclidean')
+    # print("distances ", distances)
+    # print("len(distances.flatten) ", len(distances.flatten()))
+    # print("len distances ", len(distances))
+    #
+    # print("len V1.data ", len(V1.data()))
+    #
+    # for lag_class in V1.lag_classes():
+    #     print("lag class ", lag_class)
+    # exit()
+
+    ## Directional variogram
+    fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+    Vnorth = skg.DirectionalVariogram(cond_field_xy_arr, scalar_cond_log_arr, azimuth=90, tolerance=90)
+    Vnorth.plot(axes=ax,show=True)
+    Vnorth.distance_difference_plot()
+    fig.savefig(os.path.join(dir,"variogram_vnorth.pdf"))
+
+    fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+    Veast = skg.DirectionalVariogram(cond_field_xy_arr, scalar_cond_log_arr, azimuth=0, tolerance=90)
+    Veast.plot(axes=ax, show=True)
+    Veast.distance_difference_plot()
+    fig.savefig(os.path.join(dir,"variogram_veast.pdf"))
+
+    # V2 = skg.DirectionalVariogram(cond_field_xy_arr, scalar_cond_log_arr, azimuth=45, tolerance=30)
+    # V2.plot(show=True)
+
+    fig, ax = plt.subplots(1, 1, figsize=(8, 6))
+    ax.plot(Vnorth.bins, Vnorth.experimental, '.--r', label='North-South')
+    ax.plot(Veast.bins, Veast.experimental, '.--b', label='East-West')
+    #ax.plot(V2.bins, V2.experimental, '.--g')
+    ax.set_xlabel('lag [m]')
+    ax.set_ylabel('semi-variance (matheron)')
+    plt.legend(loc='upper left')
+    fig.show()
+    fig.savefig(os.path.join(dir, "directional_semi_variance.pdf"))
+
+    exit()
+
+
+def process_results(sample_dict):
+    seeds = sample_dict.get("seeds", [])
+    if len(seeds) == 0:
+        seeds = [12345]
+
+    seeds_cond_field_xy = []
+    seeds_scalar_cond_log = []
+    for seed in seeds:
+        i = 0
+        cond_field_xy = []
+        scalar_cond_log = []
+
+        subdir = "n_10_s_300_300"
+
+        dir = "seed_{}/{}".format(seed, subdir)
+
+        if not os.path.exists(dir):
+            print("dir not exists: {}".format(dir))
+            continue
+
+        while True:
+            dir_name = os.path.join(dir, "fine_{}".format(i))
+            print("cwd ", os.getcwd())
+            print("dir name ", dir_name)
+
+            if os.path.exists(dir_name):
+                print("dir exists ")
+                with open(os.path.join(dir_name, "summary.yaml"), "r") as f:
+                    summary_dict = yaml.load(f, Loader=yaml.FullLoader)
+                print("   ...store")
+                fine_cond_tn = np.array(summary_dict['fine']['cond_tn'])
+                e_val, e_vec = np.linalg.eigh(fine_cond_tn)
+                cond_field_xy.append(np.array(summary_dict['fine']['pos']))
+                scalar_cond_log.append(np.log(np.mean(e_val)))
+            else:
+                break
+            i+=1
+
+        seeds_cond_field_xy.append(cond_field_xy)
+        seeds_scalar_cond_log.append(scalar_cond_log)
+
+    print("len(seeds_cond_field_xy) ", len(seeds_cond_field_xy))
+
+    if len(seeds_cond_field_xy) > 0:  # List of samples, every sample have conductivity tensor for every coarse mesh element.
+        for idx, (s_cond_field_xy, s_scalar_cond_log) in enumerate(zip(seeds_cond_field_xy, seeds_scalar_cond_log)):
+            # self.precompute()
+            # self.test_homogenity()
+            # self.test_homogenity_xy()
+            # self.test_isotropy()
+            # self.test_isotropy_alt()
+            print("s cond field xy ", s_cond_field_xy)
+            print("s scalar cond log ", s_scalar_cond_log)
+
+            compute_variogram(s_cond_field_xy, s_scalar_cond_log, dir="seed_{}/{}".format(seeds[idx], subdir))
+
+            # self.eigenvals_correlation()
+            # self.calculate_field_parameters()
+
+    compute_anova(seeds_scalar_cond_log)
+
+    print("seeds cond field xy ", seeds_cond_field_xy)
+    print("seeds scalar cond log ", seeds_scalar_cond_log)
+
+
+def compute_anova(seeds_scalar_cond_log):
+    import scipy.stats as stats
+    print("compute anova")
+    # stats f_oneway functions takes the groups as input and returns ANOVA F and p value
+    print("seeds_scalar_cond_log shape ", np.array(seeds_scalar_cond_log).shape)
+
+    seeds_scalar_cond_log_arr = np.array(seeds_scalar_cond_log)
+    print("seeds_scalar_cond_log_arr", seeds_scalar_cond_log_arr.shape)
+    groups = []
+    for i in range(seeds_scalar_cond_log_arr.shape[1]):
+        groups.append(seeds_scalar_cond_log_arr[:, i])
+
+    print("groups shape ", np.array(groups).shape)
+    print(groups)
+
+    fvalue, pvalue = stats.f_oneway(*groups) # (group 1 samples, group 2 sampels, ...)
+    print(fvalue, pvalue)
+
+    significant_level = 0.05
+    if pvalue > significant_level:
+        print("Cannot reject the null hypothesis that the population means are all equal")
+    else:
+        print("The null hypothesis is rejected - not all of population means are equal.")
+
+    exit()
+
+
+def subdomains(work_dir, sample_dict, command="run"):
+
+    if command == "process":
+        process_results(work_dir, sample_dict)
+    else:
+        run_samples(work_dir, sample_dict)
+
+
+def run_samples(work_dir, sample_dict):
     domain_box = sample_dict["geometry"]["domain_box"]
     subdomain_box = sample_dict["geometry"]["subdomain_box"]
-    subdomain_overlap = np.array([0, 0])#np.array([50, 50])
+    subdomain_overlap = np.array([0, 0])  # np.array([50, 50])
 
     print("domain box ", domain_box)
     print("subdomain box ", subdomain_box)
 
     lx, ly = domain_box
+
     bottom_left_corner = [-lx / 2, -ly / 2]
     bottom_right_corner = [+lx / 2, -ly / 2]
     top_right_corner = [+lx / 2, +ly / 2]
     top_left_corner = [-lx / 2, +ly / 2]
     #               bottom-left corner  bottom-right corner  top-right corner    top-left corner
     complete_polygon = [bottom_left_corner, bottom_right_corner, top_right_corner, top_left_corner]
-    # bs = BothSample(sample_dict)
-    # bs.calculate()
 
     plt.scatter(*zip(*complete_polygon))
 
+    n_subdomains = sample_dict["geometry"].get("n_subdomains", 4)
 
-    tl_corner = top_left_corner
+    domain_box = sample_dict["geometry"]["domain_box"]
+    subdomain_box = sample_dict["geometry"]["subdomain_box"]
+    lx, ly = domain_box
 
-    while True:
-        try:
-            os.remove("mesh_fine.msh")
-            os.remove("mesh_fine.brep")
-            os.remove("mesh_fine.tmp.geo")
-            os.remove("mesh_fine.tmp.msh")
-            import shutil
-            shutil.move("fine", "fine_{}".format(i))
-            shutil.rmtree("fine")
-        except:
-            pass
+    k = 0
+    for i in range(n_subdomains):
+        center_x = subdomain_box[0] / 2 + (lx - subdomain_box[0]) / (n_subdomains - 1) * i - lx / 2
+        print("center_x ", center_x)
+        for j in range(n_subdomains):
+            k += 1
+            print("i: {}, j:{}, k:{}".format(i, j, k))
+            # if k != 24:
+            #     continue
+            if k != 6: #@TODO: zkusit jeste zmensit velikost elementu
+                continue
+            center_y = subdomain_box[1] / 2 + (lx - subdomain_box[1]) / (n_subdomains - 1) * j - lx / 2
 
-        bl_corner = tl_corner - np.array([0, subdomain_box[1]])
-        bl_corner = np.maximum(bl_corner, [bl_corner[0], bottom_right_corner[1]])  # make sure it lies in the complete polygon
+            bl_corner = [center_x - subdomain_box[0] / 2, center_y - subdomain_box[1] / 2]
+            br_corner = [center_x + subdomain_box[0] / 2, center_y - subdomain_box[1] / 2]
+            tl_corner = [center_x - subdomain_box[0] / 2, center_y + subdomain_box[1] / 2]
+            tr_corner = [center_x + subdomain_box[0] / 2, center_y + subdomain_box[1] / 2]
 
-        br_corner = bl_corner + np.array([subdomain_box[0], 0])
-        br_corner = np.minimum(br_corner, [bottom_right_corner[0], br_corner[1]])
-
-        tr_corner = tl_corner + np.array([subdomain_box[0], 0])
-        tr_corner = np.minimum(tr_corner, [bottom_right_corner[0], tr_corner[1]])
-
-        outer_polygon = [copy.deepcopy(bl_corner), copy.deepcopy(br_corner), copy.deepcopy(tr_corner), copy.deepcopy(tl_corner)]
-        print("outer polygon ", outer_polygon)
-
-        #@TODO: fix, failed for outer polygon: [array([400.,   0.]), array([500.,   0.]), array([-500.,   50.]), array([400., 500.])]
-        sample_dict["geometry"]["outer_polygon"] = outer_polygon
-
-        #plt.scatter(*zip(*outer_polygon))
-
-        # Set new top-left corner including overlap on x axes
-        # Do not move corner if at the end of x axis
-        if tr_corner[0] - tl_corner[0] == subdomain_box[0]:
-            tl_corner = tr_corner - np.array([subdomain_overlap[0], 0])
-        else:
-            tl_corner = tr_corner
-
-        # top-left corner is on the left-hand edge
-        if tl_corner[0] >= bottom_right_corner[0]:
-            tl_corner[0] = bottom_left_corner[0]
-            tl_corner[1] = tl_corner[1] - subdomain_box[1]
-            # y-axis overlap
-            tl_corner += np.array([0, subdomain_overlap[1] if tl_corner[1] < top_left_corner[1] else 0])
-
-        # top-left corner is on the bottom edge
-        if tl_corner[1] <= bottom_left_corner[1]:
-            break
+            outer_polygon = [copy.deepcopy(bl_corner), copy.deepcopy(br_corner), copy.deepcopy(tr_corner),
+                             copy.deepcopy(tl_corner)]
+            print("outer polygon ", outer_polygon)
 
 
-        bs = BothSample(sample_dict)
-        bs.calculate()
+            plt.scatter(*zip(*outer_polygon))
 
+            sample_dict["geometry"]["outer_polygon"] = outer_polygon
+
+            sample_dict["work_dir"] = work_dir
+
+            bs = BothSample(sample_dict)
+            bs.calculate()
+
+            dir_name = "fine_{}".format(k)
+            sample_dict["dir_name"] = dir_name
+            try:
+                import shutil
+                shutil.move("fine", dir_name)
+                shutil.move("summary.yaml", dir_name)
+                shutil.move("mesh_fine.msh", dir_name)
+                shutil.move("mesh_fine.brep", dir_name)
+                shutil.move("mesh_fine.tmp.geo", dir_name)
+                shutil.move("mesh_fine.tmp.msh", dir_name)
+                shutil.rmtree("fine")
+            except:
+                pass
 
     plt.show()
 
+    # bottom_left_corner = [-lx / 2, -ly / 2]
+    # bottom_right_corner = [+lx / 2, -ly / 2]
+    # top_right_corner = [+lx / 2, +ly / 2]
+    # top_left_corner = [-lx / 2, +ly / 2]
+    # #               bottom-left corner  bottom-right corner  top-right corner    top-left corner
+    # complete_polygon = [bottom_left_corner, bottom_right_corner, top_right_corner, top_left_corner]
+    # # bs = BothSample(sample_dict)
+    # # bs.calculate()
+    #
+    # plt.scatter(*zip(*complete_polygon))
+    #
+    # tl_corner = top_left_corner
+    #
+    # i = 0
+    # while True:
+    #     bl_corner = tl_corner - np.array([0, subdomain_box[1]])
+    #     bl_corner = np.maximum(bl_corner,
+    #                            [bl_corner[0], bottom_right_corner[1]])  # make sure it lies in the complete polygon
+    #
+    #     br_corner = bl_corner + np.array([subdomain_box[0], 0])
+    #     br_corner = np.minimum(br_corner, [bottom_right_corner[0], br_corner[1]])
+    #
+    #     tr_corner = tl_corner + np.array([subdomain_box[0], 0])
+    #     tr_corner = np.minimum(tr_corner, [bottom_right_corner[0], tr_corner[1]])
+    #
+    #     outer_polygon = [copy.deepcopy(bl_corner), copy.deepcopy(br_corner), copy.deepcopy(tr_corner),
+    #                      copy.deepcopy(tl_corner)]
+    #     print("outer polygon ", outer_polygon)
+    #
+    #     sample_dict["geometry"]["outer_polygon"] = outer_polygon
+    #
+    #     # plt.scatter(*zip(*outer_polygon))
+    #
+    #     # Set new top-left corner including overlap on x axes
+    #     # Do not move corner if at the end of x axis
+    #     if tr_corner[0] - tl_corner[0] == subdomain_box[0]:
+    #         tl_corner = tr_corner - np.array([subdomain_overlap[0], 0])
+    #     else:
+    #         tl_corner = tr_corner
+    #
+    #     # top-left corner is on the left-hand edge
+    #     if tl_corner[0] >= bottom_right_corner[0]:
+    #         tl_corner[0] = bottom_left_corner[0]
+    #         tl_corner[1] = tl_corner[1] - subdomain_box[1]
+    #         # y-axis overlap
+    #         tl_corner += np.array([0, subdomain_overlap[1] if tl_corner[1] < top_left_corner[1] else 0])
+    #
+    #     # bs = BothSample(sample_dict)
+    #     # bs.calculate()
+    #
+    #     dir_name = "fine_{}".format(i)
+    #     sample_dict["dir_name"] = dir_name
+    #     try:
+    #         os.remove("mesh_fine.msh")
+    #         os.remove("mesh_fine.brep")
+    #         os.remove("mesh_fine.tmp.geo")
+    #         os.remove("mesh_fine.tmp.msh")
+    #         import shutil
+    #         shutil.move("fine", dir_name)
+    #         shutil.copy("summary.yaml", dir_name)
+    #         shutil.rmtree("fine")
+    #     except:
+    #         pass
+    #
+    #
+    #     # top-left corner is on the bottom edge
+    #     if tl_corner[1] <= bottom_left_corner[1]:
+    #         break
+    #
+    #     i += 1
+    #
+    # plt.show()
 
 
 
+if __name__ == "__main__":
+    start_time = time.time()
+    atexit.register(finished, start_time)
+    work_dir = sys.argv[1]
+    sample_config = sys.argv[2]
+    #try:
+    with open(sample_config, "r") as f:
+        sample_dict = yaml.load(f, Loader=yaml.FullLoader)
+    #except Exception as e:
+    #    print("cwd: ", os.getcwd(), "sample config: ", sample_config)
 
+    subdomains(work_dir, sample_dict, command="run")
+    #subdomains(sample_dict, command="process")
 
