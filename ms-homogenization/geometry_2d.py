@@ -374,17 +374,15 @@ class Geometry2d:
             assert False, "Meshing failed"
         return self.tmp_msh_file
 
-    def modify_mesh(self):
+    def modify_mesh(self, reg_to_fr=None):
         self.mesh = gmsh_io.GmshIO()
         with open(self.tmp_msh_file, "r") as f:
             self.mesh.read(f)
 
-        #print("mesh elemets items  ", self.mesh.elements.items())
+        elid_to_fr = {}
         new_elements = {}
         for id, elm in self.mesh.elements.items():
             el_type, tags, nodes = elm
-            #print("el type ", el_type)
-            #print("tags ", tags)
             if len(tags) < 2:
                 raise Exception("Less then 2 tags.")
             dim = self.el_type_to_dim[el_type]
@@ -401,18 +399,27 @@ class Geometry2d:
                 continue
             assert region.dim == dim
             physical_id = shape_info.i_reg + 10000
-            if region.name in self.mesh.physical:
+            if self.regions[shape_info.i_reg].name[:3] == "fr_" and reg_to_fr is not None:
+                elid_to_fr[id] = reg_to_fr[shape_info.i_reg]
+
+                if "fractures" not in self.mesh.physical:
+                    self.mesh.physical["fractures"] = (physical_id, dim)
+                else:
+                    physical_id, dim = self.mesh.physical["fractures"]
+            elif region.name in self.mesh.physical:
                 assert self.mesh.physical[region.name][0] == physical_id
             else:
                 self.mesh.physical[region.name] = (physical_id, dim)
+
             assert (region.name[0] == '.') == (region.boundary)
             tags[0] = physical_id
             new_elements[id] = (el_type, tags, nodes)
         self.mesh.elements = new_elements
         self.msh_file = self.basename + ".msh"
+
         with open(self.msh_file, "w") as f:
             self.mesh.write_ascii(f)
-        return self.mesh
+        return self.mesh, elid_to_fr
 
 # def make_geometry(**kwargs):
 #     """

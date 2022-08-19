@@ -96,6 +96,8 @@ class FlowThread(threading.Thread):
             n_steps=len(self.p_loads)
             )
         substitute_placeholders("flow_templ.yaml", in_f, params)
+        self.flow_args = ["docker", "run", "-v", "{}:{}".format(out_dir, out_dir),
+                          "docker://flow123d/flow123d-gnu:3.9.0", "flow123d"]
         self.flow_args.extend(['--output_dir', out_dir, in_f])
 
         if os.path.exists(os.path.join(out_dir, "flow_fields.msh")):
@@ -257,26 +259,28 @@ class FractureModel:
     max_fr: float = 1
     bulk_model: BulkBase = None
 
-    def element_data(self, mesh, eid):
+    def element_data(self, mesh, eid, elid_to_fr):
         el_type, tags, node_ids = mesh.elements[eid]
-        reg_id = tags[0] - 10000
+
+        #reg_id = tags[0] - 10000
         # line, compute conductivity from fracture size using cubic law
         # Isotropic conductivity in fractures. (Simplification.)
-        i_fr = self.region_to_fracture[reg_id]
+        #i_fr = self.region_to_fracture[reg_id]
+        i_fr = elid_to_fr[eid]
         fr_size = self.fractures.fractures[i_fr].rx
-
-        print("self.target_sigma ", self.target_sigma)
 
         if self.target_sigma is None or self.bulk_model is None:
             cs = fr_size * self.aperture_per_size
             cond = cs ** 2 / 12 * self.water_density * self.gravity_accel / self.water_viscosity
         else:
-            print("self.max_fr ", self.max_fr)
-            print("self.bulk_model.mean_log_conductivity ", type(np.mean(self.bulk_model.mean_log_conductivity)))
+            # print("self.max_fr ", self.max_fr)
+            # print("self.bulk_model.mean_log_conductivity ", int(np.mean(self.bulk_model.mean_log_conductivity)))
             cond = self.target_sigma * self.max_fr * 10**int(np.mean(self.bulk_model.mean_log_conductivity))
-            print("cond ", cond)
+            #print("cond ", cond)
             cs = np.sqrt(12*cond / (self.water_density * self.gravity_accel / self.water_viscosity))
 
+        # print("i_fr: {}, cs: {}, cond: {}".format(i_fr, cs, cond))
+        # exit()
         cond_tn = cond * np.eye(2, 2)
         return cs, cond_tn
 
@@ -288,20 +292,21 @@ def tensor_3d_flatten(tn_2d):
     return tn3d.ravel()
 
 
-def write_fields(mesh, basename, bulk_model, fracture_model):
+def write_fields(mesh, basename, bulk_model, fracture_model, elid_to_fr):
     elem_ids = []
     cond_tn_field = []
     cs_field = []
-    print("mesh ", mesh)
+
     for el_id, ele in gmsh_mesh_bulk_elements(mesh):
         # print("ele id ", el_id)
         # print("ele ", ele)
+
         elem_ids.append(el_id)
         el_type, tags, node_ids = ele
         n_nodes = len(node_ids)
 
         if n_nodes == 2:
-            cs, cond_tn = fracture_model.element_data(mesh, el_id)
+            cs, cond_tn = fracture_model.element_data(mesh, el_id, elid_to_fr)
             #print("fr cs: {}, cond_tn: {}".format(cs, cond_tn))
 
             # sigma = cs * (cond_tn[0][0] /10**-6)
@@ -439,7 +444,7 @@ class FlowProblem:
 
     def add_fractures(self, pd, fracture_lines, eid):
         outer_wire = pd.outer_polygon.outer_wire.childs
-        #print("outer wire ", outer_wire)
+        # print("outer wire ", outer_wire)
 
         assert len(outer_wire) == 1
         outer_wire = next(iter(outer_wire))
@@ -450,9 +455,9 @@ class FlowProblem:
             fracture_regions.append(reg)
             if self.skip_decomposition:
                 continue
-            #print("    ", i_fr, "fr size:", np.linalg.norm(p1 - p0))
+            # print("    ", i_fr, "fr size:", np.linalg.norm(p1 - p0))
             try:
-                #pd.decomp.check_consistency()
+                # pd.decomp.check_consistency()
                 # if eid == 0 and i_fr == 5:
                 #      print("stop")
                 #      # plot_decomp_segments(pd, [p0, p1])
@@ -462,16 +467,16 @@ class FlowProblem:
                 # new_points = [pt for seg in segments for pt in seg.vtxs]
                 print('Decomp Error, dir: {} base: {} eid: {}  i_fr: {}'.format(os.getcwd(), self.basename, eid, i_fr))
                 traceback.print_exc()
-                #plot_decomp_segments(pd, [p0, p1])
-                #raise e
-                #print(e)
-                #pass
+                # plot_decomp_segments(pd, [p0, p1])
+                # raise e
+                # print(e)
+                # pass
             # pd.decomp.check_consistency()
 
             # remove segments out of the outer polygon
             if type(sub_segments) == list:
-                #print("sub segments ", sub_segments)
-                #exit()
+                # print("sub segments ", sub_segments)
+                # exit()
                 for seg in sub_segments:
                     if seg.attr is None:
                         seg.attr = reg
@@ -483,12 +488,12 @@ class FlowProblem:
                         if seg.id in pd.segments.keys():
                             pd.delete_segment(seg)
                             for pt in points:
-                                if pt.is_free():# and pt.id in pd.points.keys():
+                                if pt.is_free():  # and pt.id in pd.points.keys():
                                     pd._rm_point(pt)
                                 # else:
                                 #     print("not rm pt.id ", pt.id)
 
-        #plot_decomp_segments(pd, [p0, p1])
+        # plot_decomp_segments(pd, [p0, p1])
         # assign boundary region to outer polygon points
         for seg, side in outer_wire.segments():
             side_reg = seg.attr
@@ -539,25 +544,27 @@ class FlowProblem:
         print("len fracture lines ", len(self.fracture_lines))
 
         pd, fr_regions = self.add_fractures(pd, self.fracture_lines, eid=0)
+        #self.reg_to_group[fr_region.id] = 0
+
         for reg in fr_regions:
             self.reg_to_group[reg.id] = 0
         self.decomp = pd
 
-    def _make_mesh_window(self):
-        import geometry_2d as geom
-
-        self.skip_decomposition = False
-
-        self.make_fracture_network()
-
-        gmsh_executable = self.config_dict["gmsh_executable"]
-
-        g2d = geom.Geometry2d("mesh_window_" + self.basename, self.regions)
-        g2d.add_compoud(self.decomp)
-        g2d.make_brep_geometry()
-        step_range = (self.mesh_step * 0.9, self.mesh_step * 1.1)
-        g2d.call_gmsh(gmsh_executable, step_range)
-        self.mesh = g2d.modify_mesh()
+    # def _make_mesh_window(self):
+    #     import geometry_2d as geom
+    #
+    #     self.skip_decomposition = False
+    #
+    #     self.make_fracture_network()
+    #
+    #     gmsh_executable = self.config_dict["gmsh_executable"]
+    #
+    #     g2d = geom.Geometry2d("mesh_window_" + self.basename, self.regions)
+    #     g2d.add_compoud(self.decomp)
+    #     g2d.make_brep_geometry()
+    #     step_range = (self.mesh_step * 0.9, self.mesh_step * 1.1)
+    #     g2d.call_gmsh(gmsh_executable, step_range)
+    #     self.mesh = g2d.modify_mesh()
 
     def make_mesh(self):
         import geometry_2d as geom
@@ -574,7 +581,7 @@ class FlowProblem:
             g2d.make_brep_geometry()
             step_range = (self.mesh_step * 0.9, self.mesh_step * 1.1)
             g2d.call_gmsh(gmsh_executable, step_range)
-            self.mesh = g2d.modify_mesh()
+            self.mesh, self.elid_to_fr = g2d.modify_mesh(self.reg_to_fr)
 
         elif self.skip_decomposition and self.config_dict["mesh_window"]:
             self._make_mesh_window()
@@ -594,10 +601,7 @@ class FlowProblem:
         :return:
         """
         fracture_model = FractureModel(self.fractures, self.reg_to_fr, **self.config_dict['fracture_model'], bulk_model=self.bulk_model)
-        print('fracture model sigma ', fracture_model.target_sigma)
-        print('fracture model max length ', fracture_model.max_fr)
-
-        elem_ids, cs_field, cond_tn_field = write_fields(self.mesh, self.basename, self.bulk_model, fracture_model)
+        elem_ids, cs_field, cond_tn_field = write_fields(self.mesh, self.basename, self.bulk_model, fracture_model, self.elid_to_fr)
 
         self._elem_ids = elem_ids
         self._cond_tn_field = cond_tn_field
