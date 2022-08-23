@@ -1446,13 +1446,13 @@ def process_mult_samples(sample_dict, work_dir=None):
     seeds_cond_field_xy = []
     seeds_scalar_cond_log = []
     seeds_results = {}
-    rho_list = [1]#[2, 4, 6]
+    rho_list = [10]#[2, 4, 6]
     results = {}
 
     for rho in rho_list:
         i = 0
         dir = "seed_{}/comparison/fr_cond_10_4/rho_{}".format(seed[0], rho)
-        dir = "seed_{}/comparison/sigma_10/rho_{}".format(seed[0], rho)
+        dir = "seed_{}/comparison/sigma_10/charon_samples/rho_{}".format(seed[0], rho)
         # dir = "seed_{}/aperture_10_4/test/{}".format(seed, subdir)
         # dir = "seed_{}/aperture_10_4/test_2/{}".format(seed, subdir)
         # dir = "seed_{}/aperture_10_4/test_identic_mesh/{}".format(seed, subdir)
@@ -2048,6 +2048,6 @@ if __name__ == "__main__":
     #    print("cwd: ", os.getcwd(), "sample config: ", sample_config)
 
     #subdomains(sample_dict, work_dir, command="run")
-    subdomains(sample_dict, work_dir, command="run_mult_samples")
+    #subdomains(sample_dict, work_dir, command="run_mult_samples")
     #subdomains(sample_dict, command="process")
-    #subdomains(sample_dict, command="process_mult_samples")
+    subdomains(sample_dict, command="process_mult_samples")

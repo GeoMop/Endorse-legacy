@@ -1,7 +1,22 @@
 # The flow executable and arguments to use.
 # JB: ABSOLUTE PATH
 
-seed: 12345
+seed: 8999 #12345 58527 26339 28219 50379 69244 50363 12614 20257 47641 94828 8999 68042 95643 37928 12140 80048 23438 95679 40474 15287 82005 52132
+
+#seeds: [12345, 58527, 26339, 28219, 50379, 69244, 50363, 12614, 20257, 47641, 94828, 8999, 68042, 95643]
+
+seeds: [58527, 50379, 28219]
+seeds: [58527]
+#seeds: [26339]
+#seeds: [28219]
+
+seeds: [58527, 28219, 26339]
+seed: 26339
+#seeds: [12345]
+
+seeds: [58527]
+seeds: [26339]
+
 
 flow_executable:
   - /home/martin/flow123d/bin/fterm
@@ -16,7 +31,6 @@ n_finer_level_samples: 2
 
 mesh_window: false
 
-
 # reuse existing sample directories and existing results
 # None - clean dir
 # False - keep dir, rerun process.py
@@ -29,10 +43,11 @@ subscale_model: "flow_templ.yaml"
 
 # case 1
 fracture_model:
-    aperture_per_size: 1e-6
+    aperture_per_size: 1e-6 #1e-4
     water_viscosity: 1.3e-3 #[Pa s] decrease from 1.8mPa.s at 0deg to 1.3mPa.s at 10deg,
     water_density: 1000
     gravity_accel: 9.8
+    target_sigma: 100
 
 
 levels:
@@ -42,11 +57,11 @@ levels:
         choose_from_finer_level: True
 
   - n_samples: 4
-    step: 20
+    step: 10  #10 # zkusit i s 5
     bulk_conductivity:
         # Bivariate log normal distribution for the tensor eigen values
         mean_log_conductivity: [-6, -6]
-        cov_log_conductivity: [[0.2,0.07],[0.07,0.2]]
+        cov_log_conductivity: [[1e-16, 0], [0, 1e-16]] # [[0.2,0.07],[0.07,0.2]]
         # Von Mises for the rotation.
         # Rotation angle of the first eigen vector. Counter clockwise from the axis X.
         # dispersion == 'inf' -> uniform distribution on interval (0, 2pi)
@@ -87,15 +102,17 @@ copy_files: []
 #bulk_conductivity: 1e-9
 
 # number of pressure gradient directions to apply in order to get effective tensor,  min 2
-n_pressure_loads: 4
+n_pressure_loads: 8
 
 
 
 geometry:
   # square side (meters)
-  fractures_box: [1000, 1000]
-  domain_box: [1000, 1000]
-  subdomain_box: [500, 500]
+  fractures_box: [400, 400]
+  domain_box: [400, 400]
+  subdomain_box: [400, 400]
+  n_subdomains: 10
+  fr_max_size: 100
   #fractures_box: [140, 140]
   #domain_box: [140, 140]
   #fractures_box: [1000, 1000]
@@ -103,9 +120,10 @@ geometry:
   #n_frac_limit: 1000
 
   #pow_law_size_range: [0.05, 500]
-  pow_law_size_range: [ 0.1, 1000 ]
+  pow_law_size_range: [0.1, 1000] # [10, 100]
   #pow_law_size_exp: 2.8   # 3d exponent
-  pow_law_size_exp: 3   # 3d exponent
+  rho_2D: 1
+  pow_law_size_exp: 3 #3   # 3d exponent
   p_32: 5
   # Mean total fracture surface for the full size range (pow_law_size_range).
   # realistic value is about 0.5,
@@ -113,10 +131,10 @@ geometry:
   # p_32==4 almost continuous for exp 2.8
   # One of possible reasons: SKB use disc radius for the fracture size. So
 
-  n_frac_limit: 500
+  n_frac_limit: false #1000
   # Upper limit for the number of fractures.
 
-  pow_law_sample_range: null #[10, 1000]
+  pow_law_sample_range: [10, 100]
   # Actual range of fracture sizes, the mean number of samples, is determined from the p32.
 
   #pow_law_sample_range: [0.56, 140]
