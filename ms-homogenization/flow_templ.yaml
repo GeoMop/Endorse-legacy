@@ -9,7 +9,7 @@ problem: !Coupling_Sequential
         name: outer_boundary
         regions: <outer_regions>
 
-  flow_equation: !Flow_Darcy_MH
+  flow_equation: !Flow_Darcy_LMH
     nonlinear_solver:
       tolerance: 1e-7
       linear_solver: !Petsc
@@ -20,13 +20,13 @@ problem: !Coupling_Sequential
         conductivity: 1.0
         anisotropy: !FieldFE
           #input_discretization: element_data
-          interpolation: identic_mesh
+          #interpolation: identic_mesh
           mesh_data_file: <fields_file>
           field_name: conductivity_tensor
           default_value: 1e-15
-        cross_section: !FieldFE 
+        cross_section: !FieldFE
           #input_discretization: element_data
-          interpolation: identic_mesh
+          #interpolation: identic_mesh
           mesh_data_file: <fields_file>
           field_name: cross_section
           default_value: 1.0
@@ -36,12 +36,12 @@ problem: !Coupling_Sequential
         bc_type: dirichlet
         bc_pressure: !FieldFormula
           value: cos(Pi * t / <n_steps>)*x + sin(Pi * t / <n_steps>)*y
-          
-    time:      
+
+    time:
       end_time: <n_steps>
       init_dt: 1.0
     output:
-      times: 
+      times:
         start: 0.0
         step: 1.0
         end: <n_steps>
@@ -51,10 +51,10 @@ problem: !Coupling_Sequential
         - velocity_p0
         #- anisotropy
         - cross_section
-    #output_stream:      
+    #output_stream:
       #format: !vtk
         #variant: binary
-    output_stream:      
-      format: !gmsh        
+    output_stream:
+      format: !gmsh
     balance:
       cumulative: true
