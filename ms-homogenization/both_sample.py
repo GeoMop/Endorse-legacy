@@ -96,8 +96,8 @@ class FlowThread(threading.Thread):
             n_steps=len(self.p_loads)
             )
         substitute_placeholders("flow_templ.yaml", in_f, params)
-        self.flow_args = ["docker", "run", "-v", "{}:{}".format(out_dir, out_dir),
-                          "docker://flow123d/flow123d-gnu:3.9.0", "flow123d"]
+        # self.flow_args = ["docker", "run", "-v", "{}:{}".format(out_dir, out_dir),
+        #                   "docker://flow123d/flow123d-gnu:3.9.0", "flow123d"]
         self.flow_args.extend(['--output_dir', out_dir, in_f])
 
         if os.path.exists(os.path.join(out_dir, "flow_fields.msh")):
@@ -268,6 +268,9 @@ class FractureModel:
         #i_fr = self.region_to_fracture[reg_id]
         i_fr = elid_to_fr[eid]
         fr_size = self.fractures.fractures[i_fr].rx
+
+        print("fr_size ",fr_size)
+
 
         if self.target_sigma is None or self.bulk_model is None:
             cs = fr_size * self.aperture_per_size
@@ -541,7 +544,15 @@ class FlowProblem:
         print("square fr range ", square_fr_range)
         #self.fracture_lines = self.fractures.get_lines(self.fr_range)
         self.fracture_lines = self.fractures.get_lines(square_fr_range)
-        print("len fracture lines ", len(self.fracture_lines))
+        print("fracture lines ", self.fracture_lines)
+        # print("len fracture lines ", len(self.fracture_lines))
+        # print("list fractures ", list(self.fracture_lines.values()))
+        import math
+
+        self._fracture_length = []
+        for id, points in self.fracture_lines.items():
+            self._fracture_length.append(math.dist(*points))
+
 
         pd, fr_regions = self.add_fractures(pd, self.fracture_lines, eid=0)
         #self.reg_to_group[fr_region.id] = 0
@@ -955,9 +966,12 @@ class FlowProblem:
         #plt.show()
 
     def summary(self):
+
+
         return dict(
             pos=[self.group_positions[eid].tolist() for eid in self.cond_tensors.keys()],
             cond_tn=[self.cond_tensors[eid].tolist() for eid in self.cond_tensors.keys()],
+            fracture_length=self._fracture_length,
             flux=self.flux.tolist(),
             pressure_matrix=self.pressure_matrix.tolist()
         )
@@ -1009,9 +1023,9 @@ class BothSample:
 
     @staticmethod
     def calculate_mean_excluded_volume(r_min, r_max, kappa, geom=False):
-        print("r min ", r_min)
-        print("r max ", r_max)
-        print("kappa ", kappa)
+        # print("r min ", r_min)
+        # print("r max ", r_max)
+        # print("kappa ", kappa)
         if geom:
             #return 0.5 * (kappa / (r_min**(-kappa) - r_max**(-kappa)))**2 * 2*(((r_max**(2-kappa) - r_min**(2-kappa))) * ((r_max**(1-kappa) - r_min**(1-kappa))))/(kappa**2 - 3*kappa + 2)
             return ((r_max ** (1.5 * kappa - 0.5) - r_min ** (1.5 * kappa - 0.5)) / (
@@ -1342,7 +1356,7 @@ def results_for_seed(seed):
         dir = "seed_{}/aperture_10_4/{}".format(seed, subdir)
         dir = "seed_{}/aperture_10_4/new_data/{}".format(seed, subdir)
 
-        dir = "seed_{}/comparison/fr_cond_10_4/rho_2".format(seed)
+        dir = "seed_{}/comparison/sigma_10/charon_samples/rho_5".format(seed)
         #dir = "seed_{}/aperture_10_4/test/{}".format(seed, subdir)
         #dir = "seed_{}/aperture_10_4/test_2/{}".format(seed, subdir)
         #dir = "seed_{}/aperture_10_4/test_identic_mesh/{}".format(seed, subdir)
@@ -1446,14 +1460,14 @@ def process_mult_samples(sample_dict, work_dir=None):
     seeds_cond_field_xy = []
     seeds_scalar_cond_log = []
     seeds_results = {}
-    rho_list = [10]#[2, 4, 6]
+    rho_list = [5]#[2, 4, 6]
     results = {}
 
     for rho in rho_list:
         i = 0
         dir = "seed_{}/comparison/fr_cond_10_4/rho_{}".format(seed[0], rho)
         dir = "seed_{}/comparison/sigma_10/charon_samples/rho_{}".format(seed[0], rho)
-        # dir = "seed_{}/aperture_10_4/test/{}".format(seed, subdir)
+        dir = "test_regions"
         # dir = "seed_{}/aperture_10_4/test_2/{}".format(seed, subdir)
         # dir = "seed_{}/aperture_10_4/test_identic_mesh/{}".format(seed, subdir)
         # dir = "test_summary"
@@ -1483,6 +1497,8 @@ def process_mult_samples(sample_dict, work_dir=None):
                 print("summary_dict flux ", summary_dict["fine"]["flux"])
                 print("summary_dict pressure matrix ", summary_dict["fine"]["pressure_matrix"])
                 print("   ...store")
+                print("summary_dict[fine] keys ", summary_dict["fine"].keys())
+                print("fracture lines length ", summary_dict["fine"]["fracture_length"])
                 fine_cond_tn = np.array(summary_dict['fine']['cond_tn'])
                 print("find cond tn ", fine_cond_tn)
                 e_val, e_vec = np.linalg.eigh(fine_cond_tn)
@@ -2048,6 +2064,6 @@ if __name__ == "__main__":
     #    print("cwd: ", os.getcwd(), "sample config: ", sample_config)
 
     #subdomains(sample_dict, work_dir, command="run")
-    #subdomains(sample_dict, work_dir, command="run_mult_samples")
+    subdomains(sample_dict, work_dir, command="run_mult_samples")
     #subdomains(sample_dict, command="process")
-    subdomains(sample_dict, command="process_mult_samples")
+    #subdomains(sample_dict, command="process_mult_samples")
