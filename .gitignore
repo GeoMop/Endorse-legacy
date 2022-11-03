@@ -7,12 +7,29 @@
 .idea/modules.xml
 *.iml
 
+# temporary excluded
+**/*.zip
+experiments/edz_transport/TSX_prediction
+experiments/edz_transport/samples
+experiments/mlmc-modelling-2019/output_2
+experiments/mlmc-modelling-2019/*.pdf
+
 # venv
-*/venv/*
-*/env/*
+**/venv/**
+**/env/**
+
+# Latex
+**/*.aux
+**/*.log
+**/*.bbl
+**/*.blg
+**/*.out
+**/SIEVERT*
+**/.~lock*
 
 # python cache
 **/__pycache__/*
+**/.pytest_cache
 
 # kate swap
 *.kate-swp
