@@ -1,12 +1,27 @@
-# projekt Endorse
+# Endorse - software for stochastic characterization of excavation damage zone
 
-Predikce vlastností EDZ (excavation damage zone) s vlivem na bezpečnost a spolehlivost hlubinného úložiště radioaktivního odpadu.
+The software provides Byesian inversion for the excavation damage zone (EDZ) properties and stochastic contaminant transport 
+in order to provide stochastic prediction of EDZ safety indicators. 
 
-Obsah repozitáře:
+The safety indicator is defined as the 95% quantile of the contaminant concentration on the repository model boundary over the whole simulation period. 
+The contaminant is modeled without radioactive decay as a inert tracer. The multilevel Monte Carlo method is 
+used to parform stochastic transport simulation in reasonable time. Random inputs to the transport model 
+include: EDZ parameters, random hidden fractures, (random leakage times for containers), perturbations of the rock properties.
 
-- `mlmc-modelling-2019` - experimentální aplikace metody MLMC na puklinové modely, 2D proudění na čtverci
-- `repository-model` - The repository scale model. Captures transport of a tracer along a single storage horizontal well
-  with random large fractures, impact of the neighboring wells is considered.
+The EDZ properties are obtained from the Bayesian inversion, using data from pore pressure min-by experiment.
+The Bayesian inversion provides posterior joined probability density for the EDZ properties (porosity, permability) as heterogenous fields.
+That means the properties are described as correlated random variables. 
+
+
+
+
+
+Repository structure:
+
+- `doc` - software documentation and various reports from the Endorse project
+- `experiments` - various numerical experiments and developments as part of the Endorse project
+- `src` - main sources
+- `tests` - various software tests, test data
 
 
 
