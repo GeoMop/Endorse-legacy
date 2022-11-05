@@ -84,12 +84,15 @@ def make_access_tunnels(factory, geom_dict):
         factory, geom_dict.lateral_tunnel,
     ).rotate([0,0,1], math.pi/2).translate([-lateral_length/2, 0, 0])
 
+    laterals = [lateral_tunnel_1]
+
     borehole_distance = geom_dict.borehole_distance
-    lateral_tunnel_2 = lateral_tunnel_1.copy().translate([0, borehole_distance, 0])
-    lateral_tunnel_3 = lateral_tunnel_1.copy().translate([0, -borehole_distance, 0])
+    for i_shift in range(geom_dict.n_explicit_boreholes):
+        laterals.append(lateral_tunnel_1.copy().translate([0, borehole_distance * i_shift, 0]))
+        laterals.append(lateral_tunnel_1.copy().translate([0, -borehole_distance * i_shift, 0]))
 
 
-    return main_tunnel_cylinder.fuse(lateral_tunnel_1, lateral_tunnel_2, lateral_tunnel_3)
+    return main_tunnel_cylinder.fuse(*laterals)
 
 def make_access_tunnels_simple(factory, geom_dict):
     r = geom_dict.main_tunnel.radius
@@ -109,9 +112,12 @@ def boreholes_full(factory, geom_dict):
 
     b_1 = factory.cylinder(borehole_radius, axis=[borehole_length, 0, 0]).translate(
         [- borehole_length / 2, 0, 1.5 * borehole_radius])
-    b_2 = b_1.copy().translate([0, borehole_distance, 0])
-    b_3 = b_1.copy().translate([0, -borehole_distance, 0])
-    return factory.group(b_1, b_2, b_3)
+    boreholes = [b_1]
+    for i_shift in range(geom_dict.n_explicit_boreholes):
+        boreholes.append(b_1.copy().translate([0, borehole_distance * i_shift, 0]))
+        boreholes.append(b_1.copy().translate([0, -borehole_distance * i_shift, 0]))
+
+    return factory.group(*boreholes)
 
 def boreholes_simple(factory, geom_dict):
     lateral_length = geom_dict.lateral_tunnel.length
@@ -173,7 +179,6 @@ def make_geometry(factory, geom_dict, fractures):
     box_fr, fractures_fr = factory.fragment(box_drilled, fractures_group)
     fractures_fr.mesh_step(geom_dict.fracture_mesh_step) #.set_region("fractures")
 
-    bulk_geom = factory.group(box_fr, fractures_fr)
     b_box_fr = box_fr.get_boundary().split_by_dimension()[2]
     b_fractures_fr = fractures_fr.get_boundary().split_by_dimension()[1]
 
@@ -197,16 +202,19 @@ def make_geometry(factory, geom_dict, fractures):
     b_fr_tunnel = b_fractures_fr.select_by_intersect(select)\
                   .set_region(".fr_tunnel").mesh_step(tunnel_mesh_step)
 
+
     boundary = factory.group(b_box, b_fractures,
                              b_box_boreholes, b_fr_boreholes,
                              b_box_tunnel, b_fr_tunnel)
+    bulk_geom = factory.group(box_fr, fractures_fr, boundary)
+    edz_refined = factory.group(b_box_boreholes, b_fr_boreholes, b_box_tunnel, b_fr_tunnel)
     #boundary = factory.group(b_box)
 
     # Following makes some mesing issues:
     #factory.group(b_box_inner, b_fr_inner).mesh_step(geom_dict['main_tunnel_mesh_step'])
     #boundary.select_by_intersect(boreholes.get_boundary()).mesh_step(geom_dict['boreholes_mesh_step'])
 
-    return bulk_geom, boundary
+    return bulk_geom, edz_refined
 
 def geom_meshing(factory, objects, mesh_file):
     factory.write_brep()
@@ -237,9 +245,9 @@ def geom_meshing(factory, objects, mesh_file):
     os.rename(factory.model_name + ".msh2", mesh_file)
 
 
-def make_mesh(repository_dict:dotdict, fractures:List['Fracture'], mesh_file: str):
+def make_mesh(cfg:dotdict, fractures:List['Fracture'], mesh_file: str):
     """
-    :param repository_dict: repository mesh configuration cfg.repository_mesh
+    :param cfg: repository mesh configuration cfg.repository_mesh
     :param fractures:  generated fractures
     :param mesh_file:
     :return:
@@ -252,14 +260,8 @@ def make_mesh(repository_dict:dotdict, fractures:List['Fracture'], mesh_file: st
     gopt.Tolerance = 0.0001
     gopt.ToleranceBoolean = 0.001
 
-    bulk, boundary = make_geometry(factory, repository_dict, fractures)
+    bulk, refined = make_geometry(factory, cfg, fractures)
 
-    #a, b, c, d = 2, 3, 5, 15
-    #f_borehole = field.threshold(field.distance_surfaces(b_borehole_fr.tags, 2 * bl / (2 * b)), lower_bound=(a, b), upper_bound=(c, d))
-    #f_borehole = field.threshold(field.distance_surfaces(b_rec_fr.tags, 2 * bl / (2 * b)), lower_bound=(a, b), upper_bound=(c, d))
-    borehole_radius = repository_dict.borehole_radius
-    borehole_length = repository_dict.borehole_length
-    #center_line = factory.line([0,0,0], [borehole_length, 0, 0]).translate([-borehole_length / 2, 0, 1.5 * borehole_radius])
     """
     cyl_dist = field.distance(center_line, sampling = 200) - 2
     ff = field.threshold(cyl_dist, lower_bound=(1, 0.3),  upper_bound=(50, 50))
@@ -271,25 +273,19 @@ def make_mesh(repository_dict:dotdict, fractures:List['Fracture'], mesh_file: st
                                      h_tangent=(3, 10),
                                      sampling=200)
     """
-    #################################################################################
-    '''
-    
-   #block_fr = block.fragment(fractures_group)
-    b_tmp = block.get_boundary()
-    b_block_fr = b_rec_fr.select_by_intersect(b_tmp).set_region(".main_tunnel")
-
-    a, b, c, d = 3, 5, 5, 15
-    f_block = field.threshold(field.distance_surfaces(b_block_fr.tags, 2 * bl / (2 * b)), lower_bound=(a, b),
-                        upper_bound=(c, d))
 
     #################################################################################
 
-    ff = field.minimum(f_borehole, f_block)
-    '''
+    center_line = factory.line([0,0,0], [cfg.borehole_length, 0, 0]).translate([-cfg.borehole_length / 2, 0, 1.5 * cfg.borehole_radius])
 
+    bx, by, bz = cfg.box_dimensions
+    n_sampling = int(cfg.borehole_length / 2)
+    dist = field.distance(center_line, sampling = n_sampling)
+    inner = field.geometric(dist, a=(cfg.borehole_radius, cfg.edz_mesh_step * 0.9), b=(cfg.edz_radius, cfg.edz_mesh_step))
+    outer = field.polynomial(dist, a=(cfg.edz_radius, cfg.edz_mesh_step), b=(by/2, cfg.boundary_mesh_step), q=1.7)
+    ff = field.maximum(inner, outer)
 
-    #ff = field.constant(10)
-    #factory.set_mesh_step_field(ff)
-    geom_meshing(factory, [bulk, boundary], mesh_file)
+    factory.set_mesh_step_field(ff)
+    geom_meshing(factory, [bulk], mesh_file)
     # factory.show()
     del factory
