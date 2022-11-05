@@ -16,13 +16,17 @@ That means the properties are described as correlated random variables.
 
 
 
-Repository structure:
+## Repository structure
 
 - `doc` - software documentation and various reports from the Endorse project
 - `experiments` - various numerical experiments and developments as part of the Endorse project
 - `src` - main sources
 - `tests` - various software tests, test data
 
+## Development environment
+In order to create the development environment run:
+
+        setup.sh
 
 
 ## Cíl projektu

@@ -78,7 +78,7 @@ geometry:
   # mesh step on inner boreholes
   boreholes_mesh_step: 1.5   # haxagon boreholes
   #boreholes_mesh_step: 0.3   # EDZ minimal resolution
-  main_tunnel_mesh_step: 2
+  main_tunnel_mesh_step: 3
 
   # Main tunnel - main access tunnel
   main_tunnel:

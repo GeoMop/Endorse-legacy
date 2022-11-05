@@ -1,8 +1,11 @@
+from typing import *
+import os
+import math
 from bgem.gmsh import gmsh, field, options
 import numpy as np
-import math
-import os
+from .common import dotdict
 import attrs
+
 
 def create_fractures_rectangles(gmsh_geom, fractures, base_shape: 'ObjectSet'):
     # From given fracture date list 'fractures'.
@@ -31,7 +34,7 @@ def create_fractures_rectangles(gmsh_geom, fractures, base_shape: 'ObjectSet'):
 #     main_tunnel: TunnelParams
 #     lateral_tunnel: TunnelParams
 
-def tunnel(factory, radius, width, length):
+def tunnel(factory, tunnel_dict):
     """
     A box with rounded "roof", basic box dimensions:
     hight= radius, width, length
@@ -40,7 +43,10 @@ def tunnel(factory, radius, width, length):
     Result is translated to have [0,0,0] at the boundary of the floor rectangle.
     At the center of the 'width' side.
     """
-    height = radius
+    radius = tunnel_dict.radius
+    height = tunnel_dict.height
+    width = tunnel_dict.width
+    length = tunnel_dict.length
     box = factory.box([width, length, height])
     z_shift = math.sqrt(radius * radius - 0.25 * width * width) - height / 2
     cylinder = factory.cylinder(radius, axis=[0, length, 0]).translate([0, -length / 2, -z_shift])
@@ -70,21 +76,15 @@ def box_with_sides(factory, dimensions):
 
 def make_access_tunnels(factory, geom_dict):
 
-    lateral_length = geom_dict["lateral_tunnel_length"]
+    lateral_length = geom_dict.lateral_tunnel.length
     main_tunnel_cylinder = tunnel(
-        factory,
-        geom_dict["main_tunnel_radius"],
-        geom_dict["main_tunnel_width"],
-        geom_dict["main_tunnel_length"]
+        factory, geom_dict.main_tunnel,
         ).translate([-lateral_length, 0, 0])
     lateral_tunnel_1 = tunnel(
-        factory,
-        geom_dict["lateral_tunnel_radius"],
-        geom_dict["lateral_tunnel_width"],
-        lateral_length
+        factory, geom_dict.lateral_tunnel,
     ).rotate([0,0,1], math.pi/2).translate([-lateral_length/2, 0, 0])
 
-    borehole_distance = geom_dict["borehole_distance"]
+    borehole_distance = geom_dict.borehole_distance
     lateral_tunnel_2 = lateral_tunnel_1.copy().translate([0, borehole_distance, 0])
     lateral_tunnel_3 = lateral_tunnel_1.copy().translate([0, -borehole_distance, 0])
 
@@ -92,9 +92,9 @@ def make_access_tunnels(factory, geom_dict):
     return main_tunnel_cylinder.fuse(lateral_tunnel_1, lateral_tunnel_2, lateral_tunnel_3)
 
 def make_access_tunnels_simple(factory, geom_dict):
-    r = geom_dict["main_tunnel_radius"]
-    w = geom_dict["main_tunnel_width"]
-    l = geom_dict["main_tunnel_length"]
+    r = geom_dict.main_tunnel.radius
+    w = geom_dict.main_tunnel.width
+    l = geom_dict.main_tunnel.length
 
     equivalent_height = w + r
     tunnel = factory.rectangle([equivalent_height, l]).rotate([0,1,0], math.pi/2).translate(
@@ -102,10 +102,10 @@ def make_access_tunnels_simple(factory, geom_dict):
     return tunnel
 
 def boreholes_full(factory, geom_dict):
-    lateral_length = geom_dict["lateral_tunnel_length"]
-    borehole_radius = geom_dict["borehole_radius"]
-    borehole_length = geom_dict["borehole_length"]
-    borehole_distance = geom_dict["borehole_distance"]
+    lateral_length = geom_dict.lateral_tunnel.length
+    borehole_radius = geom_dict.borehole_radius
+    borehole_length = geom_dict.borehole_length
+    borehole_distance = geom_dict.borehole_distance
 
     b_1 = factory.cylinder(borehole_radius, axis=[borehole_length, 0, 0]).translate(
         [- borehole_length / 2, 0, 1.5 * borehole_radius])
@@ -114,10 +114,10 @@ def boreholes_full(factory, geom_dict):
     return factory.group(b_1, b_2, b_3)
 
 def boreholes_simple(factory, geom_dict):
-    lateral_length = geom_dict["lateral_tunnel_length"]
-    borehole_radius = geom_dict["borehole_radius"]
-    borehole_length = geom_dict["borehole_length"]
-    borehole_distance = geom_dict["borehole_distance"]
+    lateral_length = geom_dict.lateral_tunnel.length
+    borehole_radius = geom_dict.borehole_radius
+    borehole_length = geom_dict.borehole_length
+    borehole_distance = geom_dict.borehole_distance
 
     b_1 = factory.cylinder(borehole_radius, axis=[borehole_length, 0, 0]).translate(
         [-borehole_length / 2, 0, 1.5 * borehole_radius])
@@ -134,31 +134,36 @@ def boreholes_simple(factory, geom_dict):
     return b_1, factory.group(b_2, b_3)
 
 def basic_shapes(factory, geom_dict):
-    box, sides = box_with_sides(factory, geom_dict["box_dimensions"])
-    borehole_length = geom_dict["borehole_length"]
+    box, sides = box_with_sides(factory, geom_dict.box_dimensions)
+    borehole_length = geom_dict.borehole_length
     access_tunnels = make_access_tunnels(factory, geom_dict).translate([-borehole_length / 2, 0, 0])
     boreholes = boreholes_full(factory, geom_dict)
-    tunnels = boreholes.copy().fuse(access_tunnels)
+    tunnels = boreholes.copy().fuse(access_tunnels.copy())
     box_drilled = box.copy().cut(tunnels).set_region("box")
-    return box_drilled, box, tunnels
+    return box_drilled, box, access_tunnels, boreholes
 
 def basic_shapes_simple(factory, geom_dict):
-    box, sides = box_with_sides(factory, geom_dict["box_dimensions"])
-    borehole_length = geom_dict["borehole_length"]
+    box, sides = box_with_sides(factory, geom_dict.box_dimensions)
+    borehole_length = geom_dict.borehole_length
     access_tunnel_2d = make_access_tunnels_simple(factory, geom_dict).translate([-borehole_length / 2, 0, 0])
     borehole, boreholes_2d = boreholes_simple(factory, geom_dict)
     tunnels_2d = boreholes_2d.fuse(access_tunnel_2d.copy().cut(borehole.copy()))
     #tunnels = boreholes.copy().fragment(access_tunnels)
 
-    box_drilled = box.copy().fragment(tunnels_2d).cut(borehole).set_region("box")
-    tunnels_2d.set_region("EDZ_2D")
-    box_drilled = factory.group(box_drilled, tunnels_2d)
+    box_fr, tunnels_2d_fr = factory.fragment(box, tunnels_2d)
+    box_t2d = factory.group(box_fr, tunnels_2d_fr)
+    #box_frag = gmsh.ObjectSet.group(box, tunnels_2d).copy().fragment(tunnels_2d.copy())
+    #box_reg = gmsh.Region.get("box", 3)
+    box_drilled = box_t2d.cut(borehole.copy())
+    box_drilled.select_by_intersect(box).set_region("box")
+    box_drilled.select_by_intersect(tunnels_2d).set_region("EDZ_2D")
+    #box_drilled = factory.group(box_drilled, tunnels_2d)
     return box_drilled, box, borehole
 
 
 def make_geometry(factory, geom_dict, fractures):
-    #box_drilled, box, tunnels = basic_shapes(factory, geom_dict)
-    box_drilled, box, tunnels = basic_shapes_simple(factory, geom_dict)
+    box_drilled, box, access_tunnels, boreholes = basic_shapes(factory, geom_dict)
+    #box_drilled, box, tunnels = basic_shapes_simple(factory, geom_dict)
 
     fractures = create_fractures_rectangles(factory, fractures, factory.rectangle())
     fractures_group = factory.group(*fractures).intersect(box_drilled)
@@ -166,17 +171,35 @@ def make_geometry(factory, geom_dict, fractures):
     #b_rec = box_drilled.get_boundary()#.set_region(".sides")
 
     box_fr, fractures_fr = factory.fragment(box_drilled, fractures_group)
-    fractures_fr.mesh_step(geom_dict['fracture_mesh_step']) #.set_region("fractures")
+    fractures_fr.mesh_step(geom_dict.fracture_mesh_step) #.set_region("fractures")
 
     bulk_geom = factory.group(box_fr, fractures_fr)
     b_box_fr = box_fr.get_boundary().split_by_dimension()[2]
     b_fractures_fr = fractures_fr.get_boundary().split_by_dimension()[1]
-    boundary_mesh_step = geom_dict['boundary_mesh_step']
+
+    # select outer boundary
+    boundary_mesh_step = geom_dict.boundary_mesh_step
     b_box = b_box_fr.select_by_intersect(box.get_boundary().copy()).set_region(".box_outer").mesh_step(boundary_mesh_step)
     b_fractures = b_fractures_fr.select_by_intersect(box.get_boundary().copy()).set_region(".fr_outer").mesh_step(boundary_mesh_step)
-    b_box_inner = b_box_fr.select_by_intersect(tunnels.get_boundary().copy()).set_region(".box_inner").mesh_step(geom_dict['boreholes_mesh_step'])
-    b_fr_inner = b_fractures_fr.select_by_intersect(tunnels.get_boundary().copy()).set_region(".fr_inner").mesh_step(geom_dict['boreholes_mesh_step'])
-    boundary = factory.group(b_box, b_fractures, b_box_inner, b_fr_inner)
+
+    # select inner boreholes boundary
+    boreholes_step = geom_dict.boreholes_mesh_step
+    select = boreholes.get_boundary().copy()
+    b_box_boreholes = b_box_fr.select_by_intersect(select)\
+                  .set_region(".box_boreholes").mesh_step(boreholes_step)
+    b_fr_boreholes = b_fractures_fr.select_by_intersect(select)\
+                 .set_region(".fr_boreholes").mesh_step(boreholes_step)
+
+    tunnel_mesh_step = geom_dict.main_tunnel_mesh_step
+    select = access_tunnels.get_boundary().copy()
+    b_box_tunnel = b_box_fr.select_by_intersect(select)\
+                  .set_region(".box_tunnel").mesh_step(tunnel_mesh_step)
+    b_fr_tunnel = b_fractures_fr.select_by_intersect(select)\
+                  .set_region(".fr_tunnel").mesh_step(tunnel_mesh_step)
+
+    boundary = factory.group(b_box, b_fractures,
+                             b_box_boreholes, b_fr_boreholes,
+                             b_box_tunnel, b_fr_tunnel)
     #boundary = factory.group(b_box)
 
     # Following makes some mesing issues:
@@ -214,32 +237,40 @@ def geom_meshing(factory, objects, mesh_file):
     os.rename(factory.model_name + ".msh2", mesh_file)
 
 
-def make_mesh(geom_dict, fractures, mesh_file):
+def make_mesh(repository_dict:dotdict, fractures:List['Fracture'], mesh_file: str):
+    """
+    :param repository_dict: repository mesh configuration cfg.repository_mesh
+    :param fractures:  generated fractures
+    :param mesh_file:
+    :return:
+    """
     base, ext = os.path.splitext(os.path.basename(mesh_file))
     factory = gmsh.GeometryOCC(base, verbose=True)
+    factory.get_logger().start()
     #factory = gmsh.GeometryOCC(mesh_name)
     gopt = options.Geometry()
     gopt.Tolerance = 0.0001
     gopt.ToleranceBoolean = 0.001
 
-    bulk, boundary = make_geometry(factory, geom_dict, fractures)
+    bulk, boundary = make_geometry(factory, repository_dict, fractures)
 
     #a, b, c, d = 2, 3, 5, 15
     #f_borehole = field.threshold(field.distance_surfaces(b_borehole_fr.tags, 2 * bl / (2 * b)), lower_bound=(a, b), upper_bound=(c, d))
     #f_borehole = field.threshold(field.distance_surfaces(b_rec_fr.tags, 2 * bl / (2 * b)), lower_bound=(a, b), upper_bound=(c, d))
-    borehole_radius = geom_dict["borehole_radius"]
-    borehole_length = geom_dict["borehole_length"]
-    center_line = factory.line([0,0,0], [borehole_length, 0, 0]).translate([-borehole_length / 2, 0, 1.5 * borehole_radius])
+    borehole_radius = repository_dict.borehole_radius
+    borehole_length = repository_dict.borehole_length
+    #center_line = factory.line([0,0,0], [borehole_length, 0, 0]).translate([-borehole_length / 2, 0, 1.5 * borehole_radius])
     """
     cyl_dist = field.distance(center_line, sampling = 200) - 2
     ff = field.threshold(cyl_dist, lower_bound=(1, 0.3),  upper_bound=(50, 50))
     """
-
+    """
     ff = field.attractor_aniso_curve(center_line,
                                      dist_range=(3, 10),
                                      h_normal=(0.3, 10),
                                      h_tangent=(3, 10),
                                      sampling=200)
+    """
     #################################################################################
     '''
     
@@ -257,8 +288,8 @@ def make_mesh(geom_dict, fractures, mesh_file):
     '''
 
 
-    ff = field.constant(10)
-    factory.set_mesh_step_field(ff)
+    #ff = field.constant(10)
+    #factory.set_mesh_step_field(ff)
     geom_meshing(factory, [bulk, boundary], mesh_file)
     # factory.show()
     del factory
