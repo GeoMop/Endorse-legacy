@@ -21,5 +21,3 @@ class workdir:
         if self._clean:
             shutil.rmtree(self.work_dir)
 
-
-def config_loader()

@@ -1,4 +1,6 @@
 # Test src/repository_mesh.py
+# fine EDZ: about 4M elements, 4 minutes
+
 import os
 import numpy as np
 from endorse import common

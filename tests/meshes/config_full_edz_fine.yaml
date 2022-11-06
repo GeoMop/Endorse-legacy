@@ -5,22 +5,13 @@
 # base of the mesh file name
 mesh_name: random_fractures
 
-containers:
-    # length of horizontal container [m]    
-    length: 4
-    # distance between containers, empty, backfill [m] 
-    spacing: 10
-    # number of containers (automaticaly reduced to fit into 'main_tunnel_length')
-    n_containers: 6
-    # position of the first container from the beginning of the tunnel (interface tunnel-
-    offset: 4
 
 geometry:
   # Coordinate system
   # X - in direction of storage boreholes
   # Y - perpendicular horizontal
   # Z - vertical
-  # origin:
+  # origin: floor of the lateral tunnel, center, interface with center borehole.
 
 
   # depth of the center of the box and of the coordinate system
@@ -62,17 +53,30 @@ geometry:
       length: 23
 
   # Storage boreholes
-  # Total number of side boreoholes (one side) resolved and homogenized.
-  n_side_boreholes: 0
-  # Number of explicit side boreholes (addition to the central source borehole)
-  n_explicit_boreholes: 0
+  borehole:
+      # Total number of side boreoholes (one side) resolved and homogenized.
+      n_sides: 0
+      # Number of explicit side boreholes (addition to the central source borehole)
+      n_explicit: 0
+      # Boreholes radius
+      radius: 1.1
+      # Boreholes length
+      length: 300
+      # Vertical position of the borehole center.
+      z_pos: 1.1
+      # horizontal gaps between boreholes; (2 * n_side_boreholes) * borehole_distance should be < main_tunnel.length
+      # not checked in the code
+      y_spacing: 25
 
-  borehole_radius: 1.1
-  borehole_length: 300
-  # horizontal gaps between boreholes; (2 * n_side_boreholes) * borehole_distance should be < main_tunnel.length
-  # not checked in the code
-  borehole_distance: 25
-
+  containers:
+      # length of horizontal container [m]
+      length: 4
+      # distance between containers, empty, backfill [m]
+      spacing: 10
+      # number of containers (automaticaly reduced to fit into 'main_tunnel_length')
+      n_containers: 6
+      # position of the first container from the beginning of the tunnel (interface tunnel-
+      offset: 4
 
 
   # shifting the mesh to real in-situ coordinates
