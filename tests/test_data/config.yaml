@@ -58,6 +58,13 @@ containers:
     offset: 4
 
 geometry:
+  # Coordinate system
+  # X - in direction of storage boreholes
+  # Y - perpendicular horizontal
+  # Z - vertical
+  # origin:
+
+
   # depth of the center of the box and of the coordinate system
   center_depth: 5000
   # x,y,z dimension
@@ -68,29 +75,51 @@ geometry:
   n_frac_limit: 3
   # mesh step on outer boundary
   boundary_mesh_step: 50
+  # mesh step on outer boundary of EDZ (just around boreholes right now)
+  edz_mesh_step: 1
   # mesh step on inner boreholes
-  boreholes_mesh_step: 1   # haxagon boreholes
+  boreholes_mesh_step: 0.3   # haxagon boreholes
   #boreholes_mesh_step: 0.3   # EDZ minimal resolution
-  main_tunnel_mesh_step: 1.1
+  main_tunnel_mesh_step: 2
 
-  main_tunnel_radius: 3.5
-  main_tunnel_width: 5.5
-  main_tunnel_length: 100
+  # Main tunnel - main access tunnel
+  main_tunnel:
+      # radius of the ceiling/roof
+      radius: 3.5
+      # height of side walls (tunnel height minus roof)
+      height: 4
+      # tunnel width
+      width: 5.5
+      # tunnel length
+      length: 100
 
-  lateral_tunnel_radius: 3.5
-  lateral_tunnel_width: 5.5
-  lateral_tunnel_length: 23
+  # Lateral short tunnels perpendicular to the main tunnel
+  # one ofr every storage borehole
+  lateral_tunnel:
+      radius: 3.5
+      height: 4
+      width: 5.5
+      length: 23
+
+  # Storage boreholes
+  # Total number of side boreoholes (one side) resolved and homogenized.
+  n_side_boreholes: 0
+  # Number of explicit side boreholes (addition to the central source borehole)
+  n_explicit_boreholes: 0
 
   borehole_radius: 1.1
   borehole_length: 300
-  # horizontal gaps between boreholes
+  # horizontal gaps between boreholes; (2 * n_side_boreholes) * borehole_distance should be < main_tunnel.length
+  # not checked in the code
   borehole_distance: 25
 
-  edz_thickness: 2
+
+  edz_radius: 2.1
 
   # shifting the mesh to real in-situ coordinates
   # TODO: do not shift the computation mesh but the input data to the local coordinate system
-  shift_vec: [ -682421.2022, -1129264.115, 50]
+  #shift_vec: [ -682421.2022, -1129264.115, 50]
+  shift_vec: [0, 0, 0]
 
   fracture_stats:
       # SKB data

@@ -1,0 +1,116 @@
+flow123d_version: 2.0.0
+problem: !Coupling_Sequential
+  description: Heat transfer in EGS after stimulation of fractures
+  mesh:
+    mesh_file: <mesh>
+    regions:
+      - !Union
+        name: fractures
+        regions: <fracture_regions>
+      - !Union
+        name: .boreholes_fr
+        regions: <boreholes_fracture_regions>
+      - !Union
+        name: .main_tunnel_fr
+        regions: <main_tunnel_fracture_regions>
+      - !Union
+        name: edz_fractures
+        regions:
+          - .boreholes
+          - .main_tunnel
+
+  flow_equation: !Flow_Darcy_MH
+    output_specific:
+    nonlinear_solver:
+      linear_solver: !Petsc
+        a_tol: <flow_solver__a_tol>
+        r_tol: <flow_solver__r_tol>
+        options: <flow_solver__options>
+
+        #options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg
+        #options: -ksp_type preonly -pc_type lu
+    n_schurs: 2
+    input_fields:
+      - region: box   # we assume steady flow, hence storativity is not set
+        conductivity: <bulk_conductivity>
+        init_piezo_head: 0
+
+      - region: fractures
+        cross_section: <fr_cross_section>
+        conductivity: <fr_conductivity>
+        init_piezo_head: 0
+
+      #- region: edz_fractures
+        #cross_section: <fr_cross_section>
+        #conductivity: <fr_conductivity>
+        #init_piezo_head: 0
+
+#      - region: .boreholes
+#        cross_section: <fr_cross_section>
+#        conductivity: <fr_conductivity>
+#        init_piezo_head: 0
+
+#      - region: .main_tunnel
+#        cross_section: <fr_cross_section>
+#        conductivity: <fr_conductivity>
+#        init_piezo_head: 0
+        
+      - region: .boreholes_fr
+        cross_section: <fr_cross_section>
+        conductivity: <fr_conductivity>
+        init_piezo_head: 0
+      
+      - region: .main_tunnel_fr
+        cross_section: <fr_cross_section>
+        conductivity: <fr_conductivity>
+        init_piezo_head: 0
+ 
+ #      - region: .boreholes_fr
+#        bc_type: total_flux
+#        bc_piezo_head: <well_piezohead_inject>
+#        bc_robin_sigma: !FieldFormula
+#          value: <fr_conductivity> / (10*log(10/0.15)) # cca 5.5e-5
+#
+#      - region: .boreholes
+#        bc_type: total_flux
+#        bc_piezo_head: <well_piezohead_inject>
+#        bc_robin_sigma: !FieldFormula
+#          value: <sigma_bulk_conductivity> / (10*log(10/0.15))
+#
+#      - region: .main_tunnel_fr
+#        bc_type: total_flux
+#        bc_piezo_head: <well_piezohead_pump>
+#        bc_robin_sigma: !FieldFormula
+#          value: <fr_conductivity> / (10*log(10/0.15))
+#
+#      - region: .main_tunnel
+#        bc_type: total_flux
+#        bc_piezo_head: <well_piezohead_pump>
+#        bc_robin_sigma: !FieldFormula
+#          value: <sigma_bulk_conductivity> / (10*log(10/0.15))
+
+      - region: .side_x0
+        bc_type: dirichlet
+        bc_piezo_head: 50
+        #bc_robin_sigma: !FieldFormula
+        #  value: 0.0025 / (10*log(10/0.15))
+
+      - region: .side_x1
+        bc_type: dirichlet
+        bc_piezo_head: 0
+        #bc_robin_sigma: !FieldFormula
+        # value: 0.0025 / (10*log(10/0.15))
+
+    output:
+      fields:
+#        - piezo_head_p0
+        - pressure_p0
+        - velocity_p0
+        - region_id
+        - cross_section
+        - conductivity
+    balance:
+      cumulative: true
+    output_stream:
+      format: !vtk
+        variant: ascii
