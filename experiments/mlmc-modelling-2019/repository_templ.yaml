@@ -1,0 +1,166 @@
+flow123d_version: 3.1.0
+problem: !Coupling_Sequential
+  description: Darcy flow through a fractured square domain. Two staedy states for X and Y pressure gradient BC are computed.
+  mesh:
+    mesh_file: <mesh_file>
+    regions:
+      - !Union
+        name: upper_boundary
+        regions: [.side_3, .side_fr_3]
+
+  flow_equation: !Flow_Darcy_MH
+    nonlinear_solver:
+      tolerance: 1e-7
+      linear_solver: !Petsc
+        r_tol: 1.0e-6
+        a_tol: 1.0e-10
+    input_fields:
+      - region: ALL
+        conductivity: 1.0
+        anisotropy: !FieldFE
+          #input_discretization: element_data
+          interpolation: identic_mesh
+          mesh_data_file: <fields_file>
+          field_name: conductivity_tensor
+          default_value: 1e-15
+        cross_section: !FieldFE 
+          #input_discretization: element_data
+          interpolation: identic_mesh
+          mesh_data_file: <fields_file>
+          field_name: cross_section
+          default_value: 1.0
+        #storativity: 0.0
+
+        
+      - region: upper_boundary 
+        bc_type: dirichlet
+        bc_pressure: !FieldFormula
+          value: x
+          
+    output:
+      times: 
+        start: 0.0
+        step: 1.0
+        end: <n_steps>
+      add_input_times: True
+      fields:
+        - pressure_p0
+        - velocity_p0
+        #- anisotropy
+        - cross_section
+    #output_stream:      
+      #format: !vtk
+        #variant: binary
+    output_stream:      
+      format: !gmsh        
+    balance:
+      cumulative: true
+
+  solute_equation: !Coupling_OperatorSplitting
+    transport: !Solute_AdvectionDiffusion_DG
+    #transport: !Solute_Advection_FV
+      input_fields:
+
+          
+        - region: BULK
+          init_conc: <init_conc>
+          porosity: <>
+          disp_l: 10
+          disp_t: 5
+          diff_m: 0
+          
+        - region: upper_boundary
+          bc_type: inflow
+          bc_conc: 0
+
+      dg_order: 2  
+      output:
+        fields:
+          - porosity
+          - conc
+        observe_fields:
+          - conc
+          
+    output_stream:
+        file: ./transport_test15.msh
+        format: !vtk
+            null
+        name: transport_output_stream
+        times:
+          #- {begin: 0.0, step: 100, end: 1000}
+          #- {begin: 1000, step: 1000, end: 10000}
+          #- {begin: 1000, step: 10000, end: 100000}
+          - step: 1e7
+        observe_points:
+          - point: [0.98,   0,  0.18]
+            dim: 2
+            #n_search_levels: 3
+            #snap_region: .surface            
+          - point: [0.9, 0,  0.15]
+            dim: 2
+            #snap_region: .surface
+          
+          - point: [0.85, 0, 0.13]
+            dim: 2
+            #snap_region: .surface
+          - point: [0.8, 0,  0.12]
+            dim: 2
+            #snap_region: .surface
+          - point: [0.75, 0, 0.10]
+            dim: 2
+            #snap_region: .surface
+          - point: [0.7, 0,  0.09]
+            dim: 2
+            #snap_region: .surface
+          - point: [0.65, 0, 0.08]
+            dim: 2
+            #snap_region: .surface
+          - point: [0.6, 0,  0.08]
+            dim: 2
+            #snap_region: .surface
+          - point: [0.55, 0, 0.08]
+            dim: 2
+            #snap_region: .surface
+          - point: [0.5, 0,  0.08]
+            dim: 2
+            #snap_region: .surface
+          
+          - point: [0.4, 0,  0.09]
+            dim: 2
+            #snap_region: .surface
+          - point: [0.3, 0,  0.14]
+            dim: 2
+            #snap_region: .surface
+          - point: [0.2, 0,  0.21]
+            dim: 2
+            #snap_region: .surface
+          - point: [0.1, 0,  0.29]
+            dim: 2
+            #snap_region: .surface
+          
+          #- [ 1 , 0 , 0.2 ]
+          #- [ 0.9 , 0 , 0.16 ]
+          
+          #- [ 0.85 , 0 , 0.14 ]
+          #- [ 0.799858 , 0 , 0.128338 ]
+          #- [ 0.75 , 0 , 0.11 ]
+          #- [ 0.7 , 0 , 0.1 ]
+          #- [ 0.65 , 0 , 0.09 ]
+          #- [ 0.599976 , 0 , 0.0895959 ]
+          #- [ 0.549931 , 0 , 0.0888147 ]
+          #- [ 0.499885 , 0 , 0.0880335 ]
+          
+          #- [ 0.4 , 0 , 0.1 ]
+          #- [ 0.3 , 0 , 0.15 ]
+          #- [ 0.2 , 0 , 0.22 ]
+          #- [ 0.1 , 0 , 0.3 ]
+          
+  
+          
+          
+    substances:
+        - X
+    time:
+        #min_dt: 10000000.0
+        #max_dt: 10000000.0
+        end_time: 1000e6

@@ -1,0 +1,993 @@
+{
+    "__class__": "LayerGeometry",
+    "curves": [],
+    "interfaces": [
+        {
+            "__class__": "Interface",
+            "elevation": 0.0,
+            "surface_id": null,
+            "transform_z": [
+                null,
+                null
+            ]
+        }
+    ],
+    "layers": [
+        {
+            "__class__": "FractureLayer",
+            "name": "layer",
+            "node_region_ids": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+            ],
+            "polygon_region_ids": [
+                0,
+                1
+            ],
+            "segment_region_ids": [
+                2,
+                3,
+                4,
+                5,
+                10,
+                14,
+                15,
+                16,
+                18,
+                19,
+                22,
+                32,
+                34,
+                37,
+                38,
+                40
+            ],
+            "top": {
+                "__class__": "InterfaceNodeSet",
+                "interface_id": 0,
+                "nodeset_id": 0
+            }
+        }
+    ],
+    "node_sets": [
+        {
+            "__class__": "NodeSet",
+            "linked_node_ids": [],
+            "linked_node_set_id": null,
+            "nodes": [
+                [
+                    -10.0,
+                    10.0
+                ],
+                [
+                    -10.0,
+                    -10.0
+                ],
+                [
+                    10.0,
+                    -10.0
+                ],
+                [
+                    10.0,
+                    10.0
+                ],
+                [
+                    -6.018195489108216,
+                    -0.22686245942659228
+                ],
+                [
+                    5.187913074122694,
+                    -7.145373123200217
+                ],
+                [
+                    -0.6508732320224243,
+                    -0.602955472660443
+                ],
+                [
+                    4.681768512842712,
+                    6.762902246319398
+                ],
+                [
+                    2.8033776129133208,
+                    -3.8538291087740344
+                ],
+                [
+                    -7.909273913438683,
+                    1.4395677351280385
+                ],
+                [
+                    -7.69160666836273,
+                    -3.2566062063666252
+                ],
+                [
+                    -1.7971573379106862,
+                    -5.28376273299517
+                ],
+                [
+                    -6.074965276536113,
+                    3.967375332428577
+                ],
+                [
+                    -6.737744046208284,
+                    2.890551446304564
+                ],
+                [
+                    -0.7030460608639407,
+                    4.777978146372757
+                ],
+                [
+                    1.143255475370815,
+                    3.6184477061699525
+                ],
+                [
+                    -8.697941884957213,
+                    -6.314110950717132
+                ],
+                [
+                    -8.476961362051807,
+                    -4.703574382459194
+                ],
+                [
+                    7.18548405126741,
+                    -6.757088562400022
+                ],
+                [
+                    -8.767802329710856,
+                    4.076611960248994
+                ],
+                [
+                    -5.044835349769049,
+                    -1.0154172415065568
+                ],
+                [
+                    -1.2885970633712656,
+                    1.1298851562521108
+                ],
+                [
+                    -7.4055247287870465,
+                    5.512003273654878
+                ],
+                [
+                    4.37667017551265,
+                    8.140773085724877
+                ],
+                [
+                    1.5183861296024583,
+                    2.314070263429328
+                ],
+                [
+                    4.148181396997911,
+                    -1.4402274867977365
+                ],
+                [
+                    -0.5540972715070164,
+                    -2.9092477029618355
+                ],
+                [
+                    -2.796502205823882,
+                    5.50208491982374
+                ],
+                [
+                    1.259549738592514,
+                    -7.609442769357218
+                ],
+                [
+                    -1.609353123451116,
+                    -8.439470949975753
+                ],
+                [
+                    5.238292896620038,
+                    4.59458719913376
+                ],
+                [
+                    8.082627392187087,
+                    1.4752121167304766
+                ],
+                [
+                    7.628505894931207,
+                    -0.031807389054337554
+                ],
+                [
+                    7.101186367470268,
+                    2.70347845731102
+                ],
+                [
+                    5.769211290245789,
+                    -0.7435275116233825
+                ],
+                [
+                    6.904150127627897,
+                    -0.9613889841004252
+                ],
+                [
+                    -1.8783238319081217,
+                    4.618027870951648
+                ],
+                [
+                    -2.3003681509254696,
+                    3.462311937608623
+                ],
+                [
+                    3.2077460954122743,
+                    -0.8782760708693916
+                ],
+                [
+                    6.141507978596762,
+                    1.717970123594134
+                ]
+            ],
+            "topology_id": 0
+        }
+    ],
+    "regions": [
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "none",
+            "mesh_step": 0.0,
+            "name": "NONE",
+            "not_used": true,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "fracture",
+            "mesh_step": 0.1,
+            "name": "bulk",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": true,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.0,
+            "name": "side_0",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": true,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.0,
+            "name": "side_1",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": true,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.0,
+            "name": "side_2",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": true,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.0,
+            "name": "side_3",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_0",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_1",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_2",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_3",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_4",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_5",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_6",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_7",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_8",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_9",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_10",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_11",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_12",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_13",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_14",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_15",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_16",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_17",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_18",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_19",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_20",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_21",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_22",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_23",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_24",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_25",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_26",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_27",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_28",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_29",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_30",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_31",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_32",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_33",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_34",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_35",
+            "not_used": false,
+            "topo_dim": "invalid"
+        },
+        {
+            "__class__": "Region",
+            "boundary": false,
+            "brep_shape_ids": [],
+            "color": "",
+            "dim": "well",
+            "mesh_step": 0.1,
+            "name": "frac_36",
+            "not_used": false,
+            "topo_dim": "invalid"
+        }
+    ],
+    "supplement": {
+        "__class__": "UserSupplement",
+        "init_area": [
+            [
+                0.0,
+                0.0
+            ],
+            [
+                1.0,
+                0.0
+            ],
+            [
+                1.0,
+                1.0
+            ],
+            [
+                0.0,
+                1.0
+            ]
+        ],
+        "last_node_set": 0,
+        "shps": [],
+        "surface_idx": null,
+        "zoom": {
+            "position_set": false,
+            "x": 0.0,
+            "y": 0.0,
+            "zoom": 1.0
+        }
+    },
+    "surfaces": [],
+    "topologies": [
+        {
+            "__class__": "Topology",
+            "polygons": [
+                {
+                    "__class__": "Polygon",
+                    "free_points": [],
+                    "holes": [
+                        [
+                            3,
+                            2,
+                            1,
+                            0
+                        ]
+                    ],
+                    "interface_id": null,
+                    "segment_ids": []
+                },
+                {
+                    "__class__": "Polygon",
+                    "free_points": [
+                        6,
+                        7,
+                        9,
+                        10,
+                        11,
+                        18,
+                        21,
+                        22,
+                        24,
+                        26,
+                        27,
+                        28,
+                        30,
+                        33,
+                        39
+                    ],
+                    "holes": [
+                        [
+                            4,
+                            11,
+                            11,
+                            4
+                        ],
+                        [
+                            5,
+                            5
+                        ],
+                        [
+                            6,
+                            6
+                        ],
+                        [
+                            7,
+                            7
+                        ],
+                        [
+                            9,
+                            9
+                        ],
+                        [
+                            12,
+                            12
+                        ],
+                        [
+                            13,
+                            13
+                        ],
+                        [
+                            14,
+                            14
+                        ],
+                        [
+                            15,
+                            15
+                        ]
+                    ],
+                    "interface_id": null,
+                    "segment_ids": [
+                        3,
+                        8,
+                        8,
+                        0,
+                        1,
+                        2,
+                        10,
+                        10
+                    ]
+                }
+            ],
+            "segments": [
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        0,
+                        1
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        1,
+                        2
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        2,
+                        3
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        3,
+                        0
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        5,
+                        8
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        12,
+                        13
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        14,
+                        15
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        16,
+                        17
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        19,
+                        0
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        20,
+                        4
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        3,
+                        23
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        5,
+                        29
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        31,
+                        32
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        34,
+                        35
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        36,
+                        37
+                    ]
+                },
+                {
+                    "__class__": "Segment",
+                    "interface_id": null,
+                    "node_ids": [
+                        38,
+                        25
+                    ]
+                }
+            ]
+        }
+    ],
+    "version": [
+        0,
+        5,
+        0
+    ]
+}

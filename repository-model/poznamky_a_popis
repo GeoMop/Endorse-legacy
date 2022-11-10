@@ -1,5 +1,0 @@
-config.yaml: vstupni parametry geometrie
-mesh.py: tvorba geometrie a meshe; nazvy entit jsou zmenene oproti vzorovym yaml souborum!
-process.py: zakomentovane spusteni flowa, vysledkem je mesh
-03_th.yaml: testovaci uloha, nazvy entit odpovidaji mesh.py
-
