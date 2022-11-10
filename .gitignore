@@ -13,6 +13,10 @@ experiments/edz_transport/TSX_prediction
 experiments/edz_transport/samples
 experiments/mlmc-modelling-2019/output_2
 experiments/mlmc-modelling-2019/*.pdf
+experiments/mlmc-modelling-2019/workdir/**
+experiments/repository-model/new_from_bgem/**
+experiments/repository-model/prd/**
+experiments/repository-model/tmp/**
 
 # venv
 **/venv/**
