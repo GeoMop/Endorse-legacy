@@ -1,0 +1,301 @@
+\documentclass[11pt,a4paper]{article}
+
+%\usepackage[square]{natbib}
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+
+%\usepackage[T1]{fontenc}
+%\usepackage{uarial}
+%\renewcommand{\familydefault}{\sfdefault}
+%\renewcommand{\rmdefault}{\sfdefault}
+%\usepackage{sfmath}
+%\usepackage{sansmath}
+
+\usepackage{amsfonts,amsmath}
+\usepackage{etoolbox}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{multirow}
+\usepackage{titlesec}
+\setcounter{secnumdepth}{3}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{setspace}
+\usepackage{geometry}
+\usepackage{calc}
+\usepackage{booktabs}
+
+
+\geometry{verbose,
+          tmargin=4cm,
+          bmargin=3cm,
+          lmargin=2.5cm,
+          rmargin=2.5cm,
+          footskip=24pt}
+% \newlength\mytopmargin
+% \newsavebox{\headbox}\savebox{\headbox}{
+%   \begin{flushleft}                           
+%   \includegraphics[width=2cm]{logo_TACR_zakl.pdf} 
+%   \end{flushleft}}
+% \setlength{\mytopmargin}{\totalheightof{\usebox{\headbox}}+2cm}
+% \geometry{verbose,
+%           tmargin=\mytopmargin,
+%           headheight=1.1\mytopmargin}
+% \usepackage{fancyhdr}
+% \fancyhf{}
+% \fancyhead[C]{\usebox\headbox}
+% \renewcommand{\headrulewidth}{0pt}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\renewcommand{\headrulewidth}{0pt}
+\fancyhead[L]{\begin{picture}(0,0) 
+\put(0,0){\includegraphics[width=2cm]{logo_TACR_zakl.pdf}} 
+\end{picture}}% empty left
+
+
+% \usepackage{fancyhdr}
+% %\pagestyle{fancy}
+% \fancyhead{
+% %     \begin{picture}(0,0)
+% %         \put(-20,-10)
+% %     \end{picture}
+%     {\includegraphics[width=2cm]{logo_TACR_zakl.pdf}}
+%     \vbox{
+%       Technologická agentura\\
+%       České republiky
+%     }
+%     }
+% \rhead{}    
+% \cfoot{}
+% \rfoot{\thepage}
+% \renewcommand{\headrulewidth}{0pt}
+
+
+
+
+\usepackage{tikz}
+
+% macro for units.
+\def\UNIT#1#2{\ifstrempty{#2}{}{%
+\ifstrequal{#2}{1}{\mathrm{#1}}{\mathrm{#1}^{#2}}%
+}}
+\def\units#1#2#3{\ifstrempty{#1#2#3}{$[-]$}{$[ \UNIT{kg}{#1}\UNIT{m}{#2}\UNIT{s}{#3} ]$}} %with brackets
+\def\unitss#1#2#3{\ifstrempty{#1#2#3}{$-$}{$ \UNIT{kg}{#1}\UNIT{m}{#2}\UNIT{s}{#3} $}}    %without brackets
+
+%macro for hyperlinks (dummy)
+\def\hyperA#1#2{#2}
+  
+
+
+% ***************************************** SYMBOLS
+\def\abs#1{\lvert#1\rvert}
+\def\argdot{{\hspace{0.18em}\cdot\hspace{0.18em}}}
+\def\bb{\vc b}
+\def\d{\mathrm{d}}
+\def\D{{\tn D}}
+\def\div{\operatorname{div}}
+\def\grad{\nabla}
+\def\jmp#1{[#1]}
+\def\n{\vc n}
+\def\nn{\vc n}
+\def\prtl{\partial}
+\def\R{\mathbb R}
+\def\Real{\mathbb R}
+\def\sc#1#2{\left(#1,#2\right)}
+\def\th{\vartheta}
+\def\tn#1{{\mathbb{#1}}}    % tensor
+\def\vc#1{\mathbf{\boldsymbol{#1}}}     % vector
+\def \E{{\mathsf E}}
+\def\avg#1{\langle#1\rangle}
+\def\var#1{\llangle#1\rrangle}
+\def\Var{\mathop{\rm Var}}
+\def\Cov{\mathop{\rm Cov}}
+%\def\log{\mathop{\rm log}}
+\def\abs#1{|#1|}
+
+\def\vl{{\vc\lambda}}
+\def\estvl{{\vc{\hat\lambda}}}
+\def\estrho{\hat\rho}
+\def\vmu{\vc\mu}
+\def\estvmu{{\vc{\hat\mu}}}
+\def\vphi{\vc\phi}
+
+
+%***************************************************************************
+
+
+
+
+
+\begin{document}
+\begin{onehalfspacing} 
+
+%\ULCornerWallPaper{1}{\includegraphics{TACR_logo.png}}
+%\LLCornerWallPaper{1}{bar}
+%\lipsum[1-3]
+
+\begin{titlepage}
+    \includegraphics[width=2cm]{logo_TACR_zakl.pdf}
+
+    \vspace{6cm}
+    {\centering	
+      {\scshape\bf\huge Odborná zpráva - \\
+      řešení projektu Endorse v roce 2019\par}
+    }
+	
+    \vspace{3cm}	
+    {\LARGE
+      {\noindent Číslo projektu:  TK02010118
+        {\bfseries }\par}
+      \vspace{2ex}
+      {\noindent Název projektu: \\
+        {\bfseries Predikce vlastností EDZ s vlivem na bezpečnost a spolehlivost
+         hlubinného úložiště radioaktivního odpadu.} \par}
+      \vspace{2ex}
+      {\noindent Předkládá: \\
+      \-\hspace{2ex} organizace: {\bfseries Technická univerzita v Liberci}\\
+      \-\hspace{2ex} řešitel: {\bfseries doc. Mgr. Jan Březina, Ph.D.}\\
+      \-\hspace{2ex} organizace: {\bfseries Ústav Geoniky}\\
+      \-\hspace{2ex} spoluřešitel: {\bfseries prof. RNDr. Radim Blaheta CSc.}\par}
+
+    }  
+    \vfill
+% Bottom of the page
+\end{titlepage}
+
+%\setcounter{page}{4}
+
+\section{Úvod}
+Zpráva shrnuje postup řešení projektu od začátku v polovině roku 2019. Cílem projektu je
+vývoj metodiky a software pro predikci indikátorů bezpečnosti se zahrnutím nejistot.
+To zahrnuje zejména vývoj matematických modelů vzniku EDZ, transportu kontaminace skrze EDZ a rozvoj metod pro stochastické výpočty. V prvním roce byly řešeny následující aktivity:
+\begin{itemize}
+\item Knihovny pro stochastické přímé a inverzní metody (07/2019 - 12/2021)
+
+\item Vývoj modelu proudění a mechaniky na smíšených sítích (07/2019 - 12/2020)
+
+\item Definice vstupních dat a indikátorů bezpečnostních funkcí EDZ. (07/2019 - 07/2020)
+\end{itemize}
+V tomto pořadí jsou popsány v následujících kapitolách.
+Za rok 2019 nebyly plánovány žádné milníky.
+
+
+
+
+
+\section{Knihovny pro stochastické přímé a inverzní metody}
+{\it Období aktivity:}  07/2019 - 12/2021
+
+\subsection{Popis aktivity}
+Aktivita je zaměřena na vývoj a aplikaci stochastických metod v úlohách simulujících hydro-mechanické procesy v EDZ. V první fázi
+bude formulován stochastický popis parametrů uvažovaných modelů včetně popisu rozdělení puklin. Následovat bude implementace
+víceúrovňové metody Monte-Carlo (MLMC) se zahrnutím různě detailního popisu puklinových sítí. Bude vyvinut nástroj pro tvorbu
+statisticky generovaných puklin a příslušných smíšených výpočetních sítí. Současně budou implementovány specifické metody pro
+Bayesovské inverze s využitím metody Metropolis-Hastings pro generování Markovského řetězce. Pro podstatné zvýšení efektivity se
+využije přibližný, náhradní (surrogate) model a příslušná varianta Metropolis-Hastings algoritmu (algoritmus se zpožděním).
+
+\subsection{Víceúrovňová metoda Monte Carlo a výpočty na puklinách (TUL)}
+Víceúrovňová metoda Monte Carlo představuje velmi efektivní metodu pro odhad střední hodnoty náhodné veličiny $X$, která není přímo realizovatelná, ale jsou realizovatelné její aproximace $X_h \rightarrow X$ pro $h \rightarrow 0$. 
+Koncept víceúrovňové metody Monte Carlo (MLMC), viz. \cite{Giles2015}, je velmi obecný, ale jeho aplikace na modely na smíšených sítích je netriviální. Je třeba pro veličinu $X_h$ vypočtenou na smíšené (pukliny popsány 2d konečnými prvky) výpočetní síti s krokem $h$ najít aproximaci $X_H$ na hrubší výpočetní síti, tak aby rozdíl $X_h - X_H$ měl malý rozptyl, tedy hrubší aproximace musí být dostatečně dobrá. V průběhu roku 2019 byly učiněny první experimenty v tomto směru byla studována možnost nahradit jemné pukliny modelu $X_h$ pomocí změn materiálových parametrů v modelu $X_H$. Byly vyřešeny různé technické problémy s generováním náhodných puklin a odpovídajících výpočetních sítí, nicméně realizace celé MLMC bude předmětem dalšího výzkumu.
+
+Zakladní struktura knihovny MLMC pro jazyk Python viz. \cite{mlmclib} je vyvíjena v rámci souběžného projeku \uv{Geopax} TH03010227. Nová verze knihovny bude dokončena 
+v prvním čtvrtletí roku 2020. V rámci projektu \uv{Endorse} je řešena problematika
+MLMC pro modely s puklinami, algoritmy pro Bayesovské inverze a aplikace na modely EDZ.
+V roce 2020 se zaměříme na další experimenty s MLMC pro 2D úlohy s puklinami. Ve spolupráci s ÚGN pak bude probíhat příprava na zahrnutí algoritmů pro Bayesovské inverze. V dalším roce, v případě zvládnutí MLMC na 2d puklinových úlohách, budou dále vyvíjeny nástroje pro práci s náhodnými puklinovými systémy ve 3d.
+Pro vybrané matematické modely bude dále třeba analyzovat a statisticky popsat nejistoty v jejich parametrech. 
+
+
+\subsection{Bayesovské inverzní metody (UGN)}
+V roce 2019 byla rozvíjena bayesovská technika řešení problémů s identifikací materiálových charakteristik. Významným přínosem je aplikace této techniky na složitý model hydromechaniky, který zahrnuje chování kontinua s poruchami (puklinami). Byla testována možnost identifikace rozevření a hydraulické vodivosti poruch. Uvažujeme situaci, kdy menší poruchy jsou zahrnuty do popisu kontinuálním modelem a doplněny modelem určitého počtu významných poruch.
+
+Při respektování nejistoty pozorovaných údajů je použití Bayesovské inverze přirozené. Ve srovnání s deterministickými metodami, které vedou pouze k bodovému odhadu identifikovaných parametrů, poskytuje Bayesovský přístup pravděpodobnostní charakteristiku identifikované veličiny. Výsledkem je získání podrobnější informace o identifikované veličině a robustnost výpočtu. Za uvedené se ovšem platí velkou výpočetní náročností.
+Určení pravděpodobnostní charakteristiky identifikované veličiny je v technice Bayesovské inverze realizováno metodami Markov Chain Monte Carlo, speciálně s využitím algoritmu Metropolis-Hastings. Výzkum se zaměřil na zvýšení efektivity metody pomocí využití náhradního (surrogate) modelu a využití algoritmu Metropolis-Hastings se zpožděným přijetím, tj. algoritmu, který vychází z generace návrhů (vzorků), které nejprve testuje pomocí náhradního modelu, čímž vyloučí velkou část návrhů. Teprve ty návrhy, které jsou přijaty testem pomocí náhradního modelu, testuje i výchozím, výpočetně náročným modelem.
+Jako způsob konstrukce náhradního modelu je využita metoda kolokace, s využitím sady testů provedených výchozím modelem. Je také testována možnost postupného zpřesňování náhradního modelu při současné generaci markovského řetězce.
+
+\vspace{2ex}
+\noindent{\it Výstupy:}
+
+S. Domesová, M. Béreš, R. Blaheta: Efficient implementation of the Bayesian inversion by MCMC with acceleration of posterior sampling using surrogate models. Accepted for presentation at IACMAG konference, Torino 2020, Minisymposium - Quantification and reduction of uncertainty in geomechanical numerical models. Contribution to IACMAG proceedings (Springer) submitted and under review.
+
+S. Domesová: Acceleration of posterior sampling using surrogate models. Modelling 2019, September 16 - 20, 2019.
+
+
+\section{Vývoj modelu proudění a mechaniky na smíšených sítích}
+{\it Období aktivity:}  07/2019 - 12/2020
+
+\subsection{Popis aktivity}
+Cílem aktivity je vývoj výpočetních kódů pro modely proudění a mechaniky v EDZ. Pro efektivní implementaci různých vazeb mezi
+procesy bude existující simulátor Flow123d významně upraven s využitím knihovny FEniCS, to zahrnuje též implementaci podpory
+smíšených sítí do knihovny FEniCS. V SW Flow123d budou dále implementovány modely proudění a mechaniky na smíšených sítích s
+předpokladem malých deformací na puklinách.
+Bude vyvinut model pro sdružené hydro-mechanické (HM) úlohy založený na iteračním přístupu a vhodném předpodmínění.
+Budou vyvinuty modely mechaniky s explicitním popisem puklin založené na SW GEM a PERMON. V první fázi půjde o mechanický
+model na smíšených sítích s pružným chováním matrice a s kontaktní formulací na trhlinách. Nerovnostní podmínka nepronikání na
+trhlinách bude řešena zavedením Lagrangeových multiplikátorů.
+
+\subsection{Poroelastický modul ve Flow123d (TUL)}
+V rámci SW Flow123d byl vyvinut a testován modul pro jednoduchou poroelasticitu na smíšených sítích. Matematický model je založen na Biotově systému, který sdružuje darcyovské proudění a lineární elasticitu.
+
+Pro použití ve Flow123d bylo nutné provést tzv. dimenzionální redukci Biotova systému, jejímž výsledkem jsou rovnice na oblastech nižší dimenze (pukliny, kanály) a podmínky na rozhraní oblastí různých dimenzí reprezentující bilance toků a sil. Dimenzionální redukce byla popsána např. pro ustálené darcyovské proudění \cite{martin_modeling_2005}; pro rovnice lineární elasticity ani poroelasticity nejsou v literatuře dostupné žádné odpovídající výsledky. Za tímto účelem jsme zmíněný postup zobecnili s využitím tangenciálních a normálových operátorů na oblastech nižší dimenze. Odvození soustavy rovnic a podmínek na rozhraní pro poroelasticitu je novým výsledkem, který plánujeme publikovat v odborném periodiku. Detaily odvození celého modelu a existenční analýza pro jeho mechanickou část jsou popsány v přiloženém dokumentu \texttt{report\_HM\_frac.pdf}.
+ 
+Na základě odvozeného modelu byl do Flow123d implementován modul mechaniky, zahrnující lineární pružnost na oblastech různých dimenzí a jejich propojení podmínkami na rozhraní. Sdružený problém proudění a mechaniky je pak řešen iteračně pomocí metody fixed-stress splitting \cite{mikelic_wheeler}. Pro urychlení konvergence jsou využity teoretické výsledky o volbě optimálních relaxačních parametrů \cite{both_fixed_stress_split}. Iterační postup umožňuje využít stávající modul proudění, diskretizovaný smíšenou hybridní metodou konečných prvků, s novým modulem mechaniky (lineární konečné prvky). Kombinace uvedených numerických schémat není stabilní pro (téměř) nestlačitelné poroelastické materiály, proto bude uvažována také některá ze známých stabilních variant (např. kvadratické konečné prvky nebo nespojitá Galerkinova metoda).
+
+Předávání fyzikálních polí mezi moduly proudění a mechaniky je ve Flow123d realizováno pomocí třídy FieldFE, jejíž současná implementace je výpočetně poměrně neefektivní a zpomaluje zejména proces asemblace matic a vektorů. Aktuálně se pracuje na optimalizaci procesu vyhodnocování v předdefinovaných kvadraturních bodech s efektivním využitím mezipaměti procesoru. To bude mít do budoucna velký význam zejména při řešení nelineárních problémů.
+
+V dalším roce plánujeme dokončit zefektivnění procesu předávání polí mezi moduly Flow123d.
+Poté se budeme věnovat rozšíření HM modelu v následujících směrech:
+\begin{itemize}
+    \item vliv mechaniky na vodivost puklin a kontinua: V puklinách lze uvažovat např. kubický zákon pro vztah hydraulické vodivosti a rozevření, v kontinuu pak půjde o aplikaci vhodného modelu poškození;
+    \item kontaktní podmínky na puklinách: Podmínky jednostranného kontaktu změní matematickou formulaci, která vede na minimalizaci kvadratického funkcionálu s omezeními. Pro efektivní numerické řešení využijeme zkušenosti ÚGN s knihovnou PERMON.
+\end{itemize}
+Souběžně s rozšiřováním modelu bude probíhat implementace a testování stability numerických metod pro proudění a mechaniku. Výhledově plánujeme postupné začleňování SW Flow123d nebo jeho částí do knihovny FEniCS, nicméně vzhledem k náročnosti předcházejících kroků v rámci projektu Endorse bude SW výsledek projektu postaven nezávisle na této knihovně.
+
+
+\subsection{Hydro-mechanický model s kontakty}
+Výzkum byl zaměřen na vývoj a testování numerických metod v případě, kdy hydraulické chování je popsáno Darcyho tokem v porézní matrici a také v poruchách (puklinách v horninovém prostředí), které jsou uvažovány jako domény redukované dimenze. Proudění v porézní matici a v poruchách je propojeno tokem přes stěny puklin. Mechanické chování je popsáno lineární elastickou deformací porézní matrice s kontaktními podmínkami na puklinách. Tímto způsobem je umožněno otevírání a uzavírání puklin s omezením na neproniknutí. Efekty skluzu nejsou brány v úvahu. Uvažujeme jak úlohy, které se týkají ustáleného stavu i tak i časově proměnné procesy.
+
+Speciální pozornost byla věnována iteračnímu propojení procesů proudění a deformace s využitím implicitního tlumení, které je možno interpretovat i jako lokální pseudočasovou kontinuaci. Iterační propojení je navíc přizpůsobeno nelinearitě systému, která je dána jednak změnou propustnosti trhlin na základě jejich uzavírání či otevírání, jednak realizací nerovnostní podmínky nepronikání.
+Další hlavní téma se týkalo realizace kontaktní podmínky nepronikání na poruchách zavedením Lagrangeových multiplikátorů a implementací efektivních metod pro optimalizaci s omezením pomocí rovnostních a nerovnostních podmínek.
+
+\vspace{2ex}
+\noindent{\it Výstupy:}
+
+
+M. Béreš, R. Blaheta, S. Domesová, D. Horák: Numerical methods for simulation of coupled hydro-mechanical processes in fractured porous media. Accepted for presentation at IACMAG konference, Torino 2020. Contribution to IACMAG proceedings (Springer) submitted and under review.
+
+M. Béreš, R. Blaheta, S. Domesová, D. Horák: Numerical methods for simulation of steady flow in fractured porous media with hydro-mechanical coupling, Modelling 2019
+
+\section{Definice vstupních dat a indikátorů bezpečnosti EDZ.}
+{\it Období aktivity:}  07/2019 - 07/2020
+ 
+\subsection{Popis aktivity} 
+V úzké spolupráci s aplikačním garantem budou navrženy indikátory bezpečnosti pro EDZ v okolí úložiště. Indikátory budou
+definovány buďto jako přímo měřitelné veličiny nebo jako veličiny odvozené od stavových veličin relevantních procesů (mechanika,
+proudění, transport). Další řešení projektu pak bude zaměřeno na predikci těchto indikátorů pomocí vhodných modelů příslušných
+procesů. Indikátory budou chápány jako náhodné veličiny
+vzhledem k nejistotám v parametrech modelů a budou predikovány jejich hustoty pravděpodobnosti. Pro určení klíčových parametrů
+zamýšlených modelů bude provedena rešerše dostupných apriorních dat (zejména dat pro Task G projektu Decovalex a data z
+podzemní laboratoře Bukov). Dále bude ve spolupráci s aplikačním garantem sestaven přehled geofyzikálních měření aplikovatelných
+v prostorách úložiště a bude odhadnuta jejich citlivost vůči parametrům modelů a finanční náročnost.
+
+
+\subsection{Koncept predikce bezpečnostní indikátorů EDZ (TUL)}
+
+V návaznosti na přihlášku projektu a na základě konzultací s aplikačním garantem SÚRAO byl vytvořen \uv{Koncept predikce bezpečnostních indikátorů EDZ}, viz. příložený dokument {\tt koncept\_metodiky.pdf}. Dokument představuje pracovní definici indikátorů bezpečnosti, dále koncept metodiky jejich predikce a základní rešerši zdrojů pro řešení projektu, ta vychází zejména z technické zprávy SÚRAO: 
+\cite{SURAO_50/2016}. Koncept predikce indikátorů je složený ze tří dílčích částí: inverzní úlohy pro získání parametrů modelů na základě zejména geofyzikálních měření, model vzniku EDZ, a konečně predikce indikátorů bezpečnosti na základě transportní úlohy.    Aktivita bude dále pokračovat během první poloviny roku 2020, zejména bude finalizována definice indikátorů bezpečnosti EDZ (pro účely řešeného projektu) a dále budou upřesněna geofyzikální měření, která budou uvažována jako vstupy do inverzních úloh řešených v rámci projektu.
+
+\section{Závěr}
+První půlrok řešení byl věnován rešerši, komunikaci mezi partnery a upřesnění postupu řešení projektu.
+Nebyly plánovány žádné milníky, první milník je plánován v polovině roku 2020 má zahrnovat především definici indikátorů bezpečnosti, ale to zahrnuje i upřesnění plánovaných modelů a rozvahu o dostupnosti vstupních dat modelů. Předběžná podoba tohoto dokumentu je v příloze \verb'koncept_metodiky.pdf'.
+
+Pro rok 2020 budeme postupovat v souladu s plánovanými aktivitami. Nicméně na základě předběžných experimentů s knihovnou FEniCS se zvládnutí její integrace s Flow123d jeví jako velmi nereálné. V tomto úsilí budeme pokračovat, ale plánované HM modely budou zatím vyvíjeny nezávisle.
+
+\bibliographystyle{plain}
+%\bibliographystyle{dinat-etal}
+\bibliography{zprava.bib}
+
+
+\end{onehalfspacing} 
+
+\end{document}
