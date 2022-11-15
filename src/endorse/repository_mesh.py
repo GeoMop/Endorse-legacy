@@ -1,11 +1,10 @@
 from typing import *
 import os
 import math
-from bgem.gmsh import gmsh, field, options
+from bgem.gmsh import gmsh, options
 import numpy as np
-from .common import dotdict
+from endorse.common.common import dotdict
 from . import mesh_tools
-
 
 def create_fractures_rectangles(gmsh_geom, fractures, base_shape: 'ObjectSet'):
     # From given fracture date list 'fractures'.

@@ -10,6 +10,7 @@ from endorse import repository_mesh
 
 script_dir = script_dir = os.path.dirname(os.path.realpath(__file__))
 
+
 def test_make_mesh():
     # about 280 k elements
     # conf_file = os.path.join(script_dir, "./config_full_coarse.yaml")
