@@ -1,3 +1,11 @@
+
+bih
+bgem
+redis-simple-cache-3k
+
 pyyaml
 pytest
+matplotlib
+numpy
 tox
+tox-gh-actions
