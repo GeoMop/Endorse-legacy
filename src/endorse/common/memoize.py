@@ -4,7 +4,15 @@ import redis_cache
 import hashlib
 from functools import wraps
 import time
+import os
 
+
+"""
+TODO: modify redis_simple_cache or our memoize decorator to hash also function code
+ see https://stackoverflow.com/questions/18134087/how-do-i-check-if-a-python-function-changed-in-live-code
+ that one should aslo hash called function .. the whole tree
+ more over we should also hash over serialization of classes
+"""
 
 class EndorseCache:
     __instance__ = None
@@ -14,28 +22,13 @@ class EndorseCache:
             EndorseCache.__instance__ = EndorseCache(*args, **kwargs)
         return EndorseCache.__instance__
 
-    def __init__(self, host="localhost", port=6379, report_calls=False ):
+    def __init__(self, host="localhost", port=6379):
         # TODO: possibly start redis server
         self.cache = redis_cache.SimpleCache(10000, hashkeys=True, host=host, port=port)
-        if report_calls:
-            self.report_call = self._do_report_call
+
 
     def expire_all(self):
         self.cache.expire_all_in_set()
-
-
-
-    def report_call(self, fn, *args, **kwargs):
-        # No reporting by default.
-        return fn(*args, **kwargs)
-
-    def _do_report_call(self, fn, *args, **kwargs):
-        init_time = time.time()
-        logging.info(f"{fn.__module__}.{fn.__name__} ... ")
-        result = fn(*args, **kwargs)
-        duration = time.time() - init_time
-        logging.info(f"        ... {duration}")
-        return result
 
 # Workaround missing module in the function call key
 # def memoize():
@@ -57,10 +50,7 @@ class EndorseCache:
 def memoize(fn):
     endorse_cache = EndorseCache.instance()
     redis_cache_deco = redis_cache.cache_it(limit=10000, expire=redis_cache.DEFAULT_EXPIRY, cache=endorse_cache.cache)
-    cached_fn = redis_cache_deco(fn)
-    def wrapper(*args, **kwargs):
-        return endorse_cache.report_call(cached_fn, *args, **kwargs)
-    return wrapper
+    return redis_cache_deco(fn)
 
 
 
@@ -107,7 +97,7 @@ class File:
     #     return cls(path, postponed=True)
 
     def __init__(self, path: str):  # , hash:Union[bytes, str]=None) #, postponed=False):
-        self.path = path
+        self.path = os.path.abspath(path)
         # if hash is None:
         #     if postponed:
         #         self.hash = None

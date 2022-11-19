@@ -4,6 +4,7 @@ bgem
 redis-simple-cache-3k
 
 pyyaml
+pyyaml-include
 pytest
 matplotlib
 numpy

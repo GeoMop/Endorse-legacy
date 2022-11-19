@@ -3,13 +3,16 @@ import os
 import time
 import pytest
 
+import logging
+
+
 script_dir = script_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 
 @common.memoize
 def file_func(f:common.File, out_file:str) -> common.File:
-    print(f"file_func(f={f}, out_file={out_file})")
+    print(f"\nfile_func(f={f}, out_file={out_file})")
     with open(f.path, "r") as ff:
         content = ff.read()
 
@@ -42,11 +45,15 @@ def test_file_memoization():
         f3 = file_func(f1, output_file)   # Trying to overwrite the created file. Should raise.
 
 
-
+@common.report
+@common.memoize
 def func(a:int):
-    print("Compute func.")
+    print("\nCompute func.")
     time.sleep(2)
     return a * a
 
 def test_memoization_reporting():
-    common.EndorseCache.instance(report_calls=True)
+    #logging.basicConfig(level=logging.DEBUG)
+    f1 = func(2)
+    f2 = func(2)
+    f3 = func(f1 + f2)

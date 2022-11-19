@@ -4,9 +4,9 @@
 
 
 import os
-import numpy as np
 from endorse import common
-from endorse import container_position_mesh
+from endorse.mesh import container_position_mesh
+
 #from bgem.stochastic.fracture import Fracture
 
 

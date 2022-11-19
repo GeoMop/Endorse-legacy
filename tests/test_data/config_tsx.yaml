@@ -1,6 +1,10 @@
+
+bayes_samples_input_file: "test_data/accepted_parameters.csv"
+
 # true -> work with pbs on metacentrum
 # false -> run locally, no pbs
 # if run by run_all*, it is set automatically
+
 run_on_metacentrum: False
 metacentrum:
   chunks: 2
@@ -210,6 +214,6 @@ hm_params:
         # -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type HMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor
 
 copy_files:
-  - config.yaml
-  - A03_hm_tmpl.yaml
-  - tunnel_mesh_cut_healed.msh
+  - config_tsx.yaml
+  - ../src/endorse/flow123d_inputs/A03_hm_tmpl.yaml
+  - test_data/tunnel_mesh_cut_healed.msh

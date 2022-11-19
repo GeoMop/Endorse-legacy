@@ -1,3 +1,4 @@
+import logging
 import os.path
 from typing import *
 import yaml
@@ -5,9 +6,9 @@ import subprocess
 import shutil
 from pathlib import Path
 import numpy as np
+from yamlinclude import YamlIncludeConstructor
 
-
-
+from .memoize import File
 
 class workdir:
     """
@@ -17,8 +18,13 @@ class workdir:
     inputs: list of files and directories to copy into the workspaceand
         TODO: fine a sort of robust ad portable reference
     clean: if true the workspace would be deleted at the end of the context manager.
+    TODO: clean_before / clean_after
+    TODO: File constructor taking current workdir environment, openning virtually copied files.
+    portable reference and with lazy evaluation. Optional true copy possible.
     """
-    def __init__(self, name:str="sandbox", inputs:List[str] = None, clean=False):
+    CopyArgs = Union[str, Tuple[str, str]]
+    def __init__(self, name:str="sandbox", inputs:List[CopyArgs] = None, clean=False):
+
         if inputs is None:
             inputs = []
         self._inputs = inputs
@@ -27,12 +33,39 @@ class workdir:
         self._clean = clean
         self._orig_dir = os.getcwd()
 
-    def __enter__(self):
-        for f in self._inputs:
-            if os.path.isdir(f):
-                shutil.copytree(f, self.work_dir, dirs_exist_ok=True)
+    def copy(self, src, dest=None):
+        """
+        :param src: Realtive or absolute path.
+        :param dest: Relative path with respect to work dir.
+                    Default is the same as the relative source path,
+                    for abs path it is the just the last name in the path.
+        """
+        if isinstance(src, File):
+            src = src.path
+        if isinstance(dest, File):
+            dest = dest.path
+        if dest is ".":
+            if os.path.isabs(src):
+                dest = os.path.basename(src)
             else:
-                shutil.copy2(f, self.work_dir)
+                dest = src
+        elif dest is None:
+            dest = ""
+        dest = os.path.join(self.work_dir, dest)
+        dest_dir, _ = os.path.split(dest)
+        Path(dest_dir).mkdir(parents=True, exist_ok=True)
+        abs_src = os.path.abspath(src)
+        if os.path.isdir(src):
+            shutil.copytree(abs_src, dest, dirs_exist_ok=True)
+        else:
+            shutil.copy2(abs_src, dest)
+
+    def __enter__(self):
+        for item in self._inputs:
+            if isinstance(item, Tuple):
+                self.copy(*item)
+            else:
+                self.copy(item)
         os.chdir(self.work_dir)
 
         return self.work_dir
@@ -46,12 +79,17 @@ class workdir:
 class dotdict(dict):
     """
     dot.notation access to dictionary attributes
+    TODO: keep somehow reference to the original YAML in order to report better
+    KeyError origin.
     """
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
     def __getattr__(self, item):
-        return self[item]
+        try:
+            return self[item]
+        except KeyError:
+            return self.__getattribute__(item)
 
     @classmethod
     def create(cls, cfg : Any):
@@ -72,10 +110,14 @@ class dotdict(dict):
 def load_config(path):
     """
     Load configuration from given file replace, dictionaries by dotdict
+    uses pyyaml-tags namely for:
+    include tag:
+        geometry: <% include(path="config_geometry.yaml")>
     """
+    YamlIncludeConstructor.add_to_loader_class(loader_class=yaml.FullLoader, base_dir=os.path.dirname(path))
     with open(path) as f:
-        cfg = yaml.safe_load(f)
-        return dotdict.create(cfg)
+        cfg = yaml.load(f, Loader=yaml.FullLoader)
+    return dotdict.create(cfg)
 
 
 def substitute_placeholders(file_in: str, file_out: str, params: Dict[str, Any]):
@@ -97,64 +139,10 @@ def substitute_placeholders(file_in: str, file_out: str, params: Dict[str, Any])
     return used_params
 
 
-def check_conv_reasons(log_fname):
-    """
-    Check correct convergence of the solver.
-    Reports the divergence reason and returns false in case of divergence.
-    """
-    with open(log_fname, "r") as f:
-        for line in f:
-            tokens = line.split(" ")
-            try:
-                i = tokens.index('convergence')
-                if tokens[i + 1] == 'reason':
-                    value = tokens[i + 2].rstrip(",")
-                    conv_reason = int(value)
-                    if conv_reason < 0:
-                        print("Failed to converge: ", conv_reason)
-                        return False
-            except ValueError:
-                continue
-    return True
-
 # Directory for all flow123d main input templates.
 # These are considered part of the software.
 _script_dir = os.path.dirname(os.path.realpath(__file__))
 flow123d_inputs_path = os.path.join(_script_dir, "../flow123d_inputs")
-
-def call_flow(cfg, file_in, params):
-    """
-    Run Flow123d in actual work dir with main input given be given template and dictionary of parameters.
-
-    1. prepare the main input file from filebase_in + "_tmpl.yamlL"
-    2. run Flow123d
-    """
-    in_dir, template = os.path.split(file_in)
-    suffix = "_tmpl.yaml"
-    assert template[-len(suffix):] == suffix
-    filebase = template[:-len(suffix)]
-    main_input = filebase + ".yaml"
-    substitute_placeholders(file_in, main_input, params)
-
-    arguments = cfg.flow_executable.copy()
-    arguments.append(main_input)
-    print("Running: ", " ".join(arguments))
-    with open(filebase + "_stdout", "w") as stdout:
-        with open(filebase + "_stderr", "w") as stderr:
-            completed = subprocess.run(arguments, stdout=stdout, stderr=stderr)
-            # print(completed)
-    print("Exit status: ", completed.returncode)
-    success = completed.returncode == 0
-    if not success:
-        with open(filebase + "_stderr", "r") as stderr:
-            print(stderr.read())
-        raise Exception("Flow123d ended with error")
-    conv_check = check_conv_reasons(os.path.join("output", "flow123.0.log"))
-    print("converged: ", conv_check)
-    return success  # and conv_check
-
-
-
 
 # TODO: running with stdout/ stderr capture, test for errors, log but only pass to the main in the case of
 # true error

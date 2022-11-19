@@ -2,7 +2,7 @@ from typing import *
 import os
 from bgem.gmsh import gmsh
 from endorse.common.common import dotdict
-from . import mesh_tools
+from endorse.mesh import mesh_tools
 
 
 def fine_micro_mesh(cfg:dotdict, fractures:List['Fracture'], i_pos:int, mesh_file: str):
@@ -22,7 +22,7 @@ def fine_micro_mesh(cfg:dotdict, fractures:List['Fracture'], i_pos:int, mesh_fil
     base, ext = os.path.splitext(os.path.basename(mesh_file))
     factory = gmsh.GeometryOCC(base, verbose=True)
     container_period = mesh_tools.container_period(cfg)
-    box_shift = container_period/2 + mesh_tools.container_x_pos(cfg, i_pos)
+    box_shift = container_period / 2 + mesh_tools.container_x_pos(cfg, i_pos)
 
     # TODO: homogenization x_size could be unrelated to the container size
     x_size = container_period + 2 * macro_mesh_step
@@ -48,6 +48,7 @@ def fine_micro_mesh(cfg:dotdict, fractures:List['Fracture'], i_pos:int, mesh_fil
     mesh_tools.edz_meshing(cfg, factory, [outer, borehole], mesh_file)
     # factory.show()
     del factory
+    return mesh_file
 
 def coarse_micro_mesh(cfg:dotdict, macro_mesh_step: float, fractures:List['Fracture'], i_pos:int, mesh_file: str):
     """
@@ -65,7 +66,7 @@ def coarse_micro_mesh(cfg:dotdict, macro_mesh_step: float, fractures:List['Fract
     base, ext = os.path.splitext(os.path.basename(mesh_file))
     factory = gmsh.GeometryOCC(base, verbose=True)
     container_period = mesh_tools.container_period(cfg)
-    box_shift = container_period/2 + mesh_tools.container_x_pos(cfg, i_pos)
+    box_shift = container_period / 2 + mesh_tools.container_x_pos(cfg, i_pos)
 
     # TODO: homogenization x_size could be unrelated to the container size
     x_size = container_period + 2 * macro_mesh_step
@@ -86,3 +87,4 @@ def coarse_micro_mesh(cfg:dotdict, macro_mesh_step: float, fractures:List['Fract
     mesh_tools.edz_meshing(cfg, factory, [box], mesh_file)
     # factory.show()
     del factory
+    return mesh_file

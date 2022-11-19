@@ -2,9 +2,9 @@
 # fine EDZ: about 4M elements, 4 minutes
 
 import os
-import numpy as np
 from endorse import common
-from endorse import repository_mesh
+from endorse.mesh import repository_mesh
+
 #from bgem.stochastic.fracture import Fracture
 
 

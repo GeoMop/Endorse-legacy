@@ -7,11 +7,11 @@ Model of single container position with EDZ and possible heterogenities, no frac
 
 Fully resolved center storage borehole and its EDZ, meshing governed by a distance field from the borehole surface. 
 Some fractures.
-Side boreholes not resolved but replaced by ekvivalent properties 
+Side boreholes not resolved but replaced by equivalent properties 
 
 # First coarsening
 
-Replace by model with tunnels replaced by eqivalent properties, elements about 5m, only major fractures.
+Replace by model with tunnels replaced by equivalent properties, elements about 5m, only major fractures.
 
 # Second coarsening
 
@@ -28,3 +28,7 @@ Neccessary tools:
 - homogenisation avarages for given points and radius, from given set of evaluations, 
   test the dot product of 
 - mark elements of the coarse mesh containing the fine scale models -> assing particular regions -> calculate the anisotropic tensors on these regions, pass them to Flow123d
+
+
+TODO:
+- large scale flow model seems to not provide reasonable 

@@ -7,6 +7,8 @@
 .idea/modules.xml
 *.iml
 
+tests/**/sandbox/**
+
 # temporary excluded
 **/*.zip
 experiments/edz_transport/TSX_prediction
