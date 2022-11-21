@@ -7,7 +7,14 @@
 .idea/modules.xml
 *.iml
 
+**/*.orig
+**/large_model*
 tests/**/sandbox/**
+experiments/mlmc-modelling-2019/TRASH
+experiments/mlmc-modelling-2019/2019_plots
+tests/run_macro_transport
+tests/fine_flow
+tests/sample_*
 
 # temporary excluded
 **/*.zip
