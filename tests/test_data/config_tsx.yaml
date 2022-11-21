@@ -26,9 +26,11 @@ clean_sample_dir: False
 run_best_n_accepted: 0
 
 # The flow executable and arguments to use.
-local:
+pe_local:
   flow_executable:
     ### this is the simplest case when using inside docker (or singularity) image
+    - env
+    - -i
     - /opt/flow123d/bin/flow123d
     ### this is for installed Flow123d package or individual build
 #    - /home/domesova/flow123d_3.1.0/bin/fterm.sh
@@ -50,6 +52,24 @@ local:
   np: 1
   gmsh_executable:
     - /home/paulie/Workspace/Endorse-2Dtest-Bayes/venv/bin/gmsh
+
+
+jb_flow_env: &jb_config
+    flow_executable:
+    # release
+    - /home/jb/workspace/flow123d/bin/fterm
+    - --no-term
+    - run
+  #   - /storage/liberec3-tul/home/jan_brezina/workspace/flow123d/bin/flow123d
+  #    - cmd
+  #    - c:/Users/peta/AppData/Local/Flow123d/v3.0.3/bin/flow123d.bat
+  #    - --no-term
+  #    - rel
+  #    - run
+    # debug
+    #- /storage/liberec3-tul/home/jan_brezina/workspace/flow-dbg/flow123d/bin/flow123d
+
+flow_env: *jb_config
 
 # lower smoother
 #smooth_factor:  5e-4 #1e-2 #1e-4 #1e-5 #1e-6 #5e-6
@@ -164,7 +184,7 @@ hm_params:
     mesh: tunnel_mesh.msh # healed mesh is used at the end (programmatically replaced)
 #    in_file: A01_hm
 #    in_file: A02_hm
-    in_file: A03_hm
+    input_template: A03_hm_tmpl.yaml
 #    in_file: A04_hm
 #    in_file: C04_hm
 #    in_file: B02long_hm
@@ -214,6 +234,6 @@ hm_params:
         # -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type HMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor
 
 copy_files:
-  - config_tsx.yaml
-  - ../src/endorse/flow123d_inputs/A03_hm_tmpl.yaml
+  #- test_data/config_tsx.yaml
+  #- ../src/endorse/flow123d_inputs/A03_hm_tmpl.yaml
   - test_data/tunnel_mesh_cut_healed.msh

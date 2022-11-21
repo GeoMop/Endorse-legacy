@@ -97,7 +97,7 @@ transport_microscale:
 transport_macroscale:
     # Template for the main Flow123d input file. In `endorse/flow123d_inputs`.
     input_template: flow_macro_tmpl.yaml
-    mesh_file: "macro_mesh.msh"
+    mesh_step: 2
     default_conductivity: 1e-16
     input_fields_file: "input_fields.msh2"
     piezo_head_input_file: "test_data/large_model_local.msh2"

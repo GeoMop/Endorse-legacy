@@ -2,8 +2,9 @@ from typing import *
 import logging
 import os
 import attrs
-from . import memoize, File, report, substitute_placeholders, workdir
+from . import dotdict, memoize, File, report, substitute_placeholders, workdir
 import subprocess
+import yaml
 
 def search_file(basename, extensions):
     """
@@ -16,33 +17,37 @@ def search_file(basename, extensions):
             return File(basename + ext)
     return None
 
-@attrs.define
 class EquationOutput:
-    @staticmethod
-    def from_cwd(basenames):
-        spatial_base, balance_base, observe_base = basenames
-        return EquationOutput(
-            spatial=search_file(spatial_base+"_fields", (".msh", ".pvd")),
-            balance=search_file(balance_base+"_balance", ".txt"),
-            observe=search_file(observe_base+"_observe", ".txt")
-        )
-    spatial: File
-    balance: File
-    observe: File
+    def __init__(self, eq_name, balance_name):
+        self.eq_name: str = eq_name
+        self.spatial_file: File = search_file(eq_name+"_fields", (".msh", ".pvd"))
+        self.balance_file: File = search_file(balance_name+"_balance", ".txt"),
+        self.observe_file: File = search_file(eq_name+"_observe", ".yaml")
+
+    def observe_dict(self):
+        if self.observe_file is None:
+            raise FileNotFoundError(f"Not found Flow123d output file: {self.eq_name}_observe.yaml.")
+        with open(self.observe_file.path, "r") as f:
+            loaded_yaml = yaml.load(f, yaml.CSafeLoader)
+        return dotdict.create(loaded_yaml)
 
 
 class FlowOutput:
 
-    def __init__(self, process: subprocess.CompletedProcess, stdout, stderr):
+    def __init__(self, process: subprocess.CompletedProcess, stdout: File, stderr: File):
         self.process = process
-        self.stdout = File(stdout.name)
-        self.stderr = File(stderr.name)
+        self.stdout = stdout
+        self.stderr = stderr
         with workdir("output"):
             self.log = File("flow123.0.log")
-            self.hydro = EquationOutput.from_cwd(("flow", "flow", "flow"))
-            self.solute = EquationOutput.from_cwd(("solute", "solute", "solute"))
-            self.mechanic = EquationOutput.from_cwd(("mechanics", "mechanics", "mechanics"))
+            # TODO: flow ver 4.0 unify output file names
+            self.hydro = EquationOutput("flow", "water")
+            self.solute = EquationOutput("solute", "mass")
+            self.mechanic = EquationOutput("mechanics", "mechanics")
 
+    @property
+    def success(self):
+        return self.process.returncode == 0
 
     def check_conv_reasons(self):
         """
@@ -64,9 +69,31 @@ class FlowOutput:
                     continue
         return True
 
+@memoize
+def _prepare_inputs(file_in, params):
+    in_dir, template = os.path.split(file_in)
+    suffix = "_tmpl.yaml"
+    assert template[-len(suffix):] == suffix
+    filebase = template[:-len(suffix)]
+    main_input = filebase + ".yaml"
+    main_input, used_params =  substitute_placeholders(file_in, main_input, params)
+    return main_input
+
+@memoize
+def _flow_subprocess(arguments, main_input):
+    filebase, ext = os.path.splitext(os.path.basename(main_input.path))
+    arguments.append(main_input.path)
+    logging.info("Running Flow123d: " + " ".join(arguments))
+
+    stdout_path = filebase + "_stdout"
+    stderr_path = filebase + "_stderr"
+    with open(stdout_path, "w") as stdout:
+        with open(stderr_path, "w") as stderr:
+            completed = subprocess.run(arguments, stdout=stdout, stderr=stderr)
+    return File(stdout_path), File(stderr_path), completed
 
 @report
-@memoize
+#@memoize
 def call_flow(cfg:'dotdict', file_in:File, params: Dict[str,str]) -> FlowOutput:
     """
     Run Flow123d in actual work dir with main input given be given template and dictionary of parameters.
@@ -76,24 +103,13 @@ def call_flow(cfg:'dotdict', file_in:File, params: Dict[str,str]) -> FlowOutput:
 
     TODO: pass only flow configuration
     """
-    in_dir, template = os.path.split(file_in)
-    suffix = "_tmpl.yaml"
-    assert template[-len(suffix):] == suffix
-    filebase = template[:-len(suffix)]
-    main_input = filebase + ".yaml"
-    substitute_placeholders(file_in, main_input, params)
-
-    arguments = cfg.flow_executable.copy()
-    arguments.append(main_input)
-    logging.info("Running Flow123d: " + " ".join(arguments))
-    with open(filebase + "_stdout", "w") as stdout:
-        with open(filebase + "_stderr", "w") as stderr:
-            completed = subprocess.run(arguments, stdout=stdout, stderr=stderr)
-    fo = FlowOutput(completed, stdout, stderr)
+    main_input = _prepare_inputs(file_in, params)
+    stdout, stderr, completed = _flow_subprocess(cfg.flow_executable.copy(), main_input)
+    fo = FlowOutput(completed, stdout.path, stderr.path)
 
     logging.info(f"Exit status: {completed.returncode}")
     if completed.returncode != 0:
-        with open(filebase + "_stderr", "r") as stderr:
+        with open(stderr.path, "r") as stderr:
             print(stderr.read())
         raise Exception("Flow123d ended with error")
     conv_check = fo.check_conv_reasons()

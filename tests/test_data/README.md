@@ -15,8 +15,11 @@ negligable conc.
 !! Seems to be very short peak, what is the model for this.
 What will be the time of leak? We should also model random leak times and compare it 
 
-**samples_params.csv**
-Set of parameters from Bayes inversion. For testing purpose.
+**accepted_parameters.csv**
+Parameters of the forward model for the accepted samples of the Bayes inversion. 
+Rows are individual accepted samples, columns are parameters.
+The first column 'N' provides number of steps the chain stays at the accepted parameter.
+
 
 **tunnel_mesh_cut_healed.msh**
 2D model of TSX experiment. Outer boundery square [-50,50]^2, 

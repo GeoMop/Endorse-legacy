@@ -136,7 +136,7 @@ def substitute_placeholders(file_in: str, file_out: str, params: Dict[str, Any])
             text = text.replace(placeholder, str(value))
     with open(file_out, 'w') as dst:
         dst.write(text)
-    return used_params
+    return File(file_out), used_params
 
 
 # Directory for all flow123d main input templates.

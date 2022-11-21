@@ -3,7 +3,11 @@
 # !! Needs redis server installed.
 # sudo apt install redis
 
+# download large data
+tests/test_data/download.sh
+
 # Setup virtual environment for development
+
 
 python -m venv venv
 source venv/bin/activate

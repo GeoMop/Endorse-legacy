@@ -21,8 +21,8 @@ def edz_meshing(cfg, factory, objects, mesh_file):
     Common EDZ and transport domain meshing setup.
     """
     factory.write_brep()
-    factory.mesh_options.CharacteristicLengthMin = cfg.get("min_mesh_step", cfg.boreholes_mesh_step)
-    factory.mesh_options.CharacteristicLengthMax = cfg.boundary_mesh_step
+    #factory.mesh_options.CharacteristicLengthMin = cfg.get("min_mesh_step", cfg.boreholes_mesh_step)
+    #factory.mesh_options.CharacteristicLengthMax = cfg.boundary_mesh_step
     factory.mesh_options.MinimumCirclePoints = 6
     factory.mesh_options.MinimumCurvePoints = 6
     #factory.mesh_options.Algorithm = options.Algorithm3d.MMG3D
@@ -35,8 +35,8 @@ def edz_meshing(cfg, factory, objects, mesh_file):
     #mesh.ToleranceInitialDelaunay = 0.01
     # mesh.ToleranceEdgeLength = fracture_mesh_step / 5
     #mesh.CharacteristicLengthFromPoints = True
-    factory.mesh_options.CharacteristicLengthFromCurvature = False
-    factory.mesh_options.CharacteristicLengthExtendFromBoundary = 2  # co se stane if 1
+    #factory.mesh_options.CharacteristicLengthFromCurvature = False
+    #factory.mesh_options.CharacteristicLengthExtendFromBoundary = 2  # co se stane if 1
     #mesh.CharacteristicLengthMin = min_el_size
     #mesh.CharacteristicLengthMax = max_el_size
 
