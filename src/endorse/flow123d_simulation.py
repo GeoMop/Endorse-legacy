@@ -122,7 +122,7 @@ class endorse_2Dtest():
         # return 1, collected_values  # tag, value_list
 
         try:
-            collected_values = self.collect_results(config_dict)
+            collected_values = self.collect_results(config_dict, flow_output)
             print("Sample results collected.")
             return 1, collected_values  # tag, value_list
         except:

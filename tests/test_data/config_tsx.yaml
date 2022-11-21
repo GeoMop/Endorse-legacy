@@ -54,6 +54,13 @@ pe_local:
     - /home/paulie/Workspace/Endorse-2Dtest-Bayes/venv/bin/gmsh
 
 
+pe_flow_env: &pe_config
+    flow_executable:
+    # release
+    - /home/paulie/Workspace/flow123d/bin/fterm
+    - --no-term
+    - run
+
 jb_flow_env: &jb_config
     flow_executable:
     # release
