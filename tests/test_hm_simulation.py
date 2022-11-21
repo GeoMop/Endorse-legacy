@@ -2,7 +2,7 @@ from endorse import hm_simulation
 import os
 import numpy as np
 from endorse import common
-script_dir = script_dir = os.path.dirname(os.path.realpath(__file__))
+script_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def test_run_random_samples():

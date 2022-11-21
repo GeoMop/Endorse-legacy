@@ -3,7 +3,7 @@ import os
 import math
 from bgem.gmsh import gmsh, options
 import numpy as np
-from endorse.common.common import dotdict
+from endorse.common import dotdict, File
 from endorse.mesh import mesh_tools
 
 
@@ -172,13 +172,14 @@ def make_geometry(factory, geom_dict, fractures):
     return bulk_geom, edz_refined
 
 
-def make_mesh(cfg:dotdict, fractures:List['Fracture'], mesh_file: str):
+def one_borehole(cfg:dotdict, fractures:List['Fracture']):
     """
     :param cfg: repository mesh configuration cfg.repository_mesh
     :param fractures:  generated fractures
     :param mesh_file:
     :return:
     """
+    mesh_file = "one_borehole.msh2"
     base, ext = os.path.splitext(os.path.basename(mesh_file))
     factory = gmsh.GeometryOCC(base, verbose=True)
     factory.get_logger().start()
@@ -194,3 +195,4 @@ def make_mesh(cfg:dotdict, fractures:List['Fracture'], mesh_file: str):
     mesh_tools.edz_meshing(cfg, factory, [bulk], mesh_file)
     # factory.show()
     del factory
+    return File(mesh_file)

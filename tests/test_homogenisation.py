@@ -24,6 +24,7 @@ def test_homogenisation():
 
 #@pytest.mark.skip
 def test_macro_transport():
+   # with common.workdir("sandbox"):
     common.EndorseCache.instance().expire_all()
     conf_file = os.path.join(script_dir, "test_data/config_homogenisation.yaml")
     cfg = common.load_config(conf_file)
