@@ -5,7 +5,7 @@ import numpy as np
 
 from . import common
 from .common import dotdict, memoize, File, call_flow, workdir
-from .mesh.container_position_mesh import fine_micro_mesh, coarse_micro_mesh
+from .mesh import container_position_mesh
 from .homogenisation import  subdomains_mesh, Homogenisation, Subdomain
 from .mesh_class import Mesh
 from . import large_mesh_shift
@@ -73,15 +73,13 @@ def homogenized_elements(cfg_geometry:dotdict, macro_mesh: Mesh):
 
 @memoize
 def make_macro_mesh(cfg):
-    macro_mesh_file = cfg.transport_macroscale.mesh_file
-    mesh_file = File(coarse_micro_mesh(cfg.geometry, macro_mesh_step=2, fractures=[], i_pos=0,
-                      mesh_file=macro_mesh_file))
+    macro_step = cfg.transport_macroscale.mesh_step
+    mesh_file = container_position_mesh.macro_mesh(cfg.geometry, macro_step)
     return Mesh.load_mesh(mesh_file)
 
 @memoize
 def make_micro_mesh(cfg):
-    micro_mesh_file = cfg.transport_microscale.mesh_file
-    mesh_file = File(fine_micro_mesh(cfg.geometry, fractures=[], i_pos=0, mesh_file=micro_mesh_file))
+    mesh_file = container_position_mesh.fine_mesh(cfg.geometry)
     return Mesh.load_mesh(mesh_file)
 
 @memoize
@@ -174,7 +172,7 @@ def micro_load_response(cfg, homogenisation, i_load, load):
             fine_conductivity=fine_conductivity.path
         )
         micro_model = call_flow(cfg.flow_env, template, params)
-        output_mesh : Mesh = Mesh.load_mesh(micro_model.hydro.spatial)
+        output_mesh : Mesh = Mesh.load_mesh(micro_model.hydro.spatial_file)
 
         response_field = cfg_micro.response_field_p0
         response_el_values = output_mesh.get_static_p0_values(response_field)
