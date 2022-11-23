@@ -14,3 +14,17 @@ half of max at about 100years, timestep 1year up to 1000 years, after just few t
 negligable conc.
 !! Seems to be very short peak, what is the model for this.
 What will be the time of leak? We should also model random leak times and compare it 
+
+**accepted_parameters.csv**
+Parameters of the forward model for the accepted samples of the Bayes inversion. 
+Rows are individual accepted samples, columns are parameters.
+The first column 'N' provides number of steps the chain stays at the accepted parameter.
+
+
+**tunnel_mesh_cut_healed.msh**
+2D model of TSX experiment. Outer boundery square [-50,50]^2, 
+tunnel is cutted out as an ellipse 1.8m vertical semiaxis, 2.2m horizontal semiaxis
+EDZ region elipse: 8m vertical, 10m horizontal (its boundary is present, but the region is not resolved)    
+
+**rectangle_2x5.msh**
+Test 2d mesh , no particular reason. 

@@ -1,5 +1,8 @@
 import sys
 import os
+
+from endorse import mesh_class
+
 script_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(script_dir, '../MLMC/src'))
 sys.path.append(os.path.join(script_dir, '../dfn/src'))
@@ -303,7 +306,7 @@ def make_mesh(config_dict, fractures, mesh_name, mesh_file):
     frac_el_size_only = field.restrict(fracture_el_size, fractures_fr, add_boundary=True)
     field.set_mesh_step_field(frac_el_size_only)
 
-    mesh = options.Mesh()
+    mesh = mesh_class.Mesh()
     #mesh.Algorithm = options.Algorithm2d.MeshAdapt # produce some degenerated 2d elements on fracture boundaries ??
     #mesh.Algorithm = options.Algorithm2d.Delaunay
     #mesh.Algorithm = options.Algorithm2d.FrontalDelaunay
