@@ -1,22 +1,62 @@
+from typing import *
 import os
+import numpy as np
 from bgem.gmsh import field, options, gmsh
+from bgem.stochastic import fracture
+from endorse.common import dotdict
 
-def edz_refinement_field(cfg:"dotdict", factory:"GeometryOCC") -> field.Field:
+
+def generate_fractures(cfg_frac:dotdict, box_dimensions:List[float]) -> List[fracture.Fracture]:
+    """
+    Generate set of stochastic fractures.
+    """
+    max_fr_size = np.max(box_dimensions)
+
+    volume = np.product(box_dimensions)
+    pop = fracture.Population(volume)
+    pop.initialize(cfg_frac.population)
+    pop.set_sample_range([10, max_fr_size], sample_size=cfg_frac.n_frac_limit)
+
+    print("total mean size: ", pop.mean_size())
+
+    pos_gen = fracture.UniformBoxPosition(box_dimensions)
+    fractures = pop.sample(pos_distr=pos_gen, keep_nonempty=True)
+    for i, fr in enumerate(fractures):
+        reg = gmsh.Region.get(f"fr_{i}")
+        fr.region = reg
+
+    # fracture.fr_intersect(fractures)
+
+    #used_families = set((f.region for f in fractures))
+    #for model in ["transport_params"]:
+        #model_dict = config_dict[model]
+        #model_dict["fracture_regions"] = list(used_families)
+        #model_dict["boreholes_fracture_regions"] = [".{}_boreholes".format(f) for f in used_families]
+        #model_dict["main_tunnel_fracture_regions"] = [".{}_main_tunnel".format(f) for f in used_families]
+    return fractures
+
+
+
+
+def edz_refinement_field(factory: "GeometryOCC", cfg_geom: "dotdict", cfg_mesh: "dotdict") -> field.Field:
     """
     Refinement mesh step field for resolution of the EDZ.
+    :param cfg_geom:
     """
-    b_cfg = cfg.borehole
+    b_cfg = cfg_geom.borehole
+    bx, by, bz = cfg_geom.box_dimensions
+    edz_radius = cfg_geom.edz_radius
     center_line = factory.line([0,0,0], [b_cfg.length, 0, 0]).translate([0, 0, b_cfg.z_pos])
 
-    bx, by, bz = cfg.box_dimensions
+
     n_sampling = int(b_cfg.length / 2)
     dist = field.distance(center_line, sampling = n_sampling)
-    inner = field.geometric(dist, a=(b_cfg.radius, cfg.edz_mesh_step * 0.9), b=(cfg.edz_radius, cfg.edz_mesh_step))
-    outer = field.polynomial(dist, a=(cfg.edz_radius, cfg.edz_mesh_step), b=(by/2, cfg.boundary_mesh_step), q=1.7)
+    inner = field.geometric(dist, a=(b_cfg.radius, cfg_mesh.edz_mesh_step * 0.9), b=(edz_radius, cfg_mesh.edz_mesh_step))
+    outer = field.polynomial(dist, a=(edz_radius, cfg_mesh.edz_mesh_step), b=(by / 2, cfg_mesh.boundary_mesh_step), q=1.7)
     return field.maximum(inner, outer)
 
 
-def edz_meshing(cfg, factory, objects, mesh_file):
+def edz_meshing(factory, objects, mesh_file):
     """
     Common EDZ and transport domain meshing setup.
     """
