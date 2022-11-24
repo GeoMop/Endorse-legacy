@@ -1,19 +1,19 @@
-
+#
 bayes_samples_input_file: "test_data/accepted_parameters.csv"
-
-# true -> work with pbs on metacentrum
-# false -> run locally, no pbs
-# if run by run_all*, it is set automatically
-
-run_on_metacentrum: False
-metacentrum:
-  chunks: 2
-  ncpus_per_chunk: 15 # max 20 cpus per node(chunk)
-  walltime: 10:00:00
-  memory: 12gb
-  queue: charon
-  name: TSX_bayes
-  workspace_rel: ../../workspace
+#
+## true -> work with pbs on metacentrum
+## false -> run locally, no pbs
+## if run by run_all*, it is set automatically
+#
+#run_on_metacentrum: False
+#metacentrum:
+#  chunks: 2
+#  ncpus_per_chunk: 15 # max 20 cpus per node(chunk)
+#  walltime: 10:00:00
+#  memory: 12gb
+#  queue: charon
+#  name: TSX_bayes
+#  workspace_rel: ../../workspace
 
 
 collect_only: False
@@ -23,60 +23,7 @@ make_plots: True
 # if True, it removes sample dir right after the sample is collected
 clean_sample_dir: False
 
-run_best_n_accepted: 0
-
-# The flow executable and arguments to use.
-pe_local:
-  flow_executable:
-    ### this is the simplest case when using inside docker (or singularity) image
-    - env
-    - -i
-    - /opt/flow123d/bin/flow123d
-    ### this is for installed Flow123d package or individual build
-#    - /home/domesova/flow123d_3.1.0/bin/fterm.sh
-#    - /home/paulie/local/flow123d/flow123d_3.1.0/bin/fterm.sh
-#    - /home/paulie/Workspace/flow123d/bin/fterm
-    ### for flow123d individual build (not docker image install)
-#    - --no-term
-#    - rel
-    ### for flow123d (docker image install)
-#    - --version
-#    - "3.1.0"
-#    - --tty
-#    - "false"
-#    - --interactive
-#    - "false"
-    ### this is for both installed Flow123d package or individual build
-#    - run
-    - --no_profiler
-  np: 1
-  gmsh_executable:
-    - /home/paulie/Workspace/Endorse-2Dtest-Bayes/venv/bin/gmsh
-
-
-pe_flow_env: &pe_config
-    flow_executable:
-    # release
-    - /home/paulie/Workspace/flow123d/bin/fterm
-    - --no-term
-    - run
-
-jb_flow_env: &jb_config
-    flow_executable:
-    # release
-    - /home/jb/workspace/flow123d/bin/fterm
-    - --no-term
-    - run
-  #   - /storage/liberec3-tul/home/jan_brezina/workspace/flow123d/bin/flow123d
-  #    - cmd
-  #    - c:/Users/peta/AppData/Local/Flow123d/v3.0.3/bin/flow123d.bat
-  #    - --no-term
-  #    - rel
-  #    - run
-    # debug
-    #- /storage/liberec3-tul/home/jan_brezina/workspace/flow-dbg/flow123d/bin/flow123d
-
-flow_env: *jb_config
+#run_best_n_accepted: 0
 
 # lower smoother
 #smooth_factor:  5e-4 #1e-2 #1e-4 #1e-5 #1e-6 #5e-6
@@ -168,23 +115,23 @@ surrDAMH_parameters:
 #        mu: 17.622
 #        sigma: 0.5
   observe_points:
-    #- HGT1-5
+    - HGT1-5
     #- HGT1-4
     #- HGT2-4
-    - HGT2-3
+    #- HGT2-3
 
-geometry:
-  # base of the mesh file name
-  mesh_name: tunnel_mesh
-  # depth of the center of the box and of the coordinate system
-  # x,y,z dimension
-  box_dimensions: [100, 100]
-  # tunnel center
-  tunnel_center: [0, 0, 0]
-  tunnel_dimX: &tunnel_dimX 4.375 # X cross-section
-  tunnel_dimY: &tunnel_dimY 3.5 # Y cross-section
-  tunnel_mesh_step: 0.25 # 0.0625 # 0.25 # 0.125 # 0.5
-  max_elem_size: 10 # 5 # 10 # 3.7
+#geometry:
+#  # base of the mesh file name
+#  mesh_name: tunnel_mesh
+#  # depth of the center of the box and of the coordinate system
+#  # x,y,z dimension
+#  box_dimensions: [100, 100]
+#  # tunnel center
+#  tunnel_center: [0, 0, 0]
+#  tunnel_dimX: &tunnel_dimX 4.375 # X cross-section
+#  tunnel_dimY: &tunnel_dimY 3.5 # Y cross-section
+#  tunnel_mesh_step: 0.25 # 0.0625 # 0.25 # 0.125 # 0.5
+#  max_elem_size: 10 # 5 # 10 # 3.7
 
 # parameters substituted into the HM model template
 hm_params:
@@ -201,9 +148,6 @@ hm_params:
     start_time: *start_time
     end_time: *end_time
     bored_time: *bored_time
-
-    tunnel_dimX: *tunnel_dimX
-    tunnel_dimY: *tunnel_dimY
 
 # physical parameters of main interest:
     biot_coefficient: 0.2

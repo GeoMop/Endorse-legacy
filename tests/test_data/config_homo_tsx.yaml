@@ -1,0 +1,161 @@
+
+pe_flow_env: &pe_config
+    flow_executable:
+    # release
+    - /home/paulie/Workspace/flow123d/bin/fterm
+    - --no-term
+    - run
+
+jb_flow_env: &jb_config
+    flow_executable:
+    # release
+    - /home/jb/workspace/flow123d/bin/fterm
+    - --no-term
+    - run
+  #   - /storage/liberec3-tul/home/jan_brezina/workspace/flow123d/bin/flow123d
+  #    - cmd
+  #    - c:/Users/peta/AppData/Local/Flow123d/v3.0.3/bin/flow123d.bat
+  #    - --no-term
+  #    - rel
+  #    - run
+    # debug
+    #- /storage/liberec3-tul/home/jan_brezina/workspace/flow-dbg/flow123d/bin/flow123d
+
+flow_env: *pe_config
+
+
+metacentrum: false
+
+mc_samples: 10
+
+copy_files: [transport_2022_5_tmpl.yaml,  conc_flux_UOS.csv, large_model.msh]
+
+geometry: !include config_geometry.yaml
+
+
+# Set to None to generate new meshes. ABSOLUTE PATH
+#mesh_repository:
+#mesh_repository: /storage/liberec3-tul/home/jan_brezina/workspace/wgc/mlmc_random_frac/fr200_unif_s100/mesh_repository/
+#mesh_repository: /home/pavel_exner/WGC2020-THM-MC/mlmc_random_frac/mesh_repository
+
+sample_dir: samples
+mesh_files:
+  input: random_fractures_healed.msh
+  output: random_fractures_healed_2.msh
+
+# base of the mesh file name
+mesh_name: random_fractures
+
+fine_conductivity_interpolated:
+    # Description of the EDZ conductivity field
+    yz_plane_mesh:
+        mesh_file: hm_plane.msh  # YZ profile given by
+        fields:
+          conductivity: conductivity
+          conductivity_tn: conductivity_tn
+          porosity: porosity
+    x_profile:    # relative conductivity with respect to the yz_plane
+        # x_coord : relative factor
+        0: 1.2
+        10: 0.8
+        20: 1.0
+
+fine_conductivity_parametric:
+    cond_max: 1e-14
+    cond_min: 1e-16
+
+    # axis wit respect to EDZ radius
+    h_axis: 1.5
+    v_axis: 2
+    inner_radius: 0.5
+
+
+
+transport_microscale:
+    # Template for the main Flow123d input file. In `endorse/flow123d_inputs`.
+    input_template: transport_micro_static_tmpl.yaml
+    mesh_file: "micro_mesh.msh"
+    pressure_loads: [ [1,0,0], [0,1,0], [0,0,1], [0,1,1], [1,0,1], [1,1,0]]
+    # the mesh regions:
+    #   outer - outside of the storage borehole
+    #   borehole - the sealed and filled storage borehole
+    #output_file: "output/flow_fields.msh"
+    #load_grad_field_p0: "piezo_head_grad_p0"
+    #load_field_p1: "piezo_head_grad_p0"
+    load_field_indirect_conductivity: "conductivity"
+    response_field_p0: "velocity_p0"
+
+transport_macroscale:
+    # Template for the main Flow123d input file. In `endorse/flow123d_inputs`.
+    input_template: flow_macro_tmpl.yaml
+    mesh_step: 2
+    default_conductivity: 1e-16
+    input_fields_file: "input_fields.msh2"
+    piezo_head_input_file: "test_data/large_model_local.msh2"
+    # the mesh regions:
+    #   outer - outside of the storage borehole
+    #   borehole - the sealed and filled storage borehole
+    #output_file: "output/flow_fields.msh"
+    #load_grad_field_p0: "piezo_head_grad_p0"
+    #load_field_p1: "piezo_head_grad_p0"
+    #response_field_p0: "velocity_p0"
+
+transport_fine:
+    # Template for the main Flow123d input file. In `endorse/flow123d_inputs`.
+    input_template: flow_fine_tmpl.yaml
+    #mesh_file: "micro_mesh.msh"
+    default_conductivity: 1e-16
+    input_fields_file: "input_fields.msh2"
+    piezo_head_input_file: "test_data/large_model_local.msh2"
+    # the mesh regions:
+    #   outer - outside of the storage borehole
+    #   borehole - the sealed and filled storage borehole
+    #output_file: "output/flow_fields.msh"
+    #load_grad_field_p0: "piezo_head_grad_p0"
+    #load_field_p1: "piezo_head_grad_p0"
+    #response_field_p0: "velocity_p0"
+
+
+  # parameters substituted into the TH model template
+transport_params:
+    # The mesh to use in both simulations.
+    #mesh: three_frac_symmetric.msh
+    mesh: random_fractures.msh
+    in_file: transport_2022_5
+
+    apperture_per_size: 1e-4  # 1mm na 10m
+    fr_conductivity: 2.5e-3     # k = 1/12 * cs^2 * rho*g/visc = 1/12 1e-8 * 1000*10*1e3 =approx. 1e-2 ; cs=1e-4
+    bulk_conductivity: 1e-8
+    edz2d_conductivity:
+    #sigma_bulk_conductivity: 1e-7
+    min_fr_cross_section: 5e-5
+    max_fr_cross_section: 5e-3
+
+    flow_solver__a_tol: 1e-14
+    flow_solver__r_tol: 1e-7
+    flow_solver__options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type HMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor
+
+
+  # residual is the energy balance which is in order of MW
+    # we prescribe a tol about # orders of mag. lower
+
+    source_ipos: 5 # ith position of the leaking container from beginning of the borehole
+    source_length: 4 # length of the container [m]
+    source_space: 4 # space between containers [m]
+
+    trans_solver__a_tol: 1e-5
+    trans_solver__r_tol: 1e-3
+        # -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg
+
+    #heat_solver__options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor
+    # faild fo indef PC
+    #heat_solver__options: -ksp_type gmres -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor
+    # failed do to 1000 iterations
+    # heat_solver__options: -ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps
+    # out of memory 12GB
+    trans_solver__options: -ksp_type gmres -pc_type ilu -pc_factor_levels 3 -ksp_diagonal_scale -ksp_diagonal_scale_fix -pc_factor_fill 1.0 -ksp_monitor
+
+  # edz_phys_group: 77
+
+
+tsx_hm_model: !include config_tsx.yaml

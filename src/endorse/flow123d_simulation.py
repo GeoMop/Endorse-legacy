@@ -30,17 +30,16 @@ class endorse_2Dtest():
 
     def __init__(self, config):
         # TODO: remove config modifications
-        self.work_dir = config["work_dir"]
-        self.clean = config["clean_sample_dir"]
+        self.clean = config.tsx_hm_model.clean_sample_dir
         self._config = config
         self.sample_dir = ""
         self.sample_counter = -1
 
     def set_parameters(self, data_dict:'dotdict'):
-        param_list = self._config["surrDAMH_parameters"]["parameters"]
+        param_list = self._config.tsx_hm_model.surrDAMH_parameters.parameters
 
         sub_dict = {p.name: data_dict[p.name] for p in param_list}
-        self._config["hm_params"].update(sub_dict)
+        self._config.tsx_hm_model.hm_params.update(sub_dict)
 
     def get_observations(self):
         try:
@@ -74,20 +73,20 @@ class endorse_2Dtest():
         print(self.sample_dir)
 
         # collect only
-        if config_dict["collect_only"]:
-            return 2, self.collect_results(config_dict)
+        if config_dict["tsx_hm_model"]["collect_only"]:
+            return 2, self.collect_results()
 
         print("Creating mesh...")
         # comp_mesh = self.prepare_mesh(config_dict, cut_tunnel=False)
-        comp_mesh = self.prepare_mesh(config_dict, cut_tunnel=True)
+        comp_mesh = self.prepare_mesh(cut_tunnel=True)
 
         mesh_bn = os.path.basename(comp_mesh)
-        config_dict["hm_params"]["mesh"] = mesh_bn
+        config_dict["tsx_hm_model"]["hm_params"]["mesh"] = mesh_bn
 
         # endorse_2Dtest.read_physical_names(config_dict, comp_mesh)
         print("Creating mesh...finished")
 
-        if config_dict["mesh_only"]:
+        if config_dict.tsx_hm_model.mesh_only:
             # TODO: Just raise exception if could not return correct values.
             return -10, []  # tag, value_list
 
@@ -96,7 +95,9 @@ class endorse_2Dtest():
 
         #hm_succeed = self.call_flow(config_dict, 'hm_params', result_files=["flow_observe.yaml"])
 
-        params = config_dict.hm_params
+        params = config_dict.tsx_hm_model.hm_params
+        params.tunnel_dimX = config_dict.geometry.tsx_tunnel.tunnel_dimX
+        params.tunnel_dimY = config_dict.geometry.tsx_tunnel.tunnel_dimY
         template = os.path.join(common.flow123d_inputs_path, params.input_template)
         flow_output: common.FlowOutput = common.call_flow(config_dict.flow_env, template, params)
 
@@ -107,7 +108,7 @@ class endorse_2Dtest():
             return -1, []  # tag, value_list
         print("Running Flow123d - HM...finished")
 
-        if self._config["make_plots"]:
+        if self._config.tsx_hm_model.make_plots:
             try:
                 self.observe_time_plot(config_dict, flow_output)
             except:
@@ -122,7 +123,7 @@ class endorse_2Dtest():
         # return 1, collected_values  # tag, value_list
 
         try:
-            collected_values = self.collect_results(config_dict, flow_output)
+            collected_values = self.collect_results(flow_output)
             print("Sample results collected.")
             return 1, collected_values  # tag, value_list
         except:
@@ -145,12 +146,12 @@ class endorse_2Dtest():
     #     if max > maximum:
     #         raise Exception("Data out of given range [max].")
 
-    def collect_results(self, config_dict, flow_output):
+    def collect_results(self, flow_output):
         #output_dir = config_dict["hm_params"]["output_dir"]
-        points2collect = config_dict.surrDAMH_parameters.observe_points
+        points2collect = self._config.tsx_hm_model.surrDAMH_parameters.observe_points
 
         # the times defined in input
-        times = np.array(generate_time_axis(config_dict))
+        times = np.array(generate_time_axis(self._config.tsx_hm_model))
         #with open(os.path.join(output_dir, "flow_observe.yaml"), "r") as f:
         #    loaded_yaml = yaml.load(f, yaml.CSafeLoader)
 
@@ -178,7 +179,7 @@ class endorse_2Dtest():
         t_indices = np.isin(obs_times, times).nonzero()
         values = values[t_indices].transpose()
 
-        if config_dict["clean_sample_dir"]:
+        if self._config.tsx_hm_model.clean_sample_dir:
             shutil.rmtree(self.sample_dir)
 
         # flatten to format: [Point0_all_all_times, Point1_all_all_times, Point2_all_all_times, ...]
@@ -229,16 +230,16 @@ class endorse_2Dtest():
     #     return status
 
 
-    def prepare_mesh(self, config_dict, cut_tunnel):
-        mesh_name = config_dict["geometry"]["mesh_name"]
+    def prepare_mesh(self, cut_tunnel):
+        mesh_name = self._config.geometry.tsx_tunnel.mesh_name
         if cut_tunnel:
             mesh_name = mesh_name + "_cut"
         mesh_file = mesh_name + ".msh"
         mesh_healed = mesh_name + "_healed.msh"
 
         # suppose that the mesh was created/copied during preprocess
-        assert os.path.isfile(os.path.join(config_dict["common_files_dir"], mesh_healed))
-        shutil.copyfile(os.path.join(config_dict["common_files_dir"], mesh_healed), mesh_healed)
+        assert os.path.isfile(os.path.join(self._config.common_files_dir, mesh_healed))
+        shutil.copyfile(os.path.join(self._config.common_files_dir, mesh_healed), mesh_healed)
         return mesh_healed
 
 

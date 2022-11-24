@@ -46,7 +46,7 @@ def run_hm_simulation(config_dict: dotdict, i_sim: int, parameters: Dict[str,Uni
 
     # copy common files
     files_to_copy = [
-        (src, os.path.join("common_files", os.path.basename(src)))  for src in config_dict.copy_files
+        (src, os.path.join("common_files", os.path.basename(src))) for src in config_dict.tsx_hm_model.copy_files
     ]
 
     with workdir(work_dir_name, files_to_copy):
@@ -62,7 +62,7 @@ def read_bayes_sample_parameteres(parameter_file:File) -> pandas.DataFrame:
 
 
 def run_random_samples(cfg, n_samples):
-    df = read_bayes_sample_parameteres(File(cfg.bayes_samples_input_file))
+    df = read_bayes_sample_parameteres(File(cfg.tsx_hm_model.bayes_samples_input_file))
     i_samples = sample_from_population(n_samples, df['N'])
     for i in i_samples:
         sample_param_dict = df[i: i + 1].to_dict('records')[0]

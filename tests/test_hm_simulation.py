@@ -16,6 +16,6 @@ def test_run_random_samples():
     # - run 1 sample, HM simulation but with modified geometry, interpolation to other 3D tranport mesh, homogenized transport execution (under 10mins localy)
     #common.EndorseCache.instance().expire_all()
     np.random.seed(0)
-    conf_file = os.path.join(script_dir, "test_data/config_tsx.yaml")
+    conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
     cfg = common.load_config(conf_file)
     hm_simulation.run_random_samples(cfg, 1)
