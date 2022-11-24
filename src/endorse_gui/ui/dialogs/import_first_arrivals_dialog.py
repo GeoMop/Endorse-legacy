@@ -1,8 +1,8 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 
-from genie.core.global_const import GenieMethod
-from genie.core.parse_first_arrival import parse_first_arrival
-from genie.core.xls_parser import XlsLog, XlsLogItem, XlsLogLevel
+from endorse_gui.core.global_const import GenieMethod
+from endorse_gui.core.parse_first_arrival import parse_first_arrival
+from endorse_gui.core.xls_parser import XlsLog, XlsLogItem, XlsLogLevel
 
 import sys
 import os

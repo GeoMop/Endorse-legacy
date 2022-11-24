@@ -1,10 +1,10 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-from genie.core.global_const import GenieMethod
-from genie.core import misc
-from genie.core import ert_prepare
-from genie.core.data_types import MeasurementsModelInfo
-from genie.core.icons_dir import icons_dir
+from endorse_gui.core.global_const import GenieMethod
+from endorse_gui.core import misc
+from endorse_gui.core import ert_prepare
+from endorse_gui.core.data_types import MeasurementsModelInfo
+from endorse_gui.core.icons_dir import icons_dir
 
 import math
 import os

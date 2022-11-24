@@ -2,7 +2,7 @@ import pandas as pd
 import pygimli as pg
 import numpy as np
 
-from genie.core import cut_point_cloud
+from endorse_gui.core import cut_point_cloud
 
 
 def prepare(electrode_groups, measurements, first_arrivals, mesh_cut_tool_param=None, use_only_verified=False):

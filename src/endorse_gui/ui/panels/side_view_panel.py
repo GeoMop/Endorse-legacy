@@ -1,4 +1,4 @@
-from genie.core.data_types import SideViewToolParam
+from endorse_gui.core.data_types import SideViewToolParam
 from .mesh_cut_tool_panel import MeshCutToolPanelEdit
 
 from PyQt5 import QtWidgets, QtCore, QtGui

@@ -2,9 +2,9 @@
 Dialog for analysing measurement.
 """
 
-from genie.core import ert_prepare
-from genie.core.data_types import InversionParam
-from genie.core import misc
+from endorse_gui.core import ert_prepare
+from endorse_gui.core.data_types import InversionParam
+from endorse_gui.core import misc
 
 import os
 import sys

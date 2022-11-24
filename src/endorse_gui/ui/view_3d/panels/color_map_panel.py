@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QWidget, QHBoxLayout, QDoubleSpinBox, QVBoxLayout, Q
     QPushButton, QDialog
 from PyQt5.QtCore import pyqtSignal, Qt
 
-from genie.ui.dialogs.color_map_editor import ColorMapEditor
+from endorse_gui.ui.dialogs.color_map_editor import ColorMapEditor
 
 
 class ColorMapPanel(QWidget):

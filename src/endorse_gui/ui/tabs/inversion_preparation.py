@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt
 from ..panels.scene import DiagramView, SideView
 #import core.electrode_parser
-from genie.core.data_types import ElectrodeGroup, Electrode, Measurement
+from endorse_gui.core.data_types import ElectrodeGroup, Electrode, Measurement
 from ..panels.electrode_views import ElectrodeGroupModel, ElectrodeGroupView
 from ..panels.measurement_view import MeasurementModel, MeasurementGroupView
 from ..panels.measurement_table_view import MeasurementTableModel, MeasurementTableView
@@ -21,8 +21,8 @@ from ..dialogs.edit_inversions_dialog import EditInversionsDialog
 #import ert_prepare
 #from run_inv import RunInvDlg
 #from ui.dialogs.gen_mesh_dialog import GenerateMeshDlg
-from genie.core.global_const import GENIE_PROJECT_FILE_NAME, GenieMethod
-from genie.core.config import ProjectConfig, InversionConfig, FirstArrival
+from endorse_gui.core.global_const import GENIE_PROJECT_FILE_NAME, GenieMethod
+from endorse_gui.core.config import ProjectConfig, InversionConfig, FirstArrival
 
 from PyQt5 import QtWidgets, QtCore
 

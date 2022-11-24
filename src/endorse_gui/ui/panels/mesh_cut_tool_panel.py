@@ -1,5 +1,5 @@
-from genie.core.data_types import MeshCutToolParam
-from genie.core.global_const import GenieMethod
+from endorse_gui.core.data_types import MeshCutToolParam
+from endorse_gui.core.global_const import GenieMethod
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 

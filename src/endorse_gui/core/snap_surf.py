@@ -2,7 +2,7 @@ import pygimli as pg
 
 import numpy as np
 
-from genie.core.global_const import GenieMethod
+from endorse_gui.core.global_const import GenieMethod
 
 
 def main(inv_par, project_conf, bw_surface, max_dist=1.0):

@@ -1,7 +1,7 @@
 from bgem.gmsh.gmsh_io import GmshIO
 from bgem.bspline import brep_writer as bw
 from .cut_point_cloud import cut_tool_to_gen_vecs, inv_tr
-from genie.core.data_types import MeshFrom
+from endorse_gui.core.data_types import MeshFrom
 
 import numpy as np
 

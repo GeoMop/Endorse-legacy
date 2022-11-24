@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-from genie.core.global_const import GenieMethod
+from endorse_gui.core.global_const import GenieMethod
 
 
 class MeasurementModel(QtCore.QAbstractItemModel):

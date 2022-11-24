@@ -1,7 +1,7 @@
-from genie.core import json_data
+from endorse_gui.core import json_data
 from .data_types import MeshCutToolParam, SideViewToolParam, InversionParam
-from genie.core.xls_parser import XlsMeasurementGroup
-from genie.core.global_const import GenieMethod
+from endorse_gui.core.xls_parser import XlsMeasurementGroup
+from endorse_gui.core.global_const import GenieMethod
 
 from typing import List, Dict
 import attr

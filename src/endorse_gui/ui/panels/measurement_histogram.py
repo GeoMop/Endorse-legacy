@@ -5,7 +5,7 @@ from matplotlib.figure import Figure
 
 import numpy as np
 
-from genie.core.global_const import GenieMethod
+from endorse_gui.core.global_const import GenieMethod
 from .mesh_cut_tool_panel import MeshCutToolPanelEdit
 
 import os

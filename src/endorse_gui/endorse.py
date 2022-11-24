@@ -3,12 +3,12 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-from genie.ui.panels.scene import Cursor
-from genie.ui.main_window import MainWindow
-from genie.core import config_file
-from genie.core.config import GenieConfig
-from genie.core.global_const import GenieMethod
-from genie.core.icons_dir import icons_dir
+from endorse_gui.ui.panels.scene import Cursor
+from endorse_gui.ui.main_window import MainWindow
+from endorse_gui.core import config_file
+from endorse_gui.core.config import GenieConfig
+from endorse_gui.core.global_const import GenieMethod
+from endorse_gui.core.icons_dir import icons_dir
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 

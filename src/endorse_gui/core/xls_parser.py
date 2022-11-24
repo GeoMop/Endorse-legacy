@@ -1,4 +1,4 @@
-from genie.core import ares_parser
+from endorse_gui.core import ares_parser
 
 import os
 import sys
@@ -9,7 +9,7 @@ import attr
 import math
 import operator
 import json
-from genie.core import json_data
+from endorse_gui.core import json_data
 import pandas as pd
 import obspy
 

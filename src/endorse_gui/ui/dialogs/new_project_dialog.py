@@ -1,4 +1,4 @@
-from genie.core.global_const import GENIE_PROJECT_FILE_NAME
+from endorse_gui.core.global_const import GENIE_PROJECT_FILE_NAME
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 

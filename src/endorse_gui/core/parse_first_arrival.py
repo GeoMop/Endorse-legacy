@@ -1,6 +1,6 @@
 import os
-from genie.core import json_data
-from genie.core.xls_parser import XlsLog, XlsLogItem, XlsLogLevel, _empty_cell
+from endorse_gui.core import json_data
+from endorse_gui.core.xls_parser import XlsLog, XlsLogItem, XlsLogLevel, _empty_cell
 import pandas as pd
 
 

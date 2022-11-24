@@ -1,4 +1,4 @@
-from genie.core.global_const import GenieMethod
+from endorse_gui.core.global_const import GenieMethod
 
 from PyQt5 import QtWidgets, QtCore
 

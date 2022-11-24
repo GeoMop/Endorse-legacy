@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets, QtGui, QtCore, QtSvg
 
-from genie.core.config import MapTransform
+from endorse_gui.core.config import MapTransform
 
 import sys
 import math

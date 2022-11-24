@@ -1,11 +1,11 @@
-from genie.core import ares_parser
-from genie.core.global_const import GenieMethod
+from endorse_gui.core import ares_parser
+from endorse_gui.core.global_const import GenieMethod
 
 import os
 from enum import IntEnum
 from typing import List, Dict, Optional
 import attr
-from genie.core import json_data
+from endorse_gui.core import json_data
 import obspy
 
 

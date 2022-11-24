@@ -4,7 +4,7 @@ import pygimli as pg
 import numpy as np
 
 from .data_types import MeasurementInfoItem, MeasurementsInfo
-from genie.core import cut_point_cloud
+from endorse_gui.core import cut_point_cloud
 
 
 def prepare_old(electrode_groups, measurements):

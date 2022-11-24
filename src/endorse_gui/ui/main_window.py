@@ -1,6 +1,6 @@
 from .menus.main_menu_bar import MainMenuBar
 from .tab_widget import TabWidget
-from genie.core.global_const import GenieMethod
+from endorse_gui.core.global_const import GenieMethod
 
 from PyQt5 import QtWidgets
 
@@ -12,7 +12,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super().__init__()
 
         if genie.method == GenieMethod.ERT:
-            self.app_name = "Genie ERT"
+            self.app_name = "Endorse"
         elif genie.method == GenieMethod.ST:
             self.app_name = "Genie ST"
         else:

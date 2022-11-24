@@ -2,9 +2,9 @@
 Dialog for running inversion.
 """
 
-from genie.core import ert_prepare, st_prepare
-from genie.core.data_types import InversionParam, MeshFrom
-from genie.core.global_const import GenieMethod
+from endorse_gui.core import ert_prepare, st_prepare
+from endorse_gui.core.data_types import InversionParam, MeshFrom
+from endorse_gui.core.global_const import GenieMethod
 
 import os
 import sys
