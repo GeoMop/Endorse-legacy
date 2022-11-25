@@ -10,7 +10,8 @@
 # depth of the center of the box and of the coordinate system
 #center_depth: 5000
 # x,y,z dimension
-box_dimensions: [400, 80, 60]
+box_dimensions: [40, 80, 60]
+#box_dimensions: [400, 80, 60]
 
 edz_radius: 2.5
 
@@ -28,7 +29,7 @@ main_tunnel:
     # tunnel width
     width: 5.5
     # tunnel length
-    length: 80
+    length: 20
 
 # Lateral short tunnels perpendicular to the main tunnel
 # one ofr every storage borehole
@@ -48,7 +49,7 @@ borehole:
     radius: 1.1
     # Boreholes length
     #length: 300
-    length: 300  # to speedup debugging
+    length: 80  # to speedup debugging
     # Vertical position of the borehole center.
     z_pos: 1.1
     # horizontal gaps between boreholes; (2 * n_side_boreholes) * borehole_distance should be < main_tunnel.length

@@ -93,7 +93,7 @@ def _flow_subprocess(arguments, main_input):
     return File(stdout_path), File(stderr_path), completed
 
 @report
-#@memoize
+@memoize
 def call_flow(cfg:'dotdict', file_in:File, params: Dict[str,str]) -> FlowOutput:
     """
     Run Flow123d in actual work dir with main input given be given template and dictionary of parameters.
