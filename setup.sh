@@ -4,7 +4,10 @@
 # sudo apt install redis
 
 # download large data
-tests/test_data/download.sh
+cd tests/test_data 
+./download.sh
+cd ../..
+
 
 # Setup virtual environment for development
 

@@ -1,12 +1,12 @@
 
 bih
 bgem
-redis-simple-cache-3k
-
+numba
 pyyaml
 pyyaml-include
 pytest
 matplotlib
 numpy
+scipy
 tox
 tox-gh-actions
