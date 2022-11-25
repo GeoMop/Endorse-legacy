@@ -39,7 +39,7 @@ mc_samples: 10
 
 copy_files: [transport_2022_5_tmpl.yaml,  conc_flux_UOS.csv, large_model.msh]
 
-geometry: !include config_geometry.yaml
+geometry: &one_borehole_geometry !include config_geometry.yaml 
 
 
 # Set to None to generate new meshes. ABSOLUTE PATH
@@ -83,7 +83,19 @@ fine_conductivity_parametric:
 transport_microscale:
     # Template for the main Flow123d input file. In `endorse/flow123d_inputs`.
     input_template: transport_micro_static_tmpl.yaml
-    mesh_file: "micro_mesh.msh"
+    #mesh_file: "micro_mesh.msh"
+    mesh_params:
+        # mesh step on fractures
+        fracture_mesh_step: 10
+        # mesh step on outer boundary
+        boundary_mesh_step: 50
+        # mesh step on outer boundary of EDZ (just around boreholes right now)
+        edz_mesh_step: 0.6
+        # mesh step on inner boreholes
+        boreholes_mesh_step: 0.2   # haxagon boreholes
+        #boreholes_mesh_step: 0.3   # EDZ minimal resolution
+        main_tunnel_mesh_step: 2
+
     pressure_loads: [ [1,0,0], [0,1,0], [0,0,1], [0,1,1], [1,0,1], [1,1,0]]
     # the mesh regions:
     #   outer - outside of the storage borehole
@@ -97,7 +109,7 @@ transport_microscale:
 transport_macroscale:
     # Template for the main Flow123d input file. In `endorse/flow123d_inputs`.
     input_template: flow_macro_tmpl.yaml
-    mesh_step: 2
+    mesh_step: 2.5
     default_conductivity: 1e-16
     input_fields_file: "input_fields.msh2"
     piezo_head_input_file: "test_data/large_model_local.msh2"
@@ -110,6 +122,24 @@ transport_macroscale:
     #response_field_p0: "velocity_p0"
 
 transport_fine:
+    geometry: *one_borehole_geometry
+    fractures:
+        population:  !include config_fractures.yaml
+        # upper limit on the number of fractures
+        n_frac_limit: 10
+
+    mesh:
+        # mesh step on fractures
+        fracture_mesh_step: 10
+        # mesh step on outer boundary
+        boundary_mesh_step: 50
+        # mesh step on outer boundary of EDZ (just around boreholes right now)
+        edz_mesh_step: 1
+        # mesh step on inner boreholes
+        boreholes_mesh_step: 0.3   # haxagon boreholes
+        #boreholes_mesh_step: 0.3   # EDZ minimal resolution
+        main_tunnel_mesh_step: 2
+
     # Template for the main Flow123d input file. In `endorse/flow123d_inputs`.
     input_template: flow_fine_tmpl.yaml
     #mesh_file: "micro_mesh.msh"
@@ -281,27 +311,4 @@ transport_params:
 #        # it: 421 r_tol 1e-7
 #        #options: -ksp_type gmres -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_strong_threshold 0.5 -ksp_monitor
 #        # it: 696 r_tol 1e-7
-#        #options: -ksp_type gmres -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type HMIS -pc_hypre_boomeramg_strong_threshold 0.5 -ksp_monitor
-#        # it: 705 r_tol 1e-7
-#        #options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor
-#        # it: 414 r_tol 1e-7
-#        #options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor -pc_hypre_boomeramg_relax_type_all FCF-Jacobi
-#        # failed: indefinite PC
-#        #options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor -pc_hypre_boomeramg_relax_type_all Jacobi
-#        # failed: indefinite PC
-#        #options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor -pc_hypre_boomeramg_relax_type_all Chebyshev
-#
-#    flow_solver__options: &fopt -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type HMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor
-#        # it: 414 r_tol 1e-7
-#
-#        #options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor -pc_hypre_boomeramg_relax_type_all symmetric-SOR/Jacobi
-#        #options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor -pc_hypre_boomeramg_relax_type_all Jacobi
-#
-#        # options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_interp_type ext+i -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor
-#        # options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_interp_type ext+i -pc_hypre_boomeramg_strong_threshold 0.4  -ksp_monitor
-#        # options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_interp_type ext+i -pc_hypre_boomeramg_strong_threshold 0.6  -ksp_monitor
-#
-#
-#
-#
-#
+#        #opti

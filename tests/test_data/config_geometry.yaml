@@ -8,21 +8,17 @@
 
 
 # depth of the center of the box and of the coordinate system
-center_depth: 5000
+#center_depth: 5000
 # x,y,z dimension
-box_dimensions: [400, 100, 100]
-# mesh step on fractures
-fracture_mesh_step: 10
-# upper limit on the number of fractures
-n_frac_limit: 3
-# mesh step on outer boundary
-boundary_mesh_step: 50
-# mesh step on outer boundary of EDZ (just around boreholes right now)
-edz_mesh_step: 1
-# mesh step on inner boreholes
-boreholes_mesh_step: 0.3   # haxagon boreholes
-#boreholes_mesh_step: 0.3   # EDZ minimal resolution
-main_tunnel_mesh_step: 2
+box_dimensions: [40, 80, 60]
+#box_dimensions: [400, 80, 60]
+
+edz_radius: 2.5
+
+# shifting the mesh to real in-situ coordinates
+# TODO: do not shift the computation mesh but the input data to the local coordinate system
+#shift_vec: [ 682421.2022, 1129264.115, -50]
+#shift_vec: [0, 0, 0]
 
 # Main tunnel - main access tunnel
 main_tunnel:
@@ -33,7 +29,7 @@ main_tunnel:
     # tunnel width
     width: 5.5
     # tunnel length
-    length: 100
+    length: 20
 
 # Lateral short tunnels perpendicular to the main tunnel
 # one ofr every storage borehole
@@ -53,12 +49,12 @@ borehole:
     radius: 1.1
     # Boreholes length
     #length: 300
-    length: 50  # to speedup debugging
+    length: 80  # to speedup debugging
     # Vertical position of the borehole center.
     z_pos: 1.1
     # horizontal gaps between boreholes; (2 * n_side_boreholes) * borehole_distance should be < main_tunnel.length
     # not checked in the code
-    y_spacing: 25
+    y_spacing: 20
 
 containers:
     # length of horizontal container [m]
@@ -72,11 +68,4 @@ containers:
 
 
 
-edz_radius: 2.5
 
-# shifting the mesh to real in-situ coordinates
-# TODO: do not shift the computation mesh but the input data to the local coordinate system
-shift_vec: [ 682421.2022, 1129264.115, -50]
-#shift_vec: [0, 0, 0]
-
-fracture_stats: !include config_fractures.yaml
