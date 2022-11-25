@@ -24,19 +24,6 @@ boreholes_mesh_step: 0.3   # haxagon boreholes
 #boreholes_mesh_step: 0.3   # EDZ minimal resolution
 main_tunnel_mesh_step: 2
 
-tsx_tunnel:
-  # base of the mesh file name
-  mesh_name: tunnel_mesh
-  # depth of the center of the box and of the coordinate system
-  # x,y,z dimension
-  box_dimensions: [100, 100]
-  # tunnel center
-  tunnel_center: [0, 0, 0]
-  tunnel_dimX: 4.375 # X cross-section
-  tunnel_dimY: 3.5 # Y cross-section
-  tunnel_mesh_step: 0.25 # 0.0625 # 0.25 # 0.125 # 0.5
-  max_elem_size: 10 # 5 # 10 # 3.7
-
 # Main tunnel - main access tunnel
 main_tunnel:
     # radius of the ceiling/roof
@@ -63,7 +50,7 @@ borehole:
     # Number of explicit side boreholes (addition to the central source borehole)
     n_explicit: 0
     # Boreholes radius
-    radius: 1.1
+    radius: &borehole_radius 1.1
     # Boreholes length
     #length: 300
     length: 50  # to speedup debugging
@@ -83,6 +70,21 @@ containers:
     # position of the first container from the beginning of the tunnel (interface tunnel-
     offset: 4
 
+tsx_tunnel:
+  # base of the mesh file name
+  mesh_name: tunnel_mesh
+  # depth of the center of the box and of the coordinate system
+  # x,y,z dimension
+  box_dimensions: [100, 100]
+  # TSX tunnel:
+  tunnel_center: [0, 0, 0]
+  # tunnel dims replaced with borehole radius
+#  tunnel_dimX: 4.375 # X cross-section
+#  tunnel_dimY: 3.5 # Y cross-section
+  radius: *borehole_radius
+
+  tunnel_mesh_step: 0.25 # 0.0625 # 0.25 # 0.125 # 0.5
+  max_elem_size: 10 # 5 # 10 # 3.7
 
 
 edz_radius: 2.5

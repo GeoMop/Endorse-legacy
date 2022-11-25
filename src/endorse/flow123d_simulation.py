@@ -9,6 +9,7 @@ import traceback
 import matplotlib.pyplot as plt
 
 from . import common
+from . import mesh
 
 
 def generate_time_axis(config_dict):
@@ -77,7 +78,6 @@ class endorse_2Dtest():
             return 2, self.collect_results()
 
         print("Creating mesh...")
-        # comp_mesh = self.prepare_mesh(config_dict, cut_tunnel=False)
         comp_mesh = self.prepare_mesh(cut_tunnel=True)
 
         mesh_bn = os.path.basename(comp_mesh)
@@ -96,8 +96,6 @@ class endorse_2Dtest():
         #hm_succeed = self.call_flow(config_dict, 'hm_params', result_files=["flow_observe.yaml"])
 
         params = config_dict.tsx_hm_model.hm_params
-        params.tunnel_dimX = config_dict.geometry.tsx_tunnel.tunnel_dimX
-        params.tunnel_dimY = config_dict.geometry.tsx_tunnel.tunnel_dimY
         template = os.path.join(common.flow123d_inputs_path, params.input_template)
         flow_output: common.FlowOutput = common.call_flow(config_dict.flow_env, template, params)
 
@@ -232,15 +230,18 @@ class endorse_2Dtest():
 
     def prepare_mesh(self, cut_tunnel):
         mesh_name = self._config.geometry.tsx_tunnel.mesh_name
-        if cut_tunnel:
-            mesh_name = mesh_name + "_cut"
-        mesh_file = mesh_name + ".msh"
-        mesh_healed = mesh_name + "_healed.msh"
+        # if cut_tunnel:
+        #     mesh_name = mesh_name + "_cut"
+        # mesh_file = mesh_name + ".msh"
+        # mesh_healed = mesh_name + "_healed.msh"
 
         # suppose that the mesh was created/copied during preprocess
-        assert os.path.isfile(os.path.join(self._config.common_files_dir, mesh_healed))
-        shutil.copyfile(os.path.join(self._config.common_files_dir, mesh_healed), mesh_healed)
-        return mesh_healed
+        # assert os.path.isfile(os.path.join(self._config.common_files_dir, mesh_healed))
+        # shutil.copyfile(os.path.join(self._config.common_files_dir, mesh_healed), mesh_healed)
+        # return mesh_healed
+        import endorse.mesh.tunnel_cross_section as tcs
+        meshfile = tcs.make_tunnel_cross_section_mesh(self._config.geometry.tsx_tunnel)
+        return meshfile
 
 
     def observe_time_plot(self, config_dict, flow_output):
