@@ -25,7 +25,7 @@ def test_homogenisation():
 #@pytest.mark.skip
 def test_macro_transport():
    # with common.workdir("sandbox"):
-    common.EndorseCache.instance().expire_all()
+    #common.EndorseCache.instance().expire_all()
     conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
     cfg = common.load_config(conf_file)
     endorse.macro_flow_model.macro_transport(cfg)
