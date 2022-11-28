@@ -33,9 +33,12 @@ def test_tunnel_interpolation():
     mesh_interp = hm_simulation.TunnelInterpolator(cfg.geometry, res_mesh)
 
     field_name = "conductivity"
-    point = np.array([10, 20, 30])
+    points = np.array([[10, 20], [4.375/2+0.01, 0], [1.1,  3.5/2+0.01+1.1]])
     selected_time = 365 * 3600 * 24 # end_time of hm simulation
-    print(field_name, point, selected_time)
-    val = mesh_interp.interpolate_field(field_name, point, time=selected_time)
-    print(val)
+    print(field_name, points, selected_time)
+    vals = mesh_interp.interpolate_field(field_name, points, time=selected_time)
+    print(vals)
+
+    mesh_interp.test_interpolation()
+
     return

@@ -2,6 +2,7 @@ from typing import *
 import pandas
 import os
 import numpy as np
+import scipy as sp
 
 import endorse.mesh_class
 from .common import File, sample_from_population, workdir, dotdict
@@ -17,20 +18,49 @@ class TunnelInterpolator:
         self._barycenters = (bars[0,:], bars[1,:])
 
     # Maps 'target_point' from the 3D tunnel to 'point' in 2D tunnel cross-section.
-    def map_point(self, target_point):
+    def map_points(self, target_points):
         shift = np.array([0, 0, self._cfg_geom.borehole.z_pos])
-        shifted_point = target_point - shift
+        shifted_point = (target_points.transpose() - shift).transpose()
         # transform x<-y, y<-z
-        point = (shifted_point[1], shifted_point[2])
-        return point
+        points = (shifted_point[1,:], shifted_point[2:])
+        return points
 
-    def interpolate_field(self, field_name, target_point, time):
-        field_values = self._mesh.get_p0_values(field_name, time=time)
-        point = self.map_point(target_point)
-        import scipy
+    def test_interpolation(self):
+        field_values = self._mesh.get_p0_values("conductivity", time=365*24*3600)
+        x = y = np.linspace(np.min(self._barycenters[0]), np.max(self._barycenters[1]), 500)
+        X, Y = np.meshgrid(x, y)
+        points = (X,Y)
         # 2D cross-section mesh is in xy plane with center in zero
-        val = scipy.interpolate.griddata(self._barycenters, field_values, point, method='linear')
-        return val
+        Z = sp.interpolate.griddata(self._barycenters, field_values, points, method='linear')
+        Z = Z.squeeze()
+        import matplotlib
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        ax.set_ylim(-50, 50)
+        ax.set_xlim(-50, 50)
+        ax.set_xlabel(r"$x$", fontsize=20)
+        ax.set_ylabel(r"$y$", fontsize=20)
+
+        levels = np.array([1e-15, 2.5e-15, 5e-15, 7.5e-15, 9e-15,
+                           1e-14, 1.75e-14, 2.5e-14, 3e-14, 5e-14, 7.5e-14,
+                           1e-13, 2.5e-13, 5e-13])
+        c = ax.contourf(X, Y, Z, levels, cmap=plt.cm.viridis,
+                    norm=matplotlib.colors.LogNorm())
+        cb = fig.colorbar(c, ax=ax)
+
+        s = ax.scatter(self._barycenters[0], self._barycenters[1], c=field_values, cmap=matplotlib.cm.viridis,
+                       s=2, norm=matplotlib.colors.LogNorm())
+        cb = fig.colorbar(s, ax=ax)
+        plt.show()
+
+    def interpolate_field(self, field_name, target_points, time):
+        field_values = self._mesh.get_p0_values(field_name, time=time)
+        points = self.map_points(target_points)
+        # print(points)
+        vals = sp.interpolate.griddata(self._barycenters, field_values, points, method='linear')
+
+        return vals
 
 
 
