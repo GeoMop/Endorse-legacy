@@ -40,7 +40,10 @@ mc_samples: 10
 copy_files: [transport_2022_5_tmpl.yaml,  conc_flux_UOS.csv, large_model.msh]
 
 geometry: &one_borehole_geometry !include config_geometry.yaml 
-
+fractures: &fractures
+    population:  !include config_fractures.yaml
+    # upper limit on the number of fractures
+    n_frac_limit: 10
 
 # Set to None to generate new meshes. ABSOLUTE PATH
 #mesh_repository:
@@ -69,9 +72,11 @@ fine_conductivity_interpolated:
         10: 0.8
         20: 1.0
 
-fine_conductivity_parametric:
+bulk_field_parametric: &bulk_field_parametric
     cond_max: 1e-14
     cond_min: 1e-16
+    por_max: 0.8
+    por_min: 0.4
 
     # axis wit respect to EDZ radius
     h_axis: 1.5
@@ -123,11 +128,8 @@ transport_macroscale:
 
 transport_fine:
     geometry: *one_borehole_geometry
-    fractures:
-        population:  !include config_fractures.yaml
-        # upper limit on the number of fractures
-        n_frac_limit: 10
-
+    fractures: *fractures
+    bulk_fields: *bulk_field_parametric
     mesh:
         # mesh step on fractures
         fracture_mesh_step: 10
@@ -156,118 +158,51 @@ transport_fine:
 
 
   # parameters substituted into the TH model template
-transport_params:
-    # The mesh to use in both simulations.
-    #mesh: three_frac_symmetric.msh
-    mesh: random_fractures.msh
-    in_file: transport_2022_5
+transport_fullscale:
+    mesh:
+        # mesh step on fractures
+        fracture_mesh_step: 10
+        # mesh step on outer boundary
+        boundary_mesh_step: 50
+        # mesh step on outer boundary of EDZ (just around boreholes right now)
+        edz_mesh_step: 1
+        # mesh step on inner boreholes
+        boreholes_mesh_step: 0.3   # haxagon boreholes
+        #boreholes_mesh_step: 0.3   # EDZ minimal resolution
+        main_tunnel_mesh_step: 2
 
-    apperture_per_size: 1e-4  # 1mm na 10m
-    fr_conductivity: 2.5e-3     # k = 1/12 * cs^2 * rho*g/visc = 1/12 1e-8 * 1000*10*1e3 =approx. 1e-2 ; cs=1e-4
+    bulk_field_params: *bulk_field_parametric
+    fr_field_params:
+        apperture_per_size: 1e-4  # 1e-4 = 1mm na 10m
+        fr_conductivity: 2.5e-3     # k = 1/12 * cs^2 * rho*g/visc = 1/12 1e-8 * 1000*10*1e3 =approx. 1e-2 ; cs=1e-4
+        #sigma_bulk_conductivity: 1e-7
+        min_fr_cross_section: 5e-5
+        max_fr_cross_section: 5e-3
+
+    # The mesh to use in both simulations.
+    input_template: transport_fullscale_tmpl.yaml
+    piezo_head_input_file: "test_data/large_model_local.msh2"
+    conc_flux_file: "test_data/conc_flux_UOS.csv"
+
+    default_conductivity: 1e-16
     bulk_conductivity: 1e-8
     edz2d_conductivity:
-    #sigma_bulk_conductivity: 1e-7
-    min_fr_cross_section: 5e-5
-    max_fr_cross_section: 5e-3
 
-    flow_solver__a_tol: 1e-14
-    flow_solver__r_tol: 1e-7
-    flow_solver__options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type HMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor
+    flow_solver__a_tol: 1e-10
+    flow_solver__r_tol: 1e-5
+    #flow_solver__options:
 
+    # setup for point source
+    # TODO: max source search, use P0 approximation with space refinement spacing
+    source_params:
+        source_ipos: 2 # ith position of the leaking container from beginning of the borehole
+        source_length: 4 # length of the container [m]
+        source_space: 2
 
-  # residual is the energy balance which is in order of MW
-    # we prescribe a tol about # orders of mag. lower
-
-    source_ipos: 5 # ith position of the leaking container from beginning of the borehole
-    source_length: 4 # length of the container [m]
-    source_space: 4 # space between containers [m]
 
     trans_solver__a_tol: 1e-5
     trans_solver__r_tol: 1e-3
         # -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg
-
-    #heat_solver__options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor
-    # faild fo indef PC
-    #heat_solver__options: -ksp_type gmres -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor
-    # failed do to 1000 iterations
-    # heat_solver__options: -ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps
-    # out of memory 12GB
-    trans_solver__options: -ksp_type gmres -pc_type ilu -pc_factor_levels 3 -ksp_diagonal_scale -ksp_diagonal_scale_fix -pc_factor_fill 1.0 -ksp_monitor
-
-  # edz_phys_group: 77
-
-      # Uniform distribution of the fracture centers near the existing surfaces
-  # in order to enhance connectivity.
-  #connected_position_distr: true
-
-  #fracture_stats:
-      ## SKB data
-      #-   name: NS
-          #trend: 292
-          #plunge: 1
-          #concentration: 17.8
-          #power: 2.5
-          #r_min: 0.038
-          #r_max: 564
-          #p_32: 0.073
-      #-   name: NE
-          #trend: 326
-          #plunge: 2
-          #concentration: 14.3
-          #power: 2.7
-          #r_min: 0.038
-          #r_max: 564
-          #p_32: 0.319
-      #-   name: NW
-          #trend: 60
-          #plunge: 6
-          #concentration: 12.9
-          #power: 3.1
-          #r_min: 0.038
-          #r_max: 564
-          #p_32: 0.107
-      #-   name: EW
-          #trend: 15
-          #plunge: 2
-          #concentration: 14.0
-          #power: 3.1
-          #r_min: 0.038
-          #r_max: 564
-          #p_32: 0.088
-      #-   name: HZ
-          #trend: 5
-          #plunge: 86
-          #concentration: 15.2
-          #power: 2.38
-          #r_min: 0.038
-          #r_max: 564
-          #p_32: 0.543
-
-          
-            # deep data <400m
-
-
-# parameters substituted into the HM model template
-#hm_params:
-#    # The mesh to use in both simulations.
-#    #mesh: three_frac_symmetric.msh
-#    mesh: random_fractures.msh
-#    in_file: 01_hm
-#
-#    well_piezohead: 5e3 # h*rho*g = 1e4*1e3*10 = 100 MPa
-#
-#    fr_cross_section: &fr_cs_init 5e-5
-#    fr_conductivity: &fr_cond_init 2.5e-3     # k = 1/12 * cs^2 * rho*g/visc = 1/12 1e-8 * 1000*10*1e3 =approx. 1e-2
-#    bulk_conductivity: &bulk_cond_init 1e-9
-#
-#    mechanics_solver__a_tol: 1e-14
-#    mechanics_solver__r_tol: 1e-7
-#        # -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg
-#    mechanics_solver__options: -ksp_type cg -pc_type icc -pc_factor_levels 2 -ksp_diagonal_scale -ksp_diagonal_scale_fix -pc_factor_fill 3.0 -ksp_monitor
-#
-#
-#    flow_solver__a_tol: &fatol   1e-14
-#    flow_solver__r_tol: &frtol   1e-7
 #        # Boomeramg options:
 #        # -ksp_type richardson              - recomended usage when solving just by multigrid
 #        #  -pc_hypre_boomeramg_cycle_type <V> Cycle type (choose one of) V W (None)

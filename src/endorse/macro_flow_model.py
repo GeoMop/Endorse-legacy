@@ -4,9 +4,10 @@ from typing import List
 import numpy as np
 
 from . import common
+from .apply_fields import conductivity_mockup
 from .common import dotdict, memoize, File, call_flow, workdir, report
 from .mesh import container_position_mesh
-from .homogenisation import  subdomains_mesh, Homogenisation, Subdomain, MacroSphere, make_subproblems, Subproblems
+from .homogenisation import MacroSphere, Subproblems
 from .mesh_class import Mesh
 from . import large_mesh_shift
 
@@ -37,7 +38,7 @@ def fine_macro_transport(cfg):
     cfg_fine = cfg.transport_fine
     micro_mesh = make_micro_mesh(cfg)
     template = os.path.join(common.flow123d_inputs_path, cfg_fine.input_template)
-    conductivity_file = apply_fine_conductivity_parametric(cfg, micro_mesh)
+    conductivity_file = conductivity_mockup(cfg, micro_mesh)
     large_model = large_model = File(cfg_fine.piezo_head_input_file)
     params = dict(
         mesh_file=micro_mesh.file.path,
@@ -81,32 +82,6 @@ def make_micro_mesh(cfg):
     mesh_file = container_position_mesh.fine_mesh(cfg.geometry, cfg.transport_microscale.mesh_params)
     return Mesh.load_mesh(mesh_file)
 
-#@memoize
-def apply_fine_conductivity_parametric(cfg, output_mesh:Mesh):
-    cfg_cond = cfg.fine_conductivity_parametric
-    X, Y, Z = output_mesh.el_barycenters()
-    cond_file = "fine_conductivity.msh2"
-    cond_max = float(cfg_cond.cond_max)
-    cond_min = float(cfg_cond.cond_min)
-
-    edz_r = cfg.geometry.edz_radius # 2.5
-    in_r = cfg_cond.inner_radius
-    Z = Z - cfg.geometry.borehole.z_pos
-    # axis wit respect to EDZ radius
-    Y_rel = Y / cfg_cond.h_axis
-    Z_rel = Z / cfg_cond.v_axis
-
-    # distance from center, 1== edz_radius
-    distance = np.sqrt((Y_rel * Y_rel + Z_rel * Z_rel)) / (edz_r)
-
-    theta = (1 - distance)/(1 - in_r)
-    cond_field = np.minimum(cond_max, np.maximum(cond_min, np.exp(theta * np.log(cond_max) + (1-theta) * np.log(cond_min))))
-    abs_dist = np.sqrt(Y * Y + Z * Z)
-    cond_field[abs_dist < cfg.geometry.borehole.radius] = 1e-18
-    #print({(i+1):cond for i,cond in enumerate(cond_field)})
-    output_mesh.write_fields(cond_file,
-                            dict(conductivity=cond_field))
-    return File(cond_file)
 
 
 #@memoize
@@ -178,7 +153,7 @@ def micro_load_response(cfg, subprobs:Subproblems, i_load, load):
 @memoize
 def subproblem_input(subproblem, conductivity_params):
     mesh = subproblem.submesh
-    return apply_fine_conductivity_parametric(conductivity_params, mesh)
+    return conductivity_mockup(conductivity_params, mesh)
 
 @report
 def micro_postprocess(cfg_micro, subproblem, micro_model):

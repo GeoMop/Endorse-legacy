@@ -1,7 +1,7 @@
 import pytest
 import os
 
-import endorse.macro_flow_model
+from endorse import macro_flow_model
 from endorse import common
 from endorse import homogenisation
 
@@ -28,5 +28,5 @@ def test_macro_transport():
     #common.EndorseCache.instance().expire_all()
     conf_file = os.path.join(script_dir, "test_data/config_homogenisation.yaml")
     cfg = common.load_config(conf_file)
-    endorse.macro_flow_model.macro_transport(cfg)
-    endorse.macro_flow_model.fine_macro_transport(cfg)
+    macro_flow_model.macro_transport(cfg)
+    macro_flow_model.fine_macro_transport(cfg)

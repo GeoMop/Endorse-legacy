@@ -6,6 +6,7 @@ import numpy as np
 from numba import njit
 
 from bgem.gmsh.gmsh_io import GmshIO
+from bgem.gmsh import heal_mesh
 
 from endorse.common import File, memoize, report
 
@@ -52,9 +53,22 @@ class Element:
 
 
 @memoize
-def _load_mesh(mesh_file: File):
+def _load_mesh(mesh_file: File, heal_tol):
+
+    if heal_tol is None:
+        gmsh_io = GmshIO(mesh_file.path)
+        return Mesh(gmsh_io, file = mesh_file)
+    else:
+        hm = heal_mesh.HealMesh.read_mesh(mesh_file.path, node_tol=heal_tol * 0.1)
+        hm.heal_mesh(gamma_tol=heal_tol)
+            #hm.move_all(geom_dict["shift_vec"])
+            #elm_to_orig_reg = hm.map_regions(new_reg_map)
+        hm.stats_to_yaml(mesh_file.path + "_heal_stats.yaml")
+        #assert hm.healed_mesh_name == mesh_healed
+        hm.write()
+        return Mesh.load_mesh(File(hm.healed_mesh_name), None)
+
     # !! can not memoize static and class methods (have no name)
-    return Mesh(GmshIO(mesh_file.path), file = mesh_file)
 
 
 @report
@@ -66,8 +80,8 @@ def mesh_compute_el_volumes(nodes:np.array, node_indices :np.array) -> np.array:
 class Mesh:
 
     @staticmethod
-    def load_mesh(mesh_file: File) -> 'Mesh':
-        return _load_mesh(mesh_file)
+    def load_mesh(mesh_file: File, heal_tol=None) -> 'Mesh':
+        return _load_mesh(mesh_file, heal_tol)
 
     @staticmethod
     def empty(mesh_path) -> 'Mesh':
@@ -151,7 +165,7 @@ class Mesh:
     def el_barycenters(self):
         if self._el_barycenters is None:
             self._el_barycenters = np.array([e.barycenter() for e in self.elements])
-        return self._el_barycenters.T
+        return self._el_barycenters
 
     # def el_loc_mat(self, id):
     #     return self.elements[self.el_indices[id]].loc_mat()
@@ -206,3 +220,53 @@ class Mesh:
             self.gmsh_io.write_fields(file_name, self.el_ids, fields)
         return File(file_name)
 
+
+    def map_regions(self, new_reg_map):
+        """
+        Replace all (reg_id, dim) regions by the new regions.
+        new_reg_map: (reg_id, dim) -> new (reg_id, dim, reg_name)
+        return: el_id -> old_reg_id
+        """
+        #print(self.mesh.physical)
+        #print(new_reg_map)
+
+        new_els = {}
+        el_to_old_reg = {}
+        for iel, el in enumerate(self.elements):
+            #type, tags, nodes = el
+            #tags = list(tags)
+            tags = list(el.tags)
+            old_reg_id = tags[0]
+            dim = len(el.node_indices) - 1
+            old_id_dim = (old_reg_id, dim)
+            if old_id_dim in new_reg_map:
+                el_to_old_reg[iel] = old_id_dim
+                reg_id, reg_dim,  reg_name = new_reg_map[old_id_dim]
+                if reg_dim != dim:
+                    Exception(f"Assigning region of wrong dimension: ele dim: {dim} region dim: {reg_dim}")
+                self.gmsh_io.physical[reg_name] = (reg_id, reg_dim)
+                tags[0] = reg_id
+            el.tags = tags
+        # remove old regions
+        id_to_reg = {id_dim: k for k, id_dim in self.gmsh_io.physical.items()}
+        for old_id_dim in new_reg_map.keys():
+            if old_id_dim in id_to_reg:
+                del self.gmsh_io.physical[id_to_reg[old_id_dim]]
+        return el_to_old_reg
+
+    def el_dim_slice(self, dim):
+        i_begin = len(self.elements)
+        i_end = i_begin
+        el_type = [21, 1, 2, 4][dim]
+        for iel, el in enumerate(self.elements):
+            if el.type == el_type:
+                i_begin = iel
+                break
+        for iel, el in enumerate(self.elements[i_begin:], start=i_begin):
+            if el.type != el_type:
+                i_end = iel
+                break
+        for iel, el in enumerate(self.elements[i_end:], start=i_end):
+            if el.type == el_type:
+                raise IndexError(f"Elements of dimension {dim} does not form a slice.")
+        return slice(i_begin, i_end, 1)
