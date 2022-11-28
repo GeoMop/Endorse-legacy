@@ -35,6 +35,7 @@ class endorse_2Dtest():
         self._config = config
         self.sample_dir = ""
         self.sample_counter = -1
+        self.flow_output = None
 
     def set_parameters(self, data_dict:'dotdict'):
         param_list = self._config.tsx_hm_model.surrDAMH_parameters.parameters
@@ -97,9 +98,9 @@ class endorse_2Dtest():
 
         params = config_dict.tsx_hm_model.hm_params
         template = os.path.join(common.flow123d_inputs_path, params.input_template)
-        flow_output: common.FlowOutput = common.call_flow(config_dict.flow_env, template, params)
+        self.flow_output = common.call_flow(config_dict.flow_env, template, params)
 
-        if not flow_output.success:
+        if not self.flow_output.success:
             # raise Exception("HM model failed.")
             # "Flow123d failed (wrong input or solver diverged)"
             print("Flow123d failed.")
@@ -108,7 +109,7 @@ class endorse_2Dtest():
 
         if self._config.tsx_hm_model.make_plots:
             try:
-                self.observe_time_plot(config_dict, flow_output)
+                self.observe_time_plot(config_dict, self.flow_output)
             except:
                 print("Making plot of sample results failed:")
                 traceback.print_exc()
@@ -121,7 +122,7 @@ class endorse_2Dtest():
         # return 1, collected_values  # tag, value_list
 
         try:
-            collected_values = self.collect_results(flow_output)
+            collected_values = self.collect_results(self.flow_output)
             print("Sample results collected.")
             return 1, collected_values  # tag, value_list
         except:
