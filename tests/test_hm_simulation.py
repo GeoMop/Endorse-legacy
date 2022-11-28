@@ -1,10 +1,14 @@
-from endorse import hm_simulation
+import pytest
 import os
 import numpy as np
-from endorse import common
+
+from endorse import hm_simulation
+from endorse import common, mesh_class
+from endorse.common.memoize import File
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
 
+# @pytest.mark.skip
 def test_run_random_samples():
     # Test execution of few random samples from the Byes inversion
     # implementation steps:
@@ -19,3 +23,19 @@ def test_run_random_samples():
     conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
     cfg = common.load_config(conf_file)
     hm_simulation.run_random_samples(cfg, 1)
+
+
+def test_tunnel_interpolation():
+    conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
+    cfg = common.load_config(conf_file)
+    res_mesh = mesh_class.Mesh.load_mesh(File(os.path.join(script_dir, "test_data/flow_fields.msh")))
+
+    mesh_interp = hm_simulation.TunnelInterpolator(cfg.geometry, res_mesh)
+
+    field_name = "conductivity"
+    point = np.array([10, 20, 30])
+    selected_time = 365 * 3600 * 24 # end_time of hm simulation
+    print(field_name, point, selected_time)
+    val = mesh_interp.interpolate_field(field_name, point, time=selected_time)
+    print(val)
+    return

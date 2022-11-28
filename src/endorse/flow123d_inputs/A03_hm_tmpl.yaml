@@ -61,7 +61,8 @@ problem: !Coupling_Sequential
 
         output:
           times: <output_times>
-          fields: []
+          fields: #[]
+            - conductivity
 #            - { field: conductivity, interpolation: P1_average }
 #            - piezo_head_p0
 #            - pressure_p0
@@ -71,8 +72,8 @@ problem: !Coupling_Sequential
         #balance:
           #cumulative: true
         output_stream:
-          file: flow.pvd
-          format: !vtk
+          file: flow_fields.msh
+          format: !gmsh
           observe_points: &observe_points
             - { name: HGT1-5, point: [ 0, 3.25, 0 ] }  # HGT1-5: 3.5/2 + 1.5
             - { name: HGT1-4, point: [ 0, 5.75, 0 ] }  # HGT1-4: 3.5/2 + 4

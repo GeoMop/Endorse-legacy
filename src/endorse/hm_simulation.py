@@ -1,10 +1,36 @@
 from typing import *
 import pandas
 import os
+import numpy as np
+
+import endorse.mesh_class
 from .common import File, sample_from_population, workdir, dotdict
 from .flow123d_simulation import endorse_2Dtest
 
+# 2D cross-section mesh is in xy plane with center in zero
+# target mesh cross-section is in yz plane
+class TunnelInterpolator:
+    def __init__(self, cfg_geom: dotdict, mesh: endorse.mesh_class.Mesh):
+        self._mesh = mesh
+        self._cfg_geom = cfg_geom
+        bars = mesh.el_barycenters()
+        self._barycenters = (bars[0,:], bars[1,:])
 
+    # Maps 'target_point' from the 3D tunnel to 'point' in 2D tunnel cross-section.
+    def map_point(self, target_point):
+        shift = np.array([0, 0, self._cfg_geom.borehole.z_pos])
+        shifted_point = target_point - shift
+        # transform x<-y, y<-z
+        point = (shifted_point[1], shifted_point[2])
+        return point
+
+    def interpolate_field(self, field_name, target_point, time):
+        field_values = self._mesh.get_p0_values(field_name, time=time)
+        point = self.map_point(target_point)
+        import scipy
+        # 2D cross-section mesh is in xy plane with center in zero
+        val = scipy.interpolate.griddata(self._barycenters, field_values, point, method='linear')
+        return val
 
 
 
