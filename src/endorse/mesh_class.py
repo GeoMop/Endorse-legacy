@@ -100,6 +100,16 @@ class Mesh:
     def reinit(self):
         # bounding interval hierarchy for the mesh elements
         # numbers elements from 0 as they are added
+        self._update_nodes()
+        self._update_elements()
+
+        # _boxes: List[bih.AABB]
+        self._bih: bih.BIH = None
+
+        self._el_volumes:np.array = None
+        self._el_barycenters:np.array =  None
+
+    def _update_nodes(self):
         self.node_ids = []
         self.node_indices = {}
         self.nodes = np.empty((len(self.gmsh_io.nodes), 3))
@@ -108,6 +118,7 @@ class Mesh:
             self.node_ids.append(nid)
             self.nodes[i, :] = node
 
+    def _update_elements(self):
         self.el_ids = []
         self.el_indices = {}
         self.elements = []
@@ -118,18 +129,18 @@ class Mesh:
             self.el_ids.append(eid)
             self.elements.append(element)
 
-        # _boxes: List[bih.AABB]
-        self.bih: bih.BIH = self._build_bih()
-
-        self._el_volumes:np.array = None
-        self._el_barycenters:np.array =  None
-
     def __getstate__(self):
         return (self.gmsh_io, self.file)
 
     def __setstate__(self, args):
         self.gmsh_io, self.file = args
         self.reinit()
+
+    @property
+    def bih(self):
+        if self._bih is None:
+            self._bih = self._build_bih()
+        return self._bih
 
     def _build_bih(self):
         el_boxes = []
@@ -232,26 +243,31 @@ class Mesh:
 
         new_els = {}
         el_to_old_reg = {}
-        for iel, el in enumerate(self.elements):
-            #type, tags, nodes = el
-            #tags = list(tags)
-            tags = list(el.tags)
+
+        for el_id, el in self.gmsh_io.elements.items():
+            type, tags, nodes = el
+            tags = list(tags)
             old_reg_id = tags[0]
-            dim = len(el.node_indices) - 1
+            dim = len(nodes) - 1
             old_id_dim = (old_reg_id, dim)
             if old_id_dim in new_reg_map:
-                el_to_old_reg[iel] = old_id_dim
+                el_to_old_reg[self.el_indices[el_id]] = old_id_dim
                 reg_id, reg_dim,  reg_name = new_reg_map[old_id_dim]
                 if reg_dim != dim:
                     Exception(f"Assigning region of wrong dimension: ele dim: {dim} region dim: {reg_dim}")
                 self.gmsh_io.physical[reg_name] = (reg_id, reg_dim)
                 tags[0] = reg_id
-            el.tags = tags
+            self.gmsh_io.elements[el_id] = (type, tags, nodes)
         # remove old regions
         id_to_reg = {id_dim: k for k, id_dim in self.gmsh_io.physical.items()}
         for old_id_dim in new_reg_map.keys():
             if old_id_dim in id_to_reg:
                 del self.gmsh_io.physical[id_to_reg[old_id_dim]]
+
+        el_ids = self.el_ids
+        self._update_elements()
+        assert_idx = np.random.randint(0, len(el_ids), 50)
+        assert all((el_ids[i] == self.el_ids[i] for i in assert_idx))
         return el_to_old_reg
 
     def el_dim_slice(self, dim):

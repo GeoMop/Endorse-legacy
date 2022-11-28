@@ -10,6 +10,11 @@ problem: !Coupling_Sequential
       Source term is prescribed on a part of the borehole boundary given by the index of container position.
   mesh:
     mesh_file: <mesh_file>
+    regions:
+      - !From_Label
+        name: .fr_boreholes
+        mesh_label: .fr_boreholes
+        allow_empty: True
   flow_equation: !Flow_Darcy_LMH
     output_specific:
     nonlinear_solver:
@@ -78,7 +83,7 @@ problem: !Coupling_Sequential
           porosity: !FieldFE
             mesh_data_file: <input_fields_file>
             field_name: porosity
-        - region: [.box_inner, .fr_inner]
+        - region: [.box_boreholes, .fr_boreholes]
           bc_type: total_flux
           bc_flux: !FieldFormula
             value: bc_flux_x * bc_flux_t
