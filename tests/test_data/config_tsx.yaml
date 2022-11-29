@@ -159,6 +159,7 @@ hm_params:
     young_modulus_1: 30e9
     poisson_ratio: 0.2
     init_stress_x: 45e6
+    init_pressure: 300
 
     # non-linear permeability
     perm_kr: 6e-22
