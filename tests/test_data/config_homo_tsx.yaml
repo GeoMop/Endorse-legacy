@@ -64,15 +64,17 @@ fine_conductivity_interpolated:
         20: 1.0
 
 bulk_field_parametric: &bulk_field_parametric
-    cond_max: 1e-14
-    cond_min: 1e-16
+    cond_zero: 1e-15
+    cond_max: 1e-9  # permeability 1e-16
+    cond_min: 1e-13  # permeability 1e-18
     por_max: 0.8
     por_min: 0.4
 
-    # axis wit respect to EDZ radius
+    # values with respect to EDZ radius
     h_axis: 1.5
     v_axis: 2
-    inner_radius: 0.5
+    # radius for c_min
+    inner_radius: 1.1
 
 
 
@@ -164,7 +166,7 @@ transport_fullscale:
 
     bulk_field_params: *bulk_field_parametric
     fr_field_params:
-        apperture_per_size: 1e-4  # 1e-4 = 1mm na 10m
+        apperture_per_size: 1e-5  # 1e-4 = 1mm na 10m
         fr_conductivity: 2.5e-3     # k = 1/12 * cs^2 * rho*g/visc = 1/12 1e-8 * 1000*10*1e3 =approx. 1e-2 ; cs=1e-4
         #sigma_bulk_conductivity: 1e-7
         min_fr_cross_section: 5e-5
@@ -174,10 +176,6 @@ transport_fullscale:
     input_template: transport_fullscale_tmpl.yaml
     piezo_head_input_file: "test_data/large_model_local.msh2"
     conc_flux_file: "test_data/conc_flux_UOS.csv"
-
-    default_conductivity: 1e-16
-    bulk_conductivity: 1e-8
-    edz2d_conductivity:
 
     flow_solver__a_tol: 1e-10
     flow_solver__r_tol: 1e-5

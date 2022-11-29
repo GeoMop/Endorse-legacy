@@ -7,7 +7,7 @@ import scipy as sp
 import endorse.mesh_class
 from .common import File, sample_from_population, workdir, dotdict
 from .flow123d_simulation import endorse_2Dtest
-
+from .plots import plot_field
 
 # 2D cross-section mesh is in xy plane with center in zero
 # target mesh cross-section is in yz plane
@@ -123,19 +123,9 @@ class TunnelInterpolator:
         interp_vol_strain = sp.interpolate.griddata(self._barycenters, field_vol_strain, points, method='linear')
         porosity = self.compute_porosity(hm_params, points, time, data=(interp_pressure, interp_vol_strain))
         porosity = np.squeeze(porosity)
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(figsize=(8, 6))
+        plots.plot_field(points, porosity, cut=(0,1))
 
-        ax.set_ylim(-50, 50)
-        ax.set_xlim(-50, 50)
-        ax.set_xlabel(r"$x$", fontsize=20)
-        ax.set_ylabel(r"$y$", fontsize=20)
 
-        # levels = np.array([])
-        c = ax.contourf(X, Y, porosity, cmap=plt.cm.viridis)
-        cb = fig.colorbar(c, ax=ax)
-
-        plt.show()
 
 def run_hm_simulation(config_dict: dotdict, i_sim: int, parameters: Dict[str,Union[int, float]]):
     # RUN THE MCMC SIMULATION

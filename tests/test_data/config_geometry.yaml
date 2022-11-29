@@ -10,7 +10,7 @@
 # depth of the center of the box and of the coordinate system
 #center_depth: 5000
 # x,y,z dimension
-box_dimensions: [40, 80, 60]
+box_dimensions: [100, 80, 60]
 #box_dimensions: [400, 80, 60]
 
 edz_radius: 2.5

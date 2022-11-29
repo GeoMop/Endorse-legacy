@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import *
 
@@ -10,6 +11,7 @@ from .homogenisation import  subdomains_mesh, Homogenisation, Subdomain, MacroSp
 from .mesh.repository_mesh import one_borehole
 from .mesh_class import Mesh
 from . import apply_fields
+from . import plots
 from bgem.stochastic.fracture import Fracture
 
 def input_files(cfg_tr_full):
@@ -108,18 +110,24 @@ def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, Fracture]):
 
     #
     cfg_bulk_fields = cfg_trans.bulk_field_params
-    conductivity = np.full((len(mesh.elements),), cfg_bulk_fields.cond_min)
-    cross_section = np.full((len(mesh.elements),), 1.0)
+    conductivity = np.full( (len(mesh.elements),), float(cfg_bulk_fields.cond_min))
+    cross_section = np.full( (len(mesh.elements),), float(1.0))
     porosity = np.full((len(mesh.elements),), 1.0)
     # Bulk fields
     el_slice_3d = mesh.el_dim_slice(3)
     bulk_cond, bulk_por = apply_fields.bulk_fields_mockup(cfg_geom, cfg_bulk_fields, mesh.el_barycenters()[el_slice_3d])
     conductivity[el_slice_3d] = bulk_cond
     porosity[el_slice_3d] = bulk_por
+    logging.info(f"3D slice: {el_slice_3d}")
+    c_min, c_max = np.min(conductivity), np.max(conductivity)
+    logging.info(f"cond range: {c_min}, {c_max}")
+    plots.plot_field(mesh.el_barycenters()[el_slice_3d], bulk_cond, file="conductivity_yz.pdf")
+    plots.plot_field(mesh.el_barycenters()[el_slice_3d], bulk_por, file="porosity_yz.pdf")
 
     # Fracture
     cfg_fr_fields = cfg_trans.fr_field_params
     el_slice_2d = mesh.el_dim_slice(2)
+    logging.info(f"2D slice: {el_slice_2d}")
     fr_cond, fr_cross, fr_por = apply_fields.fr_fields(cfg_fr_fields, mesh.elements[el_slice_2d], el_slice_2d.start, fr_map)
     conductivity[el_slice_2d] = fr_cond
     cross_section[el_slice_2d] = fr_cross
@@ -133,7 +141,7 @@ def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, Fracture]):
     return cond_file
 
 
-
+@report
 @memoize
 def fullscale_transport_mesh(cfg, cfg_mesh, seed):
     main_box_dimensions = cfg.geometry.box_dimensions
