@@ -12,7 +12,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 def test_macro_transport():
    # with common.workdir("sandbox"):
     common.EndorseCache.instance().expire_all()
-    conf_file = os.path.join(script_dir, "test_data/config_homogenisation.yaml")
+    conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
     cfg = common.load_config(conf_file)
     files = input_files(cfg.transport_fullscale)
     seed = 101

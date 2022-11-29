@@ -4,6 +4,7 @@ import attrs
 import bih
 import numpy as np
 from numba import njit
+import bisect
 
 from bgem.gmsh.gmsh_io import GmshIO
 from bgem.gmsh import heal_mesh
@@ -203,6 +204,23 @@ class Mesh:
         #gmesh.write(file_path)
         gmesh.normalize()
         return Mesh(gmesh, "")
+
+    # Returns field P0 values of field.
+    # Selects the closest time step lower than 'time'.
+    # TODO: we might do time interpolation
+    def get_p0_values(self, field_name:str, time):
+        field_dict = self.gmsh_io.element_data[field_name]
+
+        # determine maximal index of time step, where times[idx] <= time
+        times = [v.time for v in list(field_dict.values())]
+        last_time_idx = bisect.bisect_right(times, time) - 1
+
+        values = field_dict[last_time_idx].values
+        value_ids = field_dict[last_time_idx].tags
+        value_to_el_idx = [self.el_indices[iv] for iv in value_ids]
+        values_mesh = np.empty_like(values)
+        values_mesh[value_to_el_idx[:]] = values
+        return values_mesh
 
     def get_static_p0_values(self, field_name:str):
         field_dict = self.gmsh_io.element_data[field_name]
