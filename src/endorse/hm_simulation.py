@@ -5,20 +5,26 @@ import numpy as np
 import scipy as sp
 
 import endorse.mesh_class
-from .common import File, sample_from_population, workdir, dotdict
+from .common import File, sample_from_population, workdir, dotdict, FlowOutput
 from .flow123d_simulation import endorse_2Dtest
 
 
 # 2D cross-section mesh is in xy plane with center in zero
 # target mesh cross-section is in yz plane
 class TunnelInterpolator:
-    def __init__(self, cfg_geom: dotdict, flow_msh: endorse.mesh_class.Mesh, mech_msh: endorse.mesh_class.Mesh):
-        self._flow_msh = flow_msh
-        self._mech_msh = mech_msh
+    def __init__(self, cfg_geom: dotdict, flow123d_output: FlowOutput = None,
+                 flow_msh: endorse.mesh_class.Mesh = None, mech_msh: endorse.mesh_class.Mesh = None):
+        if flow123d_output is not None:
+            self._flow_msh = endorse.mesh_class.Mesh.load_mesh(flow123d_output.hydro.spatial_file)
+            self._mech_msh = endorse.mesh_class.Mesh.load_mesh(flow123d_output.mechanic.spatial_file)
+        else:
+            self._flow_msh = flow_msh
+            self._mech_msh = mech_msh
+
         self._cfg_geom = cfg_geom
 
         # precompute barycenter once
-        bars = flow_msh.el_barycenters()
+        bars = self._flow_msh.el_barycenters()
         self._barycenters = (bars[0,:], bars[1,:])
 
     # Maps 'target_point' from the 3D tunnel to 'point' in 2D tunnel cross-section.
@@ -185,9 +191,19 @@ def run_hm_simulation(config_dict: dotdict, i_sim: int, parameters: Dict[str,Uni
         res, obs_data = sim.get_observations()
         print("Flow123d res: ", res)
 
+        return sim.flow_output
+
 
 def read_bayes_sample_parameteres(parameter_file:File) -> pandas.DataFrame:
     return pandas.read_csv(parameter_file.path, dtype={'N': 'int'})
+
+
+def run_single_sample(cfg):
+    df = read_bayes_sample_parameteres(File(cfg.tsx_hm_model.bayes_samples_input_file))
+    i_samples = sample_from_population(1, df['N'])
+    sample_param_dict = df[1: 2].to_dict('records')[0]
+    fo = run_hm_simulation(cfg, 1, sample_param_dict)
+    return fo
 
 
 def run_random_samples(cfg, n_samples):
