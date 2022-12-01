@@ -11,3 +11,6 @@
 [submodule "submodules/MLMC"]
 	path = submodules/MLMC
 	url = git@github.com:GeoMop/MLMC.git
+[submodule "submodules/redis-cache"]
+	path = submodules/redis-cache
+	url = git@github.com:jbrezmorf/redis-simple-cache-3k.git
