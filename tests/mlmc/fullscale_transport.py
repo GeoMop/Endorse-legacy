@@ -92,6 +92,8 @@ class FullScaleTransport:
         conf_file = os.path.join(self.work_dir, "test_data/config_homogenisation.yaml")
         cfg = common.load_config(conf_file)
         cfg['work_dir'] = self.work_dir
+        # cfg.flow_env["flow_executable"] = ["docker", "run", "-v", "{}:{}".format(os.getcwd(), os.getcwd()),
+        #                                    "flow123d/flow123d-gnu:3.9.1", "flow123d"]
 
         # Create simulation factory, instance of class that inherits from mlmc.sim.simulation
         simulation_factory = FullScaleTransportSim(config=cfg)
