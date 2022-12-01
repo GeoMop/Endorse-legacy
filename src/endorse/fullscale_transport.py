@@ -39,15 +39,26 @@ def fullscale_transport(cfg, source_params, seed):
     #mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
     #mesh_modified = Mesh.load_mesh(mesh_modified_file)
 
-    input_fields_file = compute_fields(cfg, full_mesh, el_to_fr)
+    input_fields_file, est_velocity = compute_fields(cfg, full_mesh, el_to_fr)
     large_model = File(os.path.basename(cfg_fine.piezo_head_input_file))
     conc_flux = File(os.path.basename(cfg_fine.conc_flux_file))
     params = cfg_fine.copy()
+
+    # estimate times
+    bulk_vel_est, fr_vel_est = est_velocity
+    end_time = 50 / bulk_vel_est + 50 / fr_vel_est
+    dt = 0.1 / bulk_vel_est
+    # convert to years
+    year = 365.2425 * 24 * 60 * 60
+    end_time = end_time / year
+    dt = dt / year
     new_params = dict(
         mesh_file=input_fields_file,
         piezo_head_input_file=large_model,
         conc_flux_file=conc_flux,
-        input_fields_file = input_fields_file
+        input_fields_file = input_fields_file,
+        end_time = end_time,
+        max_time_step = dt
     )
     params.update(new_params)
     params.update(set_source_limits(cfg))
@@ -138,7 +149,15 @@ def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, Fracture]):
         porosity=porosity
     )
     cond_file = mesh.write_fields("input_fields.msh2", fields)
-    return cond_file
+
+    # estimate velocities on bulk and fracture
+    # for cond range 1e-13 - 1e-9 and porosity about 1, we have velocity 1e-16  to 5.5e-10
+    # i.e velocity about the order of conductivity or one order less
+    # for fracture, cond range:
+
+    pos_fr = fr_cond > 0
+    est_velocity = (np.quantile(bulk_cond, 0.4)/10, np.quantile(fr_cond[pos_fr],  0.4))
+    return cond_file, est_velocity
 
 
 @report
@@ -147,3 +166,15 @@ def fullscale_transport_mesh(cfg, cfg_mesh, seed):
     main_box_dimensions = cfg.geometry.box_dimensions
     fractures = mesh_tools.generate_fractures(cfg.fractures, main_box_dimensions, seed)
     return one_borehole(cfg.geometry, fractures, cfg_mesh), fractures
+
+
+# def transport_observe_points(cfg):
+#     cfg_geom = cfg.geometry
+#     lx, ly, lz = cfg_geom.box_dimensions
+#     np.
+#     with "observe_points.csv":
+#
+# observe_points:
+# - [0, 0.1, 0]
+# - {point: [0.55, 0.55, 0], snap_region: 1d_lower}
+# - {point: [0.7, 0.8, 0], snap_region: 1d_upper}

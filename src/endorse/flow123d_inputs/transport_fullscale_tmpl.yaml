@@ -12,7 +12,7 @@ problem: !Coupling_Sequential
     mesh_file: <mesh_file>
     regions:
       - !From_Label
-        name: .fr_boreholes
+        name: .fr_bore
         mesh_label: .fr_boreholes
         allow_empty: True
   flow_equation: !Flow_Darcy_LMH
@@ -48,14 +48,16 @@ problem: !Coupling_Sequential
         - velocity_p0
         - region_id
         - conductivity
-    balance: {}
-    output_stream:      
+        - cross_section
+    balance:
+      cumulative: true
+    output_stream:
       format: !vtk
         variant: ascii
 
   solute_equation: !Coupling_OperatorSplitting
     substances:
-        - name: U235 # uranium 235
+        - name: U235 # uranium 235; should rather be Iodium with zero K_d.
           molar_mass: 0.235
     transport: !Solute_AdvectionDiffusion_DG
       user_fields:
@@ -69,25 +71,36 @@ problem: !Coupling_Sequential
         - name: bc_flux_t
           is_boundary: true
           scalar_field: !FieldTimeFunction
-            time_function: 
+#            time_function:
+#              values: !include_csv
+#                file: <conc_flux_file>
+#                separator: " "
+#                n_head_lines: 1
+#                format:
+#                  t:
+#                    time: $0
+#                  value: $1
+            time_function:  # conc_flux_UOS_[kg:y]
               values: !include_csv
                 file: <conc_flux_file>
-                separator: " "
+                separator: ","
                 n_head_lines: 1
                 format:
                   t:
                     time: $0
                   value: $1
+
       input_fields:
         - region: [box, fractures]
           porosity: !FieldFE
             mesh_data_file: <input_fields_file>
             field_name: porosity
-        - region: [.box_boreholes, .fr_boreholes]
+        - region: [.box_boreholes, .fr_bore]
           bc_type: total_flux
           bc_flux: !FieldFormula
             value: bc_flux_x * bc_flux_t
-        
+            unit: kg*m*md/y
+
       solver:
         a_tol: <trans_solver__a_tol>
         r_tol: <trans_solver__r_tol>
@@ -96,14 +109,17 @@ problem: !Coupling_Sequential
       output:    
         fields:
         - field: conc
-          interpolation: [P0_value, D1_value] #[P0_value, P1_average, D1_value]
+          interpolation: [P0_value, P1_average, D1_value] #[P0_value, P1_average, D1_value]
+        - region_id
     output_stream:
       format: !vtk
         variant: ascii
       times:
-        - step: 6.3072e7   
+        - step: [1000, 'y']
     time:
-      end_time: 1e9
-      time_step: 1e7
+      end_time: [<end_time>, 'y']
+      max_dt: [<max_time_step>, 'y']
+      common_time_unit: y
+      write_used_timesteps: time_steps.yaml
     balance:
       cumulative: true
