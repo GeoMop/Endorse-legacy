@@ -2,9 +2,6 @@
 [submodule "submodules/jsondata"]
 	path = submodules/jsondata
 	url = git@github.com:GeoMop/JsonData.git
-[submodule "submodules/redis-cache"]
-	path = submodules/redis-cache
-	url = https://github.com/jbrezmorf/redis-simple-cache-3k.git
 [submodule "submodules/bgem"]
 	path = submodules/bgem
 	url = git@github.com:GeoMop/bgem.git
