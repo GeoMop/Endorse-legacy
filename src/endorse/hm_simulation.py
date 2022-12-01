@@ -25,7 +25,7 @@ class TunnelInterpolator:
 
         # precompute barycenter once
         bars = self._flow_msh.el_barycenters()
-        self._barycenters = (bars[0,:], bars[1,:])
+        self._barycenters = (bars[:,0], bars[:,1])
 
     # Maps 'target_point' from the 3D tunnel to 'point' in 2D tunnel cross-section.
     def map_points(self, target_points):
@@ -129,8 +129,20 @@ class TunnelInterpolator:
         interp_vol_strain = sp.interpolate.griddata(self._barycenters, field_vol_strain, points, method='linear')
         porosity = self.compute_porosity(hm_params, points, time, data=(interp_pressure, interp_vol_strain))
         porosity = np.squeeze(porosity)
-        plots.plot_field(points, porosity, cut=(0,1))
+        # plot_field(np.array([X, Y]), porosity, cut=(0,1))
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(8, 6))
 
+        ax.set_ylim(-50, 50)
+        ax.set_xlim(-50, 50)
+        ax.set_xlabel(r"$x$", fontsize=20)
+        ax.set_ylabel(r"$y$", fontsize=20)
+
+        # levels = np.array([])
+        c = ax.contourf(X, Y, porosity, cmap=plt.cm.viridis)
+        cb = fig.colorbar(c, ax=ax)
+
+        plt.show()
 
 
 def run_hm_simulation(config_dict: dotdict, i_sim: int, parameters: Dict[str,Union[int, float]]):
