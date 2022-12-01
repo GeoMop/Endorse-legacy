@@ -46,7 +46,7 @@ class workdir:
             src = src.path
         if isinstance(dest, File):
             dest = dest.path
-        if dest is ".":
+        if dest == ".":
             if os.path.isabs(src):
                 dest = os.path.basename(src)
             else:
