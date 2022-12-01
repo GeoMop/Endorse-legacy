@@ -15,9 +15,12 @@ def test_macro_transport():
     conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
     cfg = common.load_config(conf_file)
     files = input_files(cfg.transport_fullscale)
-    seed = 101
+    seed = 102
     with common.workdir(f"sandbox/full_transport_{seed}", inputs=files, clean=False):
         # params for single container source
         source_params = dict(position=10, length=6)
         fullscale_transport(cfg, source_params, seed)
 
+if __name__ == "__main__":
+    os.chdir(os.path.join(script_dir))
+    test_macro_transport()
