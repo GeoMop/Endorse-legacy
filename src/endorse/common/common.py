@@ -20,6 +20,8 @@ class workdir:
     clean: if true the workspace would be deleted at the end of the context manager.
     TODO: clean_before / clean_after
     TODO: File constructor taking current workdir environment, openning virtually copied files.
+    TODO: Workdir would not perform change of working dir, but provides system interface for: subprocess, file openning
+          only perform CD just before executing a subprocess also interacts with concept of an executable.
     portable reference and with lazy evaluation. Optional true copy possible.
     """
     CopyArgs = Union[str, Tuple[str, str]]
@@ -122,13 +124,19 @@ def load_config(path):
 
 def substitute_placeholders(file_in: str, file_out: str, params: Dict[str, Any]):
     """
-    In the template `file_in` substitute the placeholders of format '<name>'
+    In the template `file_in` substitute the placeholders in format '<name>'
     according to the dict `params`. Write the result to `file_out`.
+    TODO: set Files into params, in order to compute hash from them.
+    TODO: raise for missing value in dictionary
     """
     used_params = []
+    files = []
     with open(file_in, 'r') as src:
         text = src.read()
     for name, value in params.items():
+        if isinstance(value, File):
+            files.append(value)
+            value = value.path
         placeholder = '<%s>' % name
         n_repl = text.count(placeholder)
         if n_repl > 0:
@@ -136,7 +144,8 @@ def substitute_placeholders(file_in: str, file_out: str, params: Dict[str, Any])
             text = text.replace(placeholder, str(value))
     with open(file_out, 'w') as dst:
         dst.write(text)
-    return File(file_out), used_params
+
+    return File(file_out, files), used_params
 
 
 # Directory for all flow123d main input templates.

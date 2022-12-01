@@ -10,27 +10,33 @@ problem: !Coupling_Sequential
       Source term is prescribed on a part of the borehole boundary given by the index of container position.
   mesh:
     mesh_file: <mesh_file>
-  flow_equation: !Flow_Darcy_MH
+    regions:
+      - !From_Label
+        name: .fr_boreholes
+        mesh_label: .fr_boreholes
+        allow_empty: True
+  flow_equation: !Flow_Darcy_LMH
     output_specific:
     nonlinear_solver:
       linear_solver: !Petsc
         a_tol: <flow_solver__a_tol>
         r_tol: <flow_solver__r_tol>
-        options: <flow_solver__options>
+        options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type HMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor
+
     input_fields:
       - region: [.box_outer, .fr_outer]
         bc_type: dirichlet
         bc_piezo_head: !FieldFE
-          mesh_data_file: large_model.msh
+          mesh_data_file: <piezo_head_input_file>
           field_name: piezo_head_p0
           interpolation: P0_intersection
-      - region: [box, EDZ_2D, fractures]
+      - region: [box, fractures] # TODO: common region for fractures
         conductivity:  !FieldFE
-          mesh_data_file: input_fields.msh
+          mesh_data_file: <input_fields_file>
           field_name: conductivity
           #interpolation: P0_intersection
         cross_section:  !FieldFE
-          mesh_data_file: input_fields.msh
+          mesh_data_file: <input_fields_file>
           field_name: cross_section
           #interpolation: P0_intersection
     n_schurs: 2
@@ -56,13 +62,16 @@ problem: !Coupling_Sequential
         - name: bc_flux_x
           is_boundary: true
           scalar_field: !FieldFormula
-            value: if((y > <source_y0>)and(y < <source_y1>)and(x > <source_x0>)and(x < <source_x1>),1.0,0) #if((y>-1129275)and(y<-1129250)and(x>-682460)and(x<-682450),1,0)
+            # variant for more boreholes
+            #value: if((y > <source_y0>)and(y < <source_y1>)and(x > <source_x0>)and(x < <source_x1>),1.0,0) #if((y>-1129275)and(y<-1129250)and(x>-682460)and(x<-682450),1,0)
+            # variant for single borehole
+            value: if((x > <source_x0>)and(x < <source_x1>),1.0,0.0)
         - name: bc_flux_t
           is_boundary: true
           scalar_field: !FieldTimeFunction
             time_function: 
               values: !include_csv
-                file: conc_flux_UOS.csv
+                file: <conc_flux_file>
                 separator: " "
                 n_head_lines: 1
                 format:
@@ -70,13 +79,11 @@ problem: !Coupling_Sequential
                     time: $0
                   value: $1
       input_fields:
-        - region: box
-          porosity: 0.01
-        - region: EDZ_2D
-          porosity: 0.01
-        - region: fractures
-          porosity: 1
-        - region: [.box_inner, .fr_inner]
+        - region: [box, fractures]
+          porosity: !FieldFE
+            mesh_data_file: <input_fields_file>
+            field_name: porosity
+        - region: [.box_boreholes, .fr_boreholes]
           bc_type: total_flux
           bc_flux: !FieldFormula
             value: bc_flux_x * bc_flux_t
@@ -84,7 +91,8 @@ problem: !Coupling_Sequential
       solver:
         a_tol: <trans_solver__a_tol>
         r_tol: <trans_solver__r_tol>
-        options: <trans_solver__options>
+        options: -ksp_type gmres -pc_type ilu -pc_factor_levels 2 -ksp_diagonal_scale -ksp_diagonal_scale_fix -pc_factor_fill 1.0 -ksp_monitor
+
       output:    
         fields:
         - field: conc

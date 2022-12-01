@@ -200,7 +200,3 @@ def one_borehole(cfg_geom:dotdict, fractures:List['Fracture'], cfg_mesh:dotdict)
     del factory
     return File(mesh_file)
 
-def fullscale_transport_mesh(cfg_fullscale):
-    main_box_dimensions = cfg_fullscale.geometry.box_dimensions
-    fractures = mesh_tools.generate_fractures(cfg_fullscale.fractures, main_box_dimensions)
-    return one_borehole(cfg_fullscale.geometry, fractures, cfg_fullscale.mesh)

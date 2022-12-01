@@ -6,16 +6,17 @@ from bgem.stochastic import fracture
 from endorse.common import dotdict
 
 
-def generate_fractures(cfg_frac:dotdict, box_dimensions:List[float]) -> List[fracture.Fracture]:
+def generate_fractures(cfg_frac:dotdict, box_dimensions:List[float], seed) -> List[fracture.Fracture]:
     """
     Generate set of stochastic fractures.
     """
+    np.random.seed(seed)
     max_fr_size = np.max(box_dimensions)
 
     volume = np.product(box_dimensions)
     pop = fracture.Population(volume)
     pop.initialize(cfg_frac.population)
-    pop.set_sample_range([10, max_fr_size], sample_size=cfg_frac.n_frac_limit)
+    pop.set_sample_range([None, max_fr_size], sample_size=cfg_frac.n_frac_limit)
 
     print("total mean size: ", pop.mean_size())
 

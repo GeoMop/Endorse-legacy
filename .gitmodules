@@ -11,3 +11,6 @@
 [submodule "submodules/bih"]
 	path = submodules/bih
 	url = git@github.com:flow123d/bih.git
+[submodule "submodules/MLMC"]
+	path = submodules/MLMC
+	url = git@github.com:GeoMop/MLMC.git
