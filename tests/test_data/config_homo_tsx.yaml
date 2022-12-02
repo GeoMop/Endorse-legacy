@@ -175,7 +175,7 @@ transport_fullscale:
     # The mesh to use in both simulations.
     input_template: transport_fullscale_tmpl.yaml
     piezo_head_input_file: "test_data/large_model_local.msh2"
-    conc_flux_file: "test_data/conc_flux_UOS_[kg:y].csv"
+    conc_flux_file: "test_data/conc_flux_UOS.csv"
 
     flow_solver__a_tol: 1e-10
     flow_solver__r_tol: 1e-5
