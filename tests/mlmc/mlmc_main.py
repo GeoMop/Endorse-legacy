@@ -14,8 +14,15 @@ from mlmc.plot.plots import Distribution
 from mlmc.tool.process_base import ProcessBase
 from mlmc import estimator
 from mlmc.quantity.quantity_estimate import estimate_mean, moments
-from fullscale_transport_sim import FullScaleTransportSim
-from endorse import common
+from mlmc.tool.fullscale_transport_sim import FullScaleTransportSim
+
+import os.path
+from typing import *
+import yaml
+import shutil
+#from pathlib import Path
+#from yamlinclude import YamlIncludeConstructor
+
 
 """
 tested parameters: run ../ --clean
@@ -25,15 +32,17 @@ tested parameters: run ../ --clean
 class FullScaleTransport:
 
     def __init__(self):
-        args = ProcessBase.get_arguments(sys.argv[1:])
+        args = FullScaleTransport.get_arguments(sys.argv[1:])
 
         self.work_dir = os.path.abspath(args.work_dir)
+        self.singularity_path = os.path.abspath(args.singularity_path)
+        self.endorse_repository = os.path.abspath(args.endorse_dir)
         # Add samples to existing ones
         self.clean = args.clean
         # Remove HDF5 file, start from scratch
         self.debug = args.debug
         # 'Debug' mode is on - keep sample directories
-        self.use_pbs = False
+        self.use_pbs = True
         # Use PBS sampling pool
         self.n_levels = 1
         self.n_moments = 25
@@ -89,14 +98,20 @@ class FullScaleTransport:
         sampling_pool = self.create_sampling_pool()
 
         # General simulation config
-        conf_file = os.path.join(self.work_dir, "test_data/config_homogenisation.yaml")
-        cfg = common.load_config(conf_file)
-        cfg['work_dir'] = self.work_dir
+        # conf_file = os.path.join(self.work_dir, "test_data/config_homogenisation.yaml")
+        # cfg = self.load_config(conf_file)
+        config = {}
+        config['work_dir'] = self.work_dir
+        config["flow_executable"] = ["flow123d"]
+        config["mesh_steps"] = {self.level_parameters[0][0]: 50} # @TODO: check values
+        #config = dict(work_dir=self.work_dir)
         # cfg.flow_env["flow_executable"] = ["docker", "run", "-v", "{}:{}".format(os.getcwd(), os.getcwd()),
         #                                    "flow123d/flow123d-gnu:3.9.1", "flow123d"]
+        #cfg.flow_env["flow_executable"] = ["flow123d"]
+
 
         # Create simulation factory, instance of class that inherits from mlmc.sim.simulation
-        simulation_factory = FullScaleTransportSim(config=cfg)
+        simulation_factory = FullScaleTransportSim(config=config)
 
         # Create HDF sample storage
         sample_storage = SampleStorageHDF(file_path=os.path.join(self.work_dir, "mlmc_{}.hdf5".format(self.n_levels)))
@@ -106,6 +121,19 @@ class FullScaleTransport:
                           level_parameters=self.level_parameters)
 
         return sampler
+
+    # def load_config(self, path):
+    #     """
+    #     Load configuration from given file replace, dictionaries by dotdict
+    #     uses pyyaml-tags namely for:
+    #     include tag:
+    #         geometry: <% include(path="config_geometry.yaml")>
+    #     """
+    #     #YamlIncludeConstructor.add_to_loader_class(loader_class=yaml.FullLoader, base_dir=os.path.dirname(path))
+    #     with open(path) as f:
+    #         cfg = yaml.load(f, Loader=yaml.FullLoader)
+    #     print("cfg ", cfg)
+    #     return cfg#dotdict.create(cfg)
 
     def set_environment_variables(self):
         """
@@ -119,13 +147,13 @@ class FullScaleTransport:
         if tail == 'storage' or tail == 'auto':
             # Metacentrum
             self.sample_sleep = 30
-            self.init_sample_timeout = 600
+            #self.init_sample_timeout = 600
             self.sample_timeout = 60
             self.adding_samples_coef = 0.1
         else:
             # Local
             self.sample_sleep = 1
-            self.init_sample_timeout = 60
+            #self.init_sample_timeout = 60
             self.sample_timeout = 60
             self.adding_samples_coef = 0.1
 
@@ -141,24 +169,34 @@ class FullScaleTransport:
         sampling_pool = SamplingPoolPBS(work_dir=self.work_dir, debug=self.debug)
         # sampling_pool = OneProcessPool(work_dir=self.work_dir, debug=self.debug)
 
+        # singularity_path = "/storage/liberec3-tul/home/martin_spetlik/Endorse_MS_full_transport/tests/mlmc/endorse.sif"
+        # endorse_repository="/storage/liberec3-tul/home/martin_spetlik/Endorse_full_transport"
+
         pbs_config = dict(
             n_cores=1,
             n_nodes=1,
-            select_flags={'cgroups': 'cpuacct', 'scratch_local': '10gb'},
-            mem='1Gb',
-            queue='charon',
+            select_flags=['cgroups=cpuacct', 'scratch_local=10gb'],
+            mem='8Gb',
+            queue='charon_2h',
             pbs_name='flow123d',
-            walltime='72:00:00',
+            walltime='2:00:00',
             optional_pbs_requests=[],  # e.g. ['#PBS -m ae', ...]
             home_dir='/storage/liberec3-tul/home/martin_spetlik/',
-            python='python3.8',
-            env_setting=['cd $MLMC_WORKDIR',
-                         'module load python/3.8.0-gcc',
-                         'source env/bin/activate',
-                         'module use /storage/praha1/home/jan-hybs/modules',
-                         'module load flow123d',
-                         'module unload python-3.6.2-gcc',
-                         'module unload python36-modules-gcc'],
+            python='singularity exec {} venv/bin/python3'.format(self.singularity_path),
+            #python='singularity exec {} /usr/bin/python3'.format(self.singularity_path),
+            env_setting=[#'cd $MLMC_WORKDIR',
+                         "export SINGULARITY_TMPDIR=$SCRATCHDIR",
+                         "export PIP_IGNORE_INSTALLED=0",
+                         'cd {}'.format(self.endorse_repository),
+                         'singularity exec {} ./setup.sh'.format(self.singularity_path),
+                         'singularity exec {} venv/bin/python3 -m pip install scikit-learn'.format(self.singularity_path)
+                         #'module load python/3.8.0-gcc',
+                         #'source env/bin/activate',
+                         #'module use /storage/praha1/home/jan-hybs/modules',
+                         #'module load flow123d',
+                         #'module unload python-3.6.2-gcc',
+                         #'module unload python36-modules-gcc'
+                         ],
             scratch_dir=None
         )
 
@@ -301,6 +339,61 @@ class FullScaleTransport:
             level_parameters.append([step_range[0] ** (1 - level_param) * step_range[1] ** level_param])
         return level_parameters
 
+
+# class dotdict(dict):
+#     """
+#     dot.notation access to dictionary attributes
+#     TODO: keep somehow reference to the original YAML in order to report better
+#     KeyError origin.
+#     """
+#     __setattr__ = dict.__setitem__
+#     __delattr__ = dict.__delitem__
+#
+#     def __getattr__(self, item):
+#         try:
+#             return self[item]
+#         except KeyError:
+#             return self.__getattribute__(item)
+#
+#     @classmethod
+#     def create(cls, cfg : Any):
+#         """
+#         - recursively replace all dicts by the dotdict.
+#         """
+#         if isinstance(cfg, dict):
+#             items = ( (k, cls.create(v)) for k,v in cfg.items())
+#             return dotdict(items)
+#         elif isinstance(cfg, list):
+#             return [cls.create(i) for i in cfg]
+#         elif isinstance(cfg, tuple):
+#             return tuple([cls.create(i) for i in cfg])
+#         else:
+#             return cfg
+    @staticmethod
+    def get_arguments(arguments):
+        """
+        Getting arguments from console
+        :param arguments: list of arguments
+        :return: namespace
+        """
+        import argparse
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument('command', choices=['run', 'collect', 'renew'],
+                            help='run - create new execution,'
+                                 'collect - keep collected, append existing HDF file'
+                                 'renew - renew failed samples, run new samples with failed sample ids (which determine random seed)')
+        parser.add_argument('work_dir', help='Work directory')
+        parser.add_argument('singularity_path', help='Path to singularity image')
+        parser.add_argument('endorse_dir', help='Path to endorse repository')
+        parser.add_argument("-c", "--clean", default=False, action='store_true',
+                            help="Clean before run, used only with 'run' command")
+        parser.add_argument("-d", "--debug", default=False, action='store_true',
+                            help="Keep sample directories")
+
+        args = parser.parse_args(arguments)
+
+        return args
 
 if __name__ == "__main__":
     pr = FullScaleTransport()
