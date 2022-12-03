@@ -32,33 +32,38 @@ def fullscale_transport(cfg, source_params, seed):
     """
 
     cfg_fine = cfg.transport_fullscale
+    large_model = File(os.path.basename(cfg_fine.piezo_head_input_file))
+    conc_flux = File(os.path.basename(cfg_fine.conc_flux_file))
+    plots.plot_source(conc_flux)
+
     full_mesh_file, fractures = fullscale_transport_mesh(cfg, cfg_fine.mesh, seed)
 
     full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol = 1e-4)
-    el_to_fr = fracture_map(full_mesh, fractures)
+    el_to_ifr = fracture_map(full_mesh, fractures)
     #mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
     #mesh_modified = Mesh.load_mesh(mesh_modified_file)
 
-    input_fields_file, est_velocity = compute_fields(cfg, full_mesh, el_to_fr)
-    large_model = File(os.path.basename(cfg_fine.piezo_head_input_file))
-    conc_flux = File(os.path.basename(cfg_fine.conc_flux_file))
+    input_fields_file, est_velocity = compute_fields(cfg, full_mesh, el_to_ifr, fractures)
     params = cfg_fine.copy()
 
     # estimate times
     bulk_vel_est, fr_vel_est = est_velocity
-    end_time = 50 / bulk_vel_est + 50 / fr_vel_est
-    dt = 0.1 / bulk_vel_est
+    end_time = (50 / bulk_vel_est + 50 / fr_vel_est)
+    dt = 0.5 / bulk_vel_est
     # convert to years
     year = 365.2425 * 24 * 60 * 60
     end_time = end_time / year
     dt = dt / year
+
+    #end_time = 10 * dt
     new_params = dict(
         mesh_file=input_fields_file,
         piezo_head_input_file=large_model,
         conc_flux_file=conc_flux,
         input_fields_file = input_fields_file,
         end_time = end_time,
-        max_time_step = dt
+        max_time_step = dt,
+        output_step = 10 * dt
     )
     params.update(new_params)
     params.update(set_source_limits(cfg))
@@ -89,9 +94,9 @@ def fracture_map(mesh, fractures) -> Dict[int, Fracture]:
     # else:
     iel_to_orig_reg = mesh.map_regions(new_reg_map)
 
-    reg_to_fr = {own_to_gmsh_id[fr.region.id]: fr for fr in fractures}
-    elm_to_fr = {el_idx: reg_to_fr[reg_id] for el_idx, (reg_id, dim) in iel_to_orig_reg.items()}
-    return elm_to_fr
+    reg_to_ifr = {own_to_gmsh_id[fr.region.id]: ifr for ifr, fr in enumerate(fractures)}
+    elm_to_ifr = {el_idx: reg_to_ifr[reg_id] for el_idx, (reg_id, dim) in iel_to_orig_reg.items()}
+    return elm_to_ifr
 
 def set_source_limits(cfg):
     geom = cfg.geometry
@@ -109,7 +114,7 @@ def set_source_limits(cfg):
     return source_params
 
 
-def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, Fracture]):
+def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, int], fractures:List[Fracture]):
     """
     :param params: transport parameters dictionary
     :param mesh: GmshIO of the computational mesh (read only)
@@ -119,8 +124,9 @@ def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, Fracture]):
     cfg_geom = cfg.geometry
     cfg_trans = cfg.transport_fullscale
 
-    #
+
     cfg_bulk_fields = cfg_trans.bulk_field_params
+
     conductivity = np.full( (len(mesh.elements),), float(cfg_bulk_fields.cond_min))
     cross_section = np.full( (len(mesh.elements),), float(1.0))
     porosity = np.full((len(mesh.elements),), 1.0)
@@ -136,10 +142,14 @@ def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, Fracture]):
     plots.plot_field(mesh.el_barycenters()[el_slice_3d], bulk_por, file="porosity_yz.pdf")
 
     # Fracture
+    cfg_fr = cfg_trans.fractures
     cfg_fr_fields = cfg_trans.fr_field_params
     el_slice_2d = mesh.el_dim_slice(2)
     logging.info(f"2D slice: {el_slice_2d}")
-    fr_cond, fr_cross, fr_por = apply_fields.fr_fields(cfg_fr_fields, mesh.elements[el_slice_2d], el_slice_2d.start, fr_map)
+    i_default = len(fractures)
+    fr_map_slice = [fr_map.get(i, i_default) for i in range(el_slice_2d.start, el_slice_2d.stop)]
+    fr_cond, fr_cross, fr_por = apply_fields.fr_fields_repo(cfg_fr, cfg_fr_fields,
+                                                            mesh.elements[el_slice_2d], fr_map_slice, fractures)
     conductivity[el_slice_2d] = fr_cond
     cross_section[el_slice_2d] = fr_cross
     porosity[el_slice_2d] = fr_por

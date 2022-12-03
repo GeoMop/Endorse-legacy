@@ -95,12 +95,19 @@ problem: !Coupling_Sequential
           porosity: !FieldFE
             mesh_data_file: <input_fields_file>
             field_name: porosity
+
+          diff_m: <diffusivity_effective>
+          disp_l: <dispersivity_L>
+          disp_t: <dispersivity_T>
+
         - region: [.box_boreholes, .fr_bore]
           bc_type: total_flux
           bc_flux: !FieldFormula
-            value: bc_flux_x * bc_flux_t
-            unit: kg*m*md/y
-
+            #value: bc_flux_x * bc_flux_t / (365.2425 * 24 * 3600)
+            value: bc_flux_x * bc_flux_t / (365.2425 * 2.4 * 3.6)
+            #unit: kg*m*md/y  unfortunately does not work so we scale manually from kg/y/m2 to kg/s/m2
+            # even for nonzero diffusion getting zero mass in balance and substantial error (since fluxes are taken from field evaluation)
+            # trying some scaling in between (could be interpreted as change in conc unit anyway)
       solver:
         a_tol: <trans_solver__a_tol>
         r_tol: <trans_solver__r_tol>
@@ -115,10 +122,19 @@ problem: !Coupling_Sequential
       format: !vtk
         variant: ascii
       times:
-        - step: [1000, 'y']
+        - step: [<output_step>, 'y']
     time:
       end_time: [<end_time>, 'y']
       max_dt: [<max_time_step>, 'y']
+      dt_limits:
+        - time: [0, 'y']
+          dt_max: [30, 'y']
+        - time: [60, 'y']
+          dt_max: [60, 'y']
+        - time: [540, 'y']
+          dt_max: [120, 'y']
+        - time: [1200, 'y']
+          dt_max: [<max_time_step>, 'y']
       common_time_unit: y
       write_used_timesteps: time_steps.yaml
     balance:
