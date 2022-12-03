@@ -1,4 +1,9 @@
-
+numba
+pyyaml
+pyyaml-include
+matplotlib
+numpy
+scipy
 pytest
 tox
 tox-gh-actions

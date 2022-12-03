@@ -1,5 +1,5 @@
-import logging
 import os
+import shutil
 from typing import *
 
 import numpy as np
@@ -11,7 +11,6 @@ from .homogenisation import  subdomains_mesh, Homogenisation, Subdomain, MacroSp
 from .mesh.repository_mesh import one_borehole
 from .mesh_class import Mesh
 from . import apply_fields
-from . import plots
 from bgem.stochastic.fracture import Fracture
 
 def input_files(cfg_tr_full):
@@ -34,36 +33,32 @@ def fullscale_transport(cfg, source_params, seed):
     cfg_fine = cfg.transport_fullscale
     full_mesh_file, fractures = fullscale_transport_mesh(cfg, cfg_fine.mesh, seed)
 
-    full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol = 1e-4)
+    full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol=1e-4)
     el_to_fr = fracture_map(full_mesh, fractures)
-    #mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
-    #mesh_modified = Mesh.load_mesh(mesh_modified_file)
+    # mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
+    # mesh_modified = Mesh.load_mesh(mesh_modified_file)
 
-    input_fields_file, est_velocity = compute_fields(cfg, full_mesh, el_to_fr)
+    # copy files to sample dir
+    shutil.copy(os.path.join(cfg["work_dir"], cfg_fine.piezo_head_input_file), os.getcwd())
+    shutil.copy(os.path.join(cfg["work_dir"], cfg_fine.conc_flux_file), os.getcwd())
+
+    input_fields_file = compute_fields(cfg, full_mesh, el_to_fr)
     large_model = File(os.path.basename(cfg_fine.piezo_head_input_file))
     conc_flux = File(os.path.basename(cfg_fine.conc_flux_file))
-    params = cfg_fine.copy()
 
-    # estimate times
-    bulk_vel_est, fr_vel_est = est_velocity
-    end_time = 50 / bulk_vel_est + 50 / fr_vel_est
-    dt = 0.1 / bulk_vel_est
-    # convert to years
-    year = 365.2425 * 24 * 60 * 60
-    end_time = end_time / year
-    dt = dt / year
+    params = cfg_fine.copy()
     new_params = dict(
         mesh_file=input_fields_file,
         piezo_head_input_file=large_model,
         conc_flux_file=conc_flux,
-        input_fields_file = input_fields_file,
-        end_time = end_time,
-        max_time_step = dt
+        input_fields_file=input_fields_file
     )
     params.update(new_params)
     params.update(set_source_limits(cfg))
     template = os.path.join(common.flow123d_inputs_path, cfg_fine.input_template)
-    common.call_flow(cfg.flow_env, template, params)
+    fo = common.call_flow(cfg.flow_env, template, params)
+
+    return fo
 
 def fracture_map(mesh, fractures) -> Dict[int, Fracture]:
     """
@@ -121,24 +116,18 @@ def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, Fracture]):
 
     #
     cfg_bulk_fields = cfg_trans.bulk_field_params
-    conductivity = np.full( (len(mesh.elements),), float(cfg_bulk_fields.cond_min))
-    cross_section = np.full( (len(mesh.elements),), float(1.0))
+    conductivity = np.full((len(mesh.elements),), cfg_bulk_fields.cond_min)
+    cross_section = np.full((len(mesh.elements),), 1.0)
     porosity = np.full((len(mesh.elements),), 1.0)
     # Bulk fields
     el_slice_3d = mesh.el_dim_slice(3)
     bulk_cond, bulk_por = apply_fields.bulk_fields_mockup(cfg_geom, cfg_bulk_fields, mesh.el_barycenters()[el_slice_3d])
     conductivity[el_slice_3d] = bulk_cond
     porosity[el_slice_3d] = bulk_por
-    logging.info(f"3D slice: {el_slice_3d}")
-    c_min, c_max = np.min(conductivity), np.max(conductivity)
-    logging.info(f"cond range: {c_min}, {c_max}")
-    plots.plot_field(mesh.el_barycenters()[el_slice_3d], bulk_cond, file="conductivity_yz.pdf")
-    plots.plot_field(mesh.el_barycenters()[el_slice_3d], bulk_por, file="porosity_yz.pdf")
 
     # Fracture
     cfg_fr_fields = cfg_trans.fr_field_params
     el_slice_2d = mesh.el_dim_slice(2)
-    logging.info(f"2D slice: {el_slice_2d}")
     fr_cond, fr_cross, fr_por = apply_fields.fr_fields(cfg_fr_fields, mesh.elements[el_slice_2d], el_slice_2d.start, fr_map)
     conductivity[el_slice_2d] = fr_cond
     cross_section[el_slice_2d] = fr_cross
@@ -149,32 +138,12 @@ def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, Fracture]):
         porosity=porosity
     )
     cond_file = mesh.write_fields("input_fields.msh2", fields)
-
-    # estimate velocities on bulk and fracture
-    # for cond range 1e-13 - 1e-9 and porosity about 1, we have velocity 1e-16  to 5.5e-10
-    # i.e velocity about the order of conductivity or one order less
-    # for fracture, cond range:
-
-    pos_fr = fr_cond > 0
-    est_velocity = (np.quantile(bulk_cond, 0.4)/10, np.quantile(fr_cond[pos_fr],  0.4))
-    return cond_file, est_velocity
+    return cond_file
 
 
-@report
+
 @memoize
 def fullscale_transport_mesh(cfg, cfg_mesh, seed):
     main_box_dimensions = cfg.geometry.box_dimensions
     fractures = mesh_tools.generate_fractures(cfg.fractures, main_box_dimensions, seed)
     return one_borehole(cfg.geometry, fractures, cfg_mesh), fractures
-
-
-# def transport_observe_points(cfg):
-#     cfg_geom = cfg.geometry
-#     lx, ly, lz = cfg_geom.box_dimensions
-#     np.
-#     with "observe_points.csv":
-#
-# observe_points:
-# - [0, 0.1, 0]
-# - {point: [0.55, 0.55, 0], snap_region: 1d_lower}
-# - {point: [0.7, 0.8, 0], snap_region: 1d_upper}
