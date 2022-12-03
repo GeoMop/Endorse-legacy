@@ -2,20 +2,12 @@
 
 export SINGULARITY_TMPDIR=$SCRATCHDIR
 
-#singularity build docker://flow123d/endorse:latest
+ENDORSE_DOCKER="docker://flow123d/endorse:latest"
+ENDORSE_REPOSITORY="/storage/liberec3-tul/home/martin_spetlik/Endorse_full_transport"
+RUN_SCRIPT_DIR="/storage/liberec3-tul/home/martin_spetlik/Endorse_MS_full_transport/tests/mlmc"
 
-#singularity build endorse.sif docker://flow123d/endorse:latest
+cd $ENDORSE_REPOSITORY
+singularity exec $ENDORSE_DOCKER ./setup.sh
 
-
-cd /storage/liberec3-tul/home/martin_spetlik/Endorse_full_transport
-
-singularity exec docker://flow123d/endorse:latest ./setup.sh
-
-#singularity exec docker://flow123d/endorse:latest . venv/bin/activate
-
-cd /storage/liberec3-tul/home/martin_spetlik/Endorse_MS_full_transport/tests/mlmc
-
-singularity exec docker://flow123d/endorse:latest python3 fullscale_transport.py run ../ --clean
-
-
-#./storage/liberec3-tul/home/martin_spetlik/Endorse_full_transport/setup.sh
+cd $RUN_SCRIPT_DIR
+singularity exec $ENDORSE_DOCKER python3 fullscale_transport.py run ../ --clean
