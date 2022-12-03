@@ -103,12 +103,12 @@ class FullScaleTransport:
         config = {}
         config['work_dir'] = self.work_dir
         config["flow_executable"] = ["flow123d"]
-        print("self.level_parameters[0][0] ", self.level_parameters)
         config["mesh_steps"] = {self.level_parameters[0][0]: 50} # @TODO: check values
         #config = dict(work_dir=self.work_dir)
         # cfg.flow_env["flow_executable"] = ["docker", "run", "-v", "{}:{}".format(os.getcwd(), os.getcwd()),
         #                                    "flow123d/flow123d-gnu:3.9.1", "flow123d"]
         #cfg.flow_env["flow_executable"] = ["flow123d"]
+
 
         # Create simulation factory, instance of class that inherits from mlmc.sim.simulation
         simulation_factory = FullScaleTransportSim(config=config)

@@ -41,18 +41,19 @@ def bulk_fields_mockup(cfg_geom, cfg_fields, XYZ):
     Z_rel = Z / cfg_fields.v_axis
 
     # distance from center, 1== edz_radius
-    distance = np.sqrt((Y_rel * Y_rel + Z_rel * Z_rel)) / (edz_r)
+    distance = np.sqrt((Y_rel * Y_rel + Z_rel * Z_rel)) - in_r
+    theta = distance / (edz_r - in_r)
 
-    theta = (1 - distance)/(1 - in_r)
     cond_max = float(cfg_fields.cond_max)
     cond_min = float(cfg_fields.cond_min)
-    cond_field = np.minimum(cond_max, np.maximum(cond_min, np.exp(theta * np.log(cond_max) + (1-theta) * np.log(cond_min))))
+    cond_field = np.exp((1-theta) * np.log(cond_max) + theta * np.log(cond_min))
+    cond_field = np.minimum(cond_max, np.maximum(cond_min, cond_field))
     #abs_dist = np.sqrt(Y * Y + Z * Z)
     #cond_field[abs_dist < cfg_geom.borehole.radius] = 1e-18
 
     por_max = float(cfg_fields.por_max)
     por_min = float(cfg_fields.por_min)
-    por_field = np.minimum(por_max, np.maximum(por_min, np.exp(theta * np.log(por_max) + (1-theta) * np.log(por_min))))
+    por_field = np.minimum(por_max, np.maximum(por_min, np.exp((1-theta) * np.log(por_max) + theta * np.log(por_min))))
     #cond_field[abs_dist < cfg_geom.borehole.radius] = 1e-18
     #print({(i+1):cond for i,cond in enumerate(cond_field)})
 
@@ -61,7 +62,7 @@ def bulk_fields_mockup(cfg_geom, cfg_fields, XYZ):
 viscosity = 1e-3
 gravity_accel = 10
 density = 1000
-permeability_to_conductivity = viscosity * gravity_accel * density
+permeability_to_conductivity = gravity_accel * density / viscosity
 def fr_fields(cfg_fr_fields, fr_elements, i_begin,  fr_map):
     """
     :param cfg_fr_fields:
@@ -77,7 +78,9 @@ def fr_fields(cfg_fr_fields, fr_elements, i_begin,  fr_map):
             fr_r[iel] = fr.r
         except KeyError:
             pass
+    # cross = 0.001
     cross = float(cfg_fr_fields.apperture_per_size) * fr_r
+    # cond = 0.01
     cond = permeability_to_conductivity/12 * cross * cross
     porosity = np.full_like(cond, 1.0)
     return cond, cross, porosity

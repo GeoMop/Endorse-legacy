@@ -19,7 +19,7 @@ problem: !Coupling_Sequential
     iteration_parameter: 1 # affects convergence of HM coupling (defaults to 1, lower value sometimes helps)
     a_tol: 0
     r_tol: 1e-7
-    flow_equation: !Flow_Richards_LMH
+    flow_equation: !Flow_Darcy_LMH
         nonlinear_solver:
           linear_solver: !Petsc
             a_tol: <flow_solver__a_tol>
@@ -38,11 +38,11 @@ problem: !Coupling_Sequential
             # bulk compressibility beta_s=1/K = (3(1-2pr)/E)
             # porosity nu=0.007
             # water compressibility beta_w=0 1/Pa
-            init_pressure: 300
+            init_pressure: <init_pressure>
 
           - region: .outer_boundary
             bc_type: dirichlet
-            bc_pressure: 300 # 3MPa = p = h*rho*g => h = 300 m
+            bc_pressure: <init_pressure> # 3MPa = p = h*rho*g => h = 300 m
 
 #          - region: .tunnel
 #            bc_type: dirichlet
@@ -53,7 +53,7 @@ problem: !Coupling_Sequential
             time: 0
             bc_type: dirichlet
             bc_pressure: !FieldFormula
-              value: 300*(-1/(<bored_time>*86400)*t + 1) # 1d=86400s
+              value: <init_pressure>*(-1/(<bored_time>*86400)*t + 1) # 1d=86400s
           - region: .tunnel
             time: <bored_time>
             bc_type: dirichlet
@@ -61,18 +61,19 @@ problem: !Coupling_Sequential
 
         output:
           times: <output_times>
-          fields: []
+          fields: #[]
+            - conductivity
 #            - { field: conductivity, interpolation: P1_average }
 #            - piezo_head_p0
-#            - pressure_p0
+            - pressure_p0
 #            - velocity_p0
 #            - region_id
           observe_fields: [pressure_p0]
         #balance:
           #cumulative: true
         output_stream:
-          file: flow.pvd
-          format: !vtk
+          file: flow_fields.msh
+          format: !gmsh
           observe_points: &observe_points
             - { name: HGT1-5, point: [ 0, 3.25, 0 ] }  # HGT1-5: 3.5/2 + 1.5
             - { name: HGT1-4, point: [ 0, 5.75, 0 ] }  # HGT1-4: 3.5/2 + 4
@@ -80,15 +81,15 @@ problem: !Coupling_Sequential
             - { name: HGT2-3, point: [ 6.1875, 0, 0 ] }  # HGT2-3: 4.375/2 + 4
     mechanics_equation:
         output_stream:
-          file: mechanics.pvd
-          format: !vtk
+          file: mechanics_fields.msh
+          format: !gmsh
 #          observe_points: *observe_points
         output:
           times: <output_times>
-          fields: []
+          fields: # []
 #            - { field: displacement, interpolation: P1_average }
 #            - stress
-#            - displacement_divergence
+            - displacement_divergence
 #            - mean_stress
 #            - von_mises_stress
 #            - initial_stress

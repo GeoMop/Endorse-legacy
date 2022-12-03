@@ -5,6 +5,7 @@ import time
 import yaml
 import shutil
 import aux_functions
+import pandas
 
 from flow123d_simulation import endorse_2Dtest
 
@@ -67,14 +68,17 @@ if __name__ == "__main__":
     config_dict = setup(output_dir, can_overwrite=False, clean=False)
 
     print("Reading parameters from CSV: ", csv_data)
-    with open(csv_data, newline='') as csvfile:
-        reader = csv.reader(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
-        header = next(reader)  # skip the header
-        parameters = list()
-        for row in reader:
-            # process each row
-            parameters.append(row)
+    df = pandas.read_csv(csv_data, dtype={'N': 'int'})
+    # with open(csv_data, newline='') as csvfile:
+    #     reader = csv.reader(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
+    #     header = next(reader)  # skip the header
+    #     parameters = list()
+    #     for row in reader:
+    #         # process each row
+    #         parameters.append(row)
 
+    parameters = df.values
+    print(df.columns.tolist())
     print(parameters)
 
     # TODO: select random params

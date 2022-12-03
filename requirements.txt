@@ -1,12 +1,10 @@
-
-bih
-bgem
 numba
 pyyaml
 pyyaml-include
-pytest
 matplotlib
 numpy
 scipy
+pytest
 tox
 tox-gh-actions
+

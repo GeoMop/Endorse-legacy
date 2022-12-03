@@ -1,4 +1,5 @@
 import os
+import shutil
 from typing import *
 
 import numpy as np
@@ -32,25 +33,32 @@ def fullscale_transport(cfg, source_params, seed):
     cfg_fine = cfg.transport_fullscale
     full_mesh_file, fractures = fullscale_transport_mesh(cfg, cfg_fine.mesh, seed)
 
-    full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol = 1e-4)
+    full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol=1e-4)
     el_to_fr = fracture_map(full_mesh, fractures)
-    #mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
-    #mesh_modified = Mesh.load_mesh(mesh_modified_file)
+    # mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
+    # mesh_modified = Mesh.load_mesh(mesh_modified_file)
+
+    # copy files to sample dir
+    shutil.copy(os.path.join(cfg["work_dir"], cfg_fine.piezo_head_input_file), os.getcwd())
+    shutil.copy(os.path.join(cfg["work_dir"], cfg_fine.conc_flux_file), os.getcwd())
 
     input_fields_file = compute_fields(cfg, full_mesh, el_to_fr)
     large_model = File(os.path.basename(cfg_fine.piezo_head_input_file))
     conc_flux = File(os.path.basename(cfg_fine.conc_flux_file))
+
     params = cfg_fine.copy()
     new_params = dict(
         mesh_file=input_fields_file,
         piezo_head_input_file=large_model,
         conc_flux_file=conc_flux,
-        input_fields_file = input_fields_file
+        input_fields_file=input_fields_file
     )
     params.update(new_params)
     params.update(set_source_limits(cfg))
     template = os.path.join(common.flow123d_inputs_path, cfg_fine.input_template)
-    common.call_flow(cfg.flow_env, template, params)
+    fo = common.call_flow(cfg.flow_env, template, params)
+
+    return fo
 
 def fracture_map(mesh, fractures) -> Dict[int, Fracture]:
     """

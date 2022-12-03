@@ -1,19 +1,10 @@
-# The flow executable and arguments to use.
-# JB: ABSOLUTE PATH
-#flow_executable:
-#  - /home/jb/workspace/flow123d_JB/bin/fterm
-#  - --no-term
-#  - rel
-#  - run
-#finish_sleep: 0
-#metacentrum: false
 
-# reuse existing sample directories and existing results
-# None - clean dir
-# False - keep dir, rerun process.py
-# True - reuse existing results
-#reuse_samples: true
-
+pe_flow_env: &pe_config
+    flow_executable:
+    # release
+    - /home/paulie/Workspace/flow123d/bin/fterm
+    - --no-term
+    - run
 
 jb_flow_env: &jb_config
     flow_executable:
@@ -39,7 +30,7 @@ mc_samples: 10
 
 copy_files: [transport_2022_5_tmpl.yaml,  conc_flux_UOS.csv, large_model.msh]
 
-geometry: &one_borehole_geometry !include config_geometry.yaml 
+geometry: &one_borehole_geometry !include config_geometry.yaml
 fractures: &fractures
     population:  !include config_fractures.yaml
     # upper limit on the number of fractures
@@ -73,15 +64,17 @@ fine_conductivity_interpolated:
         20: 1.0
 
 bulk_field_parametric: &bulk_field_parametric
-    cond_max: 1e-14
-    cond_min: 1e-16
+    cond_zero: 1e-15
+    cond_max: 1e-9  # permeability 1e-16
+    cond_min: 1e-13  # permeability 1e-18
     por_max: 0.8
     por_min: 0.4
 
-    # axis wit respect to EDZ radius
+    # values with respect to EDZ radius
     h_axis: 1.5
     v_axis: 2
-    inner_radius: 0.5
+    # radius for c_min
+    inner_radius: 1.1
 
 
 
@@ -173,7 +166,7 @@ transport_fullscale:
 
     bulk_field_params: *bulk_field_parametric
     fr_field_params:
-        apperture_per_size: 1e-4  # 1e-4 = 1mm na 10m
+        apperture_per_size: 1e-5  # 1e-4 = 1mm na 10m
         fr_conductivity: 2.5e-3     # k = 1/12 * cs^2 * rho*g/visc = 1/12 1e-8 * 1000*10*1e3 =approx. 1e-2 ; cs=1e-4
         #sigma_bulk_conductivity: 1e-7
         min_fr_cross_section: 5e-5
@@ -182,11 +175,7 @@ transport_fullscale:
     # The mesh to use in both simulations.
     input_template: transport_fullscale_tmpl.yaml
     piezo_head_input_file: "test_data/large_model_local.msh2"
-    conc_flux_file: "test_data/conc_flux_UOS.csv"
-
-    default_conductivity: 1e-16
-    bulk_conductivity: 1e-8
-    edz2d_conductivity:
+    conc_flux_file: "test_data/conc_flux_UOS_[kg:y].csv"
 
     flow_solver__a_tol: 1e-10
     flow_solver__r_tol: 1e-5
@@ -247,3 +236,16 @@ transport_fullscale:
 #        #options: -ksp_type gmres -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_strong_threshold 0.5 -ksp_monitor
 #        # it: 696 r_tol 1e-7
 #        #opti
+
+    #heat_solver__options: -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor
+    # faild fo indef PC
+    #heat_solver__options: -ksp_type gmres -pc_type hypre -pc_hypre_type boomeramg  -pc_hypre_boomeramg_coarsen_type PMIS -pc_hypre_boomeramg_strong_threshold 0.5  -ksp_monitor
+    # failed do to 1000 iterations
+    # heat_solver__options: -ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps
+    # out of memory 12GB
+    trans_solver__options: -ksp_type gmres -pc_type ilu -pc_factor_levels 3 -ksp_diagonal_scale -ksp_diagonal_scale_fix -pc_factor_fill 1.0 -ksp_monitor
+
+  # edz_phys_group: 77
+
+
+tsx_hm_model: !include config_tsx.yaml
