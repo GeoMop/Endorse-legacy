@@ -21,7 +21,7 @@ def input_files(cfg_tr_full):
         cfg_tr_full.conc_flux_file
     ]
 
-def fullscale_transport(cfg, source_params, seed):
+def fullscale_transport(cfg_path, source_params, seed):
     """
     1. apply conouctivity to given mesh:
        - on borehole neighbourhood, select elements
@@ -31,10 +31,13 @@ def fullscale_transport(cfg, source_params, seed):
     2. substitute source term space distribution
     3. return necessary files
     """
+    cfg = common.load_config(cfg_path)
+    cfg_basedir = os.path.dirname(cfg_path)
+    #files = input_files(cfg.transport_fullscale)
 
     cfg_fine = cfg.transport_fullscale
-    large_model = File(os.path.basename(cfg_fine.piezo_head_input_file))
-    conc_flux = File(os.path.basename(cfg_fine.conc_flux_file))
+    large_model = File(os.path.join(cfg_basedir, cfg_fine.piezo_head_input_file))
+    conc_flux = File(os.path.join(cfg_basedir, cfg_fine.conc_flux_file))
     plots.plot_source(conc_flux)
 
     full_mesh_file, fractures = fullscale_transport_mesh(cfg, cfg_fine.mesh, seed)

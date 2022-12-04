@@ -23,6 +23,18 @@ jb_flow_env: &jb_config
 
 flow_env: *jb_config
 
+mlmc:
+    singularity_image: docker://flow123d/geomop-gnu:2.0.0
+    #singularity_image: None
+    _pbs:
+        n_cores: 1
+        n_nodes: 1
+        select_flags: ['cgroups=cpuacct', 'scratch_local=10gb']
+        mem: 8Gb
+        queue: charon
+        pbs_name: endorse-flow123d
+        walltime: 2:00:00
+
 
 metacentrum: false
 
@@ -162,9 +174,13 @@ transport_fullscale:
     geometry: *one_borehole_geometry
     fractures: *fractures_repo
     # The mesh to use in both simulations.
+
+    # templates are part of the endorse sources
     input_template: transport_fullscale_tmpl.yaml
-    piezo_head_input_file: "test_data/large_model_local.msh2"
-    conc_flux_file: "test_data/conc_flux_UOS_[kg:y].csv"
+
+    # relative to main config
+    piezo_head_input_file: "large_model_local.msh2"
+    conc_flux_file: "conc_flux_UOS_[kg:y].csv"
     mesh:
         # mesh step on fractures
         fracture_mesh_step: 10

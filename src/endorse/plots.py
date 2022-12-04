@@ -57,5 +57,5 @@ def plot_source(source_file):
     formatter.set_powerlimits((-1, 1))
     ax1.yaxis.set_major_formatter(formatter)
     fig.tight_layout()
-    fig.savefig("sandbox/source_plot.pdf")
+    fig.savefig("source_plot.pdf")
     plt.show()

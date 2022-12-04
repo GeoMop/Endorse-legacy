@@ -1,4 +1,5 @@
-numba
+#numba
+#scikit-learn
 pyyaml
 pyyaml-include
 matplotlib
