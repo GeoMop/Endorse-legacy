@@ -70,8 +70,8 @@ fine_conductivity_interpolated:
         20: 1.0
 
 bulk_field_parametric: &bulk_field_parametric
-    cond_zero: 1e-15
-    cond_max: 1e-9  # permeability 1e-16
+    cond_zero: 1e-16
+    cond_max: 1e-11  # permeability 1e-16
     cond_min: 1e-13  # permeability 1e-18
     por_max: 0.01
     por_min: 0.002
