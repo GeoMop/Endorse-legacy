@@ -13,6 +13,7 @@ from mlmc import estimator
 from mlmc.quantity.quantity_estimate import estimate_mean, moments
 from mlmc.sim.fullscale_transport_sim import FullScaleTransportSim
 
+from endorse.common.config import load_config
 import os.path
 
 #from pathlib import Path
@@ -26,11 +27,12 @@ tested parameters: run ../ --clean
 
 class FullScaleTransport:
 
-    def __init__(self):
-        args = FullScaleTransport.get_arguments(sys.argv[1:])
+    def __init__(self, main_cfg_file, args):
 
         self.work_dir = os.path.abspath(args.work_dir)
-        self.singularity_path = os.path.abspath(args.singularity_path)
+        cfg = load_config(self.work_dir, main_cfg_file)
+        #cfg.flow_env.mlmc.singularity
+        self.singularity_image = os.path.abspath(args.singularity_image)
         self.endorse_repository = os.path.abspath(args.endorse_dir)
         # Add samples to existing ones
         self.clean = args.clean
@@ -177,14 +179,14 @@ class FullScaleTransport:
             walltime='2:00:00',
             optional_pbs_requests=[],  # e.g. ['#PBS -m ae', ...]
             home_dir='/storage/liberec3-tul/home/martin_spetlik/',
-            python='singularity exec {} venv/bin/python3'.format(self.singularity_path),
+            python='singularity exec {} venv/bin/python3'.format(self.singularity_image),
             #python='singularity exec {} /usr/bin/python3'.format(self.singularity_path),
             env_setting=[#'cd $MLMC_WORKDIR',
                          "export SINGULARITY_TMPDIR=$SCRATCHDIR",
                          "export PIP_IGNORE_INSTALLED=0",
                          'cd {}'.format(self.endorse_repository),
-                         'singularity exec {} ./setup.sh'.format(self.singularity_path),
-                         'singularity exec {} venv/bin/python3 -m pip install scikit-learn'.format(self.singularity_path)
+                         'singularity exec {} ./setup.sh'.format(self.singularity_image),
+                         'singularity exec {} venv/bin/python3 -m pip install scikit-learn'.format(self.singularity_image)
                          #'module load python/3.8.0-gcc',
                          #'source env/bin/activate',
                          #'module use /storage/praha1/home/jan-hybs/modules',
@@ -379,8 +381,8 @@ class FullScaleTransport:
                                  'collect - keep collected, append existing HDF file'
                                  'renew - renew failed samples, run new samples with failed sample ids (which determine random seed)')
         parser.add_argument('work_dir', help='Work directory')
-        parser.add_argument('singularity_path', help='Path to singularity image')
-        parser.add_argument('endorse_dir', help='Path to endorse repository')
+        #parser.add_argument('singularity_path', help='Path to singularity image')
+        #parser.add_argument('endorse_dir', help='Path to endorse repository')
         parser.add_argument("-c", "--clean", default=False, action='store_true',
                             help="Clean before run, used only with 'run' command")
         parser.add_argument("-d", "--debug", default=False, action='store_true',
@@ -391,5 +393,6 @@ class FullScaleTransport:
         return args
 
 if __name__ == "__main__":
-    pr = FullScaleTransport()
+    args = FullScaleTransport.get_arguments(sys.argv[1:])
+    pr = FullScaleTransport("config_homo_tsx.yaml", args)
 
