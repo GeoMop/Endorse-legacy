@@ -181,7 +181,7 @@ transport_fullscale:
 
     # relative to main config
     piezo_head_input_file: "large_model_local.msh2"
-    conc_flux_file: "conc_flux_UOS_[kg:y].csv"
+    conc_flux_file: "conc_flux_UOS_kg_y.csv"
     mesh:
         # mesh step on fractures
         fracture_mesh_step: 10
