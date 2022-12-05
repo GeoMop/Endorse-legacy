@@ -2,7 +2,7 @@ import numpy as np
 
 from .common import File
 from .mesh_class import Mesh
-
+from endorse import hm_simulation
 
 def conductivity_mockup(cfg_geom, cfg_fields, output_mesh:Mesh):
     X, Y, Z = output_mesh.el_barycenters().T
@@ -28,6 +28,19 @@ def conductivity_mockup(cfg_geom, cfg_fields, output_mesh:Mesh):
     output_mesh.write_fields(cond_file,
                             dict(conductivity=cond_field))
     return File(cond_file)
+
+
+def bulk_fields_mockup_from_hm(cfg, interp: hm_simulation.TunnelInterpolator, XYZ):
+    # use Tunnel Interpolator
+    # in X axis it is constant
+    # X, Y, Z = XYZ.T
+    cfg_hm = cfg.tsx_hm_model.hm_params
+    selected_time = cfg_hm.end_time * 3600 * 24  # end_time of hm simulation
+    # TODO: cut and interpolate in X axis
+    cond_field = interp.interpolate_field("conductivity", XYZ.T, time=selected_time)
+    por_field = interp.compute_porosity(cfg_hm, XYZ.T, time=selected_time)
+
+    return cond_field, por_field
 
 
 def bulk_fields_mockup(cfg_geom, cfg_fields, XYZ):

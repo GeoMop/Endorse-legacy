@@ -28,7 +28,12 @@ metacentrum: false
 
 mc_samples: 10
 
-copy_files: [transport_2022_5_tmpl.yaml,  conc_flux_UOS.csv, large_model.msh]
+#copy_files:
+#  - transport_2022_5_tmpl.yaml
+#  - conc_flux_UOS.csv
+#  - large_model.msh
+#  - tunnel_mesh_cut_healed.msh
+#  - accepted_parameters.csv
 
 geometry: &one_borehole_geometry !include config_geometry.yaml
 fractures: &fractures

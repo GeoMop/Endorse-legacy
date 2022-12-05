@@ -13,11 +13,13 @@ from .mesh_class import Mesh
 from . import apply_fields
 from . import plots
 from bgem.stochastic.fracture import Fracture
+from endorse import hm_simulation
 
-def input_files(cfg_tr_full):
+def input_files(cfg):
     return [
-        cfg_tr_full.piezo_head_input_file,
-        cfg_tr_full.conc_flux_file
+        cfg.transport_fullscale.piezo_head_input_file,
+        cfg.transport_fullscale.conc_flux_file,
+        "test_data/accepted_parameters.csv"
     ]
 
 def fullscale_transport(cfg, source_params, seed):
@@ -109,7 +111,7 @@ def set_source_limits(cfg):
     return source_params
 
 
-def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, Fracture]):
+def compute_fields(cfg:dotdict, mesh:Mesh, fr_map: Dict[int, Fracture]):
     """
     :param params: transport parameters dictionary
     :param mesh: GmshIO of the computational mesh (read only)
@@ -125,8 +127,15 @@ def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, Fracture]):
     cross_section = np.full( (len(mesh.elements),), float(1.0))
     porosity = np.full((len(mesh.elements),), 1.0)
     # Bulk fields
+    # run HM model
+    # conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
+    # cfg = common.load_config(conf_file)
+    fo = hm_simulation.run_single_sample(cfg)
+    mesh_interp = hm_simulation.TunnelInterpolator(cfg.geometry, flow123d_output=fo)
+
     el_slice_3d = mesh.el_dim_slice(3)
-    bulk_cond, bulk_por = apply_fields.bulk_fields_mockup(cfg_geom, cfg_bulk_fields, mesh.el_barycenters()[el_slice_3d])
+    # bulk_cond, bulk_por = apply_fields.bulk_fields_mockup(cfg_geom, cfg_bulk_fields, mesh.el_barycenters()[el_slice_3d])
+    bulk_cond, bulk_por = apply_fields.bulk_fields_mockup_from_hm(cfg, mesh_interp, mesh.el_barycenters()[el_slice_3d])
     conductivity[el_slice_3d] = bulk_cond
     porosity[el_slice_3d] = bulk_por
     logging.info(f"3D slice: {el_slice_3d}")

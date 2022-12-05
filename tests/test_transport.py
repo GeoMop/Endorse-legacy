@@ -14,8 +14,8 @@ def test_macro_transport():
     #common.EndorseCache.instance().expire_all()
     conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
     cfg = common.load_config(conf_file)
-    files = input_files(cfg.transport_fullscale)
-    seed = 102
+    files = input_files(cfg)
+    seed = 101
     with common.workdir(f"sandbox/full_transport_{seed}", inputs=files, clean=False):
         # params for single container source
         source_params = dict(position=10, length=6)
