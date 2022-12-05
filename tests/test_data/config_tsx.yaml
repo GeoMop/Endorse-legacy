@@ -1,5 +1,5 @@
 #
-bayes_samples_input_file: "test_data/accepted_parameters.csv"
+bayes_samples_input_file: "accepted_parameters.csv"
 #
 ## true -> work with pbs on metacentrum
 ## false -> run locally, no pbs

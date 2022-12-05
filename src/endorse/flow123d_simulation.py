@@ -61,11 +61,6 @@ class endorse_2Dtest():
         # create sample dir
         self.sample_counter = self.sample_counter + 1
 
-        print("=========================== RUNNING CALCULATION " +
-              "solver {} ".format(config_dict["solver_id"]).zfill(2) +
-              "sample {} ===========================".format(self.sample_counter).zfill(3),
-              flush=True)
-
         # collect only
         if config_dict["tsx_hm_model"]["collect_only"]:
             return 2, self.collect_results()

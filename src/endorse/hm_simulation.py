@@ -9,6 +9,7 @@ from .common import File, sample_from_population, workdir, dotdict, FlowOutput
 from .flow123d_simulation import endorse_2Dtest
 from .plots import plot_field
 
+
 # 2D cross-section mesh is in xy plane with center in zero
 # target mesh cross-section is in yz plane
 class TunnelInterpolator:
@@ -145,15 +146,10 @@ class TunnelInterpolator:
         plt.show()
 
 
-def run_hm_simulation(config_dict: dotdict, i_sim: int, parameters: Dict[str,Union[int, float]]):
-    # setup paths and directories
-    # create and cd workdir
+def run_hm_simulation(cfg: dotdict, i_sim: int, parameters: Dict[str,Union[int, float]]):
     work_dir_name = f"hm_sample_{i_sim:00d}"
-
-    files_to_copy = []
-    with workdir(work_dir_name, files_to_copy):
-        config_dict["solver_id"] = 0
-        sim = endorse_2Dtest(config_dict)
+    with workdir(work_dir_name):
+        sim = endorse_2Dtest(cfg)
         sim.set_parameters(parameters)
         res, obs_data = sim.get_observations()
         print("Flow123d res: ", res)
