@@ -87,7 +87,7 @@ class TunnelInterpolator:
         strain_diff = interp_vol_strain  # Flow123d actually computes the difference to initial state
         exponent = -(1-biot)/bulk_modulus * pressure_diff - strain_diff
         porosity = biot + (init_porosity-biot) * np.exp(exponent)
-        return porosity
+        return init_porosity, porosity
 
     def test_conductivity(self):
         field_values = self._flow_msh.get_p0_values("conductivity", time=365 * 24 * 3600)

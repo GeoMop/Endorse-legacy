@@ -132,25 +132,15 @@ def compute_fields(cfg:dotdict, cfg_basedir, mesh:Mesh, fr_map: Dict[int, int], 
     :param fr_map: map ele id to the fracture (only for fracture 2d elements
     :return: el_ids:List[int], cond:List[float], cross:List[float]
     """
-    cfg_geom = cfg.geometry
     cfg_trans = cfg.transport_fullscale
-
-
     cfg_bulk_fields = cfg_trans.bulk_field_params
 
     conductivity = np.full( (len(mesh.elements),), float(cfg_bulk_fields.cond_min))
     cross_section = np.full( (len(mesh.elements),), float(1.0))
     porosity = np.full((len(mesh.elements),), 1.0)
-    # Bulk fields
-    # run HM model
-    # conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
-    # cfg = common.load_config(conf_file)
-    fo = hm_simulation.run_single_sample(cfg, cfg_basedir)
-    mesh_interp = hm_simulation.TunnelInterpolator(cfg.geometry, flow123d_output=fo)
-
     el_slice_3d = mesh.el_dim_slice(3)
-    # bulk_cond, bulk_por = apply_fields.bulk_fields_mockup(cfg_geom, cfg_bulk_fields, mesh.el_barycenters()[el_slice_3d])
-    bulk_cond, bulk_por = apply_fields.bulk_fields_mockup_from_hm(cfg, mesh_interp, mesh.el_barycenters()[el_slice_3d])
+    # Bulk fields
+    bulk_cond, bulk_por = compute_hm_bulk_fields(cfg, cfg_basedir, mesh.el_barycenters()[el_slice_3d])
     conductivity[el_slice_3d] = bulk_cond
     porosity[el_slice_3d] = bulk_por
     logging.info(f"3D slice: {el_slice_3d}")
@@ -186,6 +176,21 @@ def compute_fields(cfg:dotdict, cfg_basedir, mesh:Mesh, fr_map: Dict[int, int], 
     pos_fr = fr_cond > 0
     est_velocity = (np.quantile(bulk_cond, 0.4)/10, np.quantile(fr_cond[pos_fr],  0.4))
     return cond_file, est_velocity
+
+def compute_hm_bulk_fields(cfg, cfg_basedir, points):
+    cfg_geom = cfg.geometry
+
+    # TEST
+    # bulk_cond, bulk_por = apply_fields.bulk_fields_mockup(cfg_geom, cfg.transport_fullscale.bulk_field_params, points)
+
+    # RUN HM model
+    fo = hm_simulation.run_single_sample(cfg, cfg_basedir)
+    mesh_interp = hm_simulation.TunnelInterpolator(cfg_geom, flow123d_output=fo)
+    bulk_cond, bulk_por = apply_fields.bulk_fields_mockup_from_hm(cfg, mesh_interp, points)
+
+    # bulk_cond = apply_fields.rescale_along_xaxis(cfg_geom, bulk_cond, points)
+    # bulk_por = apply_fields.rescale_along_xaxis(cfg_geom, bulk_por, points)
+    return bulk_cond, bulk_por
 
 
 @report
