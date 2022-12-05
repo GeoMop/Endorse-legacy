@@ -4,9 +4,9 @@ from endorse import plots
 
 
 def test_indicator():
-    EndorseCache.instance().expire_all()
+    #EndorseCache.instance().expire_all()
     #pvd_file = File("test_data/trans_m_01/solute_fields.pvd")
-    case = "trans_m_00"
+    case = "trans_m_01"
     pvd_file = File(f"test_data/{case}/solute_fields.pvd")
     with workdir('sandbox'):
         inds = indicators(pvd_file, 'U235_conc', (-10, 10))

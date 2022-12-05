@@ -95,8 +95,11 @@ problem: !Coupling_Sequential
           porosity: !FieldFE
             mesh_data_file: <input_fields_file>
             field_name: porosity
-
-          dg_penalty: 10.0
+          
+          # dg_penalty: 1       # mass: 80, error: 4.5, default value, solution highly oscilates
+          # dg_penalty: 10      # mass: 40, error: 4.0,  high error, hard to converge
+          # dg_penalty: 100     # mass: 27, error: 16,  high error, hard to converge
+          dg_penalty: 10
           diff_m: <diffusivity_effective>
           disp_l: <dispersivity_L>
           disp_t: <dispersivity_T>

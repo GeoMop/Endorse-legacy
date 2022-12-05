@@ -69,11 +69,19 @@ def plot_indicators(ind_functions: List[IndicatorFn], file=None):
 
     fig, ax = plt.subplots(figsize=(8, 6))
     for i, ind_fn in enumerate(ind_functions):
-        ax.plot(ind_fn.times_fine(), ind_fn.spline(ind_fn.times_fine()), c=colors[i], label=ind_fn.indicator.indicator_label)
-        ax.scatter(ind_fn.times, ind_fn.ind_values, marker='.', c=colors[i])
         tmax, vmax = ind_fn.time_max()
-        ax.scatter([tmax], [vmax], marker='*', c=colors[i],)
-        plt.text(tmax, vmax, f'({tmax:.2e}, {vmax:.2e})')
+
+        label = f"{ind_fn.indicator.indicator_label}; max: ({vmax:.2e}, {tmax:.2e})"
+        ax.plot(ind_fn.times_fine(), ind_fn.spline(ind_fn.times_fine()), c=colors[i], label=label)
+        ax.scatter(ind_fn.times, ind_fn.ind_values, marker='.', c=colors[i])
+        ax.scatter([tmax], [vmax], s=100, c=colors[i], marker='*')
+        #plt.text(tmax, vmax, f'({tmax:.2e}, {vmax:.2e})')
+    formatter = ticker.ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((-1, 1))
+    ax.yaxis.set_major_formatter(formatter)
+    ax.set_xlabel("years")
+    ax.set_ylabel("conc [g/m3]")
     plt.legend(loc='best')
     fig.tight_layout()
     if file is None:

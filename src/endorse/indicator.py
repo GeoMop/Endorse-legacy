@@ -60,7 +60,10 @@ class Indicator:
         Can not use lambdas here since memoize can not pickle them.
         """
         #q_fn = lambda x: np.quantile(x, q)
-        return cls(f'quantile {q:f}', '_quantile', 1.0-q)
+        exp = int(np.floor(np.log10(q)))
+        man = int(q / 10 ** exp)
+
+        return cls(f'quantile $1 - {man}\\times 10^{{{exp:1d}}}$', '_quantile', 1.0-q)
 
     @classmethod
     def max(cls):
