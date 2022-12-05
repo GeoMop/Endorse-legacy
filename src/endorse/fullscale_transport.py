@@ -42,10 +42,10 @@ def fullscale_transport(cfg_path, source_params, seed):
     conc_flux = File(os.path.join(cfg_basedir, cfg_fine.conc_flux_file))
     plots.plot_source(conc_flux)
 
-    full_mesh_file, fractures = fullscale_transport_mesh(cfg, cfg_fine.mesh, seed)
+    full_mesh_file, fractures, n_large = fullscale_transport_mesh(cfg_fine, seed)
 
     full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol=1e-4)
-    el_to_ifr = fracture_map(full_mesh, fractures)
+    el_to_ifr = fracture_map(full_mesh, fractures, n_large)
     # mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
     # mesh_modified = Mesh.load_mesh(mesh_modified_file)
 
@@ -87,7 +87,7 @@ def fullscale_transport(cfg_path, source_params, seed):
     fixed_indicators[:len(ind_time_max)] = np.array(ind_time_max)
     return fixed_indicators
 
-def fracture_map(mesh, fractures) -> Dict[int, Fracture]:
+def fracture_map(mesh, fractures, n_large) -> Dict[int, Fracture]:
     """
     - join all fracture regions into single "fractures" region
     - return dictionary mapping element idx to fracture
@@ -98,8 +98,13 @@ def fracture_map(mesh, fractures) -> Dict[int, Fracture]:
     own_name_to_id = {fr.region.name: fr.region.id for fr in fractures}
     own_to_gmsh_id = {own_name_to_id[name]: gmsh_id for name,(gmsh_id, dim) in mesh.gmsh_io.physical.items() if name in own_name_to_id}
 
-    new_reg_id = max( [gmsh_id for gmsh_id, dim in mesh.gmsh_io.physical.values()] ) + 1
-    new_reg_map = {(own_to_gmsh_id[fr.region.id], 2): (new_reg_id, 2, "fractures")  for fr in fractures}
+    max_reg = max( [gmsh_id for gmsh_id, dim in mesh.gmsh_io.physical.values()] )
+    small_reg_id = max_reg + 1
+    large_reg_id = max_reg + 2
+    large_reg_map = {(own_to_gmsh_id[fr.region.id], 2): (large_reg_id, 2, "fr_large")  for fr in fractures[:n_large]}
+    small_reg_map = {(own_to_gmsh_id[fr.region.id], 2): (small_reg_id, 2, "fr_small")  for fr in fractures[n_large:]}
+    new_reg_map = large_reg_map
+    new_reg_map.update(small_reg_map)
 
     # if do_heal:
     #     hm.heal_mesh(gamma_tol=0.01)
@@ -189,10 +194,20 @@ def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, int], fractures:Li
 
 @report
 @memoize
-def fullscale_transport_mesh(cfg, cfg_mesh, seed):
+def fullscale_transport_mesh(cfg, seed):
     main_box_dimensions = cfg.geometry.box_dimensions
-    fractures = mesh_tools.generate_fractures(cfg.fractures, main_box_dimensions, seed)
-    return one_borehole(cfg.geometry, fractures, cfg_mesh), fractures
+
+    # Fixed large fractures
+    fix_seed = cfg.fractures.fixed_seed
+    large_min_r = cfg.fractures.large_min_r
+    large_box_dimensions = cfg.fractures.large_box
+    fractures = mesh_tools.generate_fractures(cfg.fractures, (large_min_r, None), large_box_dimensions, fix_seed)
+    n_large = len(fractures)
+    # random small scale fractures
+    small_fr = mesh_tools.generate_fractures(cfg.fractures, (None, large_min_r), main_box_dimensions, seed)
+    fractures.extend(small_fr)
+    logging.info(f"Generated fractures: {n_large} large, {len(small_fr)} small.")
+    return one_borehole(cfg.geometry, fractures, cfg.mesh), fractures, n_large
 
 
 # def transport_observe_points(cfg):

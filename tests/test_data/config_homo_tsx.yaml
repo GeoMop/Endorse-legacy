@@ -45,15 +45,23 @@ copy_files: [transport_2022_5_tmpl.yaml,  conc_flux_UOS.csv, large_model.msh]
 
 geometry: &one_borehole_geometry !include config_geometry.yaml
 fractures: &fractures
+    # SKB fracture parameters for upper domain
     population:  !include config_fractures.yaml
     # upper limit on the number of fractures
     n_frac_limit: 10
 
 #
 fractures_repo: &fractures_repo
+    # SKB fracture population for repository domain
     population:  !include config_fr_Forsmark_repo.yaml
-    # upper limit on the number of fractures
-    n_frac_limit: 10
+    # upper limit on the number of (small) fractures
+    n_frac_limit: 30
+    fixed_seed: 101
+    large_min_r: 30
+    large_box:  [100, 80, 60]
+    # Would be better to have separate domains for known large fractures close to tunnel and
+    # uncertain large fractures, need support in Population
+
 
 # Set to None to generate new meshes. ABSOLUTE PATH
 #mesh_repository:
@@ -141,7 +149,7 @@ transport_macroscale:
 
 transport_fine:
     geometry: *one_borehole_geometry
-    fractures: *fractures
+    fractures: *fractures_repo
     bulk_fields: *bulk_field_parametric
     mesh:
         # mesh step on fractures

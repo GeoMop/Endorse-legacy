@@ -15,6 +15,12 @@ problem: !Coupling_Sequential
         name: .fr_bore
         mesh_label: .fr_boreholes
         allow_empty: True
+      - !Union
+        name: fractures
+        regions:
+            - fr_large
+            - fr_small
+
   flow_equation: !Flow_Darcy_LMH
     output_specific:
     nonlinear_solver:
