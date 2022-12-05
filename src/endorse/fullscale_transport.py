@@ -13,6 +13,7 @@ from .mesh.repository_mesh import one_borehole
 from .mesh_class import Mesh
 from . import apply_fields
 from . import plots
+from . import flow123d_inputs_path
 from bgem.stochastic.fracture import Fracture
 
 def input_files(cfg_tr_full):
@@ -73,7 +74,7 @@ def fullscale_transport(cfg_path, source_params, seed):
     )
     params.update(new_params)
     params.update(set_source_limits(cfg))
-    template = os.path.join(common.flow123d_inputs_path, cfg_fine.input_template)
+    template = os.path.join(flow123d_inputs_path, cfg_fine.input_template)
     fo = common.call_flow(cfg.flow_env, template, params)
 
     return fo

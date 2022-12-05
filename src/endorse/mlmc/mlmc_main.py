@@ -14,10 +14,10 @@ from mlmc.quantity.quantity_estimate import estimate_mean, moments
 from mlmc.sim.fullscale_transport_sim import FullScaleTransportSim
 
 from endorse.common.config import load_config
-import os.path
+import os
 
-#from pathlib import Path
-#from yamlinclude import YamlIncludeConstructor
+_script_dir = os.path.dirname(os.path.realpath(__file__))
+_endorse_repository = os.path.abspath(os.path.join(_script_dir, '../../../'))
 
 
 """
@@ -30,10 +30,13 @@ class FullScaleTransport:
     def __init__(self, main_cfg_file, args):
 
         self.work_dir = os.path.abspath(args.work_dir)
-        cfg = load_config(self.work_dir, main_cfg_file)
+        self.cfg_file = main_cfg_file
+        cfg = load_config(os.path.join(main_cfg_file))
+        self.cfg = cfg
+
         #cfg.flow_env.mlmc.singularity
-        self.singularity_image = os.path.abspath(args.singularity_image)
-        self.endorse_repository = os.path.abspath(args.endorse_dir)
+        #self.singularity_image = os.path.abspath(cfg.mlmc.singularity_image)
+        #self.endorse_repository = os.path.abspath(args.endorse_dir)
         # Add samples to existing ones
         self.clean = args.clean
         # Remove HDF5 file, start from scratch
@@ -100,6 +103,8 @@ class FullScaleTransport:
         config = {}
         config['work_dir'] = self.work_dir
         config["flow_executable"] = ["flow123d"]
+        config['source_params'] = dict(position=10, length=6)
+        config['main_cfg_file'] = os.path.abspath(self.cfg_file)
         config["mesh_steps"] = {self.level_parameters[0][0]: 50} # @TODO: check values
         #config = dict(work_dir=self.work_dir)
         # cfg.flow_env["flow_executable"] = ["docker", "run", "-v", "{}:{}".format(os.getcwd(), os.getcwd()),
@@ -159,34 +164,26 @@ class FullScaleTransport:
         Initialize sampling pool, object which
         :return: None
         """
-        if not self.use_pbs:
+        cfg_pbs = self.cfg.mlmc.get('pbs', None)
+        if cfg_pbs is None:
             return OneProcessPool(work_dir=self.work_dir, debug=self.debug)  # Everything runs in one process
 
         # Create PBS sampling pool
         sampling_pool = SamplingPoolPBS(work_dir=self.work_dir, debug=self.debug)
-        # sampling_pool = OneProcessPool(work_dir=self.work_dir, debug=self.debug)
 
-        # singularity_path = "/storage/liberec3-tul/home/martin_spetlik/Endorse_MS_full_transport/tests/mlmc/endorse.sif"
-        # endorse_repository="/storage/liberec3-tul/home/martin_spetlik/Endorse_full_transport"
-
+        singularity_img = self.cfg.mlmc.singularity_image
         pbs_config = dict(
-            n_cores=1,
-            n_nodes=1,
-            select_flags=['cgroups=cpuacct', 'scratch_local=10gb'],
-            mem='8Gb',
-            queue='charon_2h',
-            pbs_name='flow123d',
-            walltime='2:00:00',
             optional_pbs_requests=[],  # e.g. ['#PBS -m ae', ...]
-            home_dir='/storage/liberec3-tul/home/martin_spetlik/',
-            python='singularity exec {} venv/bin/python3'.format(self.singularity_image),
+            home_dir="Why we need the home dir!! Should not be necessary.",
+            #home_dir='/storage/liberec3-tul/home/martin_spetlik/',
+            python=f'singularity exec {singularity_img} venv/bin/python3',
             #python='singularity exec {} /usr/bin/python3'.format(self.singularity_path),
             env_setting=[#'cd $MLMC_WORKDIR',
                          "export SINGULARITY_TMPDIR=$SCRATCHDIR",
                          "export PIP_IGNORE_INSTALLED=0",
-                         'cd {}'.format(self.endorse_repository),
-                         'singularity exec {} ./setup.sh'.format(self.singularity_image),
-                         'singularity exec {} venv/bin/python3 -m pip install scikit-learn'.format(self.singularity_image)
+                         'cd {}'.format(_endorse_repository),
+                         'singularity exec {} ./setup.sh'.format(singularity_img),
+                         'singularity exec {} venv/bin/python3 -m pip install scikit-learn'.format(singularity_img)
                          #'module load python/3.8.0-gcc',
                          #'source env/bin/activate',
                          #'module use /storage/praha1/home/jan-hybs/modules',
@@ -196,7 +193,7 @@ class FullScaleTransport:
                          ],
             scratch_dir=None
         )
-
+        pbs_config.update(cfg_pbs)
         sampling_pool.pbs_common_setting(flow_3=True, **pbs_config)
 
         return sampling_pool

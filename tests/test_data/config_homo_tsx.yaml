@@ -24,6 +24,7 @@ jb_flow_env: &jb_config
 flow_env: *jb_config
 
 mlmc:
+    # flow base image: 4.0.0a_d4c856
     singularity_image: docker://flow123d/geomop-gnu:2.0.0
     #singularity_image: None
     _pbs:
