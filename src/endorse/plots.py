@@ -1,5 +1,7 @@
+from typing import *
 import matplotlib.pyplot as plt
 from matplotlib import ticker
+from .indicator import IndicatorFn
 
 import numpy as np
 import pandas as pd
@@ -59,3 +61,24 @@ def plot_source(source_file):
     fig.tight_layout()
     fig.savefig("source_plot.pdf")
     plt.show()
+
+
+def plot_indicators(ind_functions: List[IndicatorFn], file=None):
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    for i, ind_fn in enumerate(ind_functions):
+        ax.plot(ind_fn.times_fine(), ind_fn.spline(ind_fn.times_fine()), c=colors[i], label=ind_fn.indicator.indicator_label)
+        ax.scatter(ind_fn.times, ind_fn.ind_values, marker='.', c=colors[i])
+        tmax, vmax = ind_fn.time_max()
+        ax.scatter([tmax], [vmax], marker='*', c=colors[i],)
+        plt.text(tmax, vmax, f'({tmax:.2e}, {vmax:.2e})')
+    plt.legend(loc='best')
+    fig.tight_layout()
+    if file is None:
+        file = "indicators_plot.pdf"
+    else:
+        file = f"{file}.pdf"
+    fig.savefig(file)
+

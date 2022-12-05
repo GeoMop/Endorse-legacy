@@ -1,5 +1,6 @@
 #numba
 #scikit-learn
+pyvista
 pyyaml
 pyyaml-include
 matplotlib
