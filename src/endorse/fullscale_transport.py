@@ -14,6 +14,7 @@ from .mesh_class import Mesh
 from . import apply_fields
 from . import plots
 from . import flow123d_inputs_path
+from .indicator import indicators
 from bgem.stochastic.fracture import Fracture
 
 def input_files(cfg_tr_full):
@@ -58,9 +59,9 @@ def fullscale_transport(cfg_path, source_params, seed):
     end_time = (50 / bulk_vel_est + 50 / fr_vel_est)
     dt = 0.5 / bulk_vel_est
     # convert to years
-    year = 365.2425 * 24 * 60 * 60
-    end_time = end_time / year
-    dt = dt / year
+
+    end_time = end_time / common.year
+    dt = dt / common.year
 
     #end_time = 10 * dt
     new_params = dict(
@@ -76,8 +77,15 @@ def fullscale_transport(cfg_path, source_params, seed):
     params.update(set_source_limits(cfg))
     template = os.path.join(flow123d_inputs_path, cfg_fine.input_template)
     fo = common.call_flow(cfg.flow_env, template, params)
-
-    return fo
+    z_dim = 0.9 * 0.5 * cfg.geometry.box_dimensions[2]
+    z_shift = cfg.geometry.borehole.z_pos
+    z_cuts = (z_shift - z_dim, z_shift + z_dim)
+    inds = indicators(fo.solute.spatial_file, f"{cfg_fine.conc_name}_conc", z_cuts)
+    plots.plot_indicators(inds)
+    ind_time_max = [ind.time_max()[1] for ind in inds]
+    fixed_indicators = np.zeros((10,))
+    fixed_indicators[:len(ind_time_max)] = np.array(ind_time_max)
+    return fixed_indicators
 
 def fracture_map(mesh, fractures) -> Dict[int, Fracture]:
     """

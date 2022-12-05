@@ -51,6 +51,7 @@ experiments/repository-model/tmp/**
 tests/test_data/*_fields
 tests/test_data/*_fields.*
 tests/test_data/*_balance.*
+tests/test_data/trans_*
 #
 */output_1/*
 

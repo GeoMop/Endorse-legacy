@@ -84,9 +84,9 @@ fine_conductivity_interpolated:
 
 bulk_field_parametric: &bulk_field_parametric
     cond_zero: 1e-16
-    cond_max: 1e-11  # permeability 1e-16
-    cond_min: 1e-13  # permeability 1e-18
-    por_max: 0.01
+    cond_max: 1e-11  # permeability 1e-18
+    cond_min: 1e-13  # permeability 1e-20
+    por_max: 0.0025
     por_min: 0.002
 
     # values with respect to EDZ radius
@@ -182,6 +182,7 @@ transport_fullscale:
     # relative to main config
     piezo_head_input_file: "large_model_local.msh2"
     conc_flux_file: "conc_flux_UOS_kg_y.csv"
+    conc_name: U235
     mesh:
         # mesh step on fractures
         fracture_mesh_step: 10
