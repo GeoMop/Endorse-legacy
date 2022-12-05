@@ -161,8 +161,13 @@ def read_bayes_sample_parameteres(parameter_file:File) -> pandas.DataFrame:
     return pandas.read_csv(parameter_file.path, dtype={'N': 'int'})
 
 
-def run_single_sample(cfg):
-    df = read_bayes_sample_parameteres(File(cfg.tsx_hm_model.bayes_samples_input_file))
+def run_single_sample(cfg, cfg_basedir=None):
+    parameter_filepath = cfg.tsx_hm_model.bayes_samples_input_file
+    if cfg_basedir is None:
+        parameter_file = File(parameter_filepath)
+    else:
+        parameter_file = File(os.path.join(cfg_basedir, parameter_filepath))
+    df = read_bayes_sample_parameteres(parameter_file)
     i_samples = sample_from_population(1, df['N'])
     sample_param_dict = df[1: 2].to_dict('records')[0]
     fo = run_hm_simulation(cfg, 1, sample_param_dict)

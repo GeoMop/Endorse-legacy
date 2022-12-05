@@ -1,15 +1,11 @@
 import os
-import subprocess
-
 import numpy as np
-import shutil
-import yaml
 import traceback
-
 import matplotlib.pyplot as plt
 
 from . import common
-from . import mesh
+from . import flow123d_inputs_path
+from endorse.common.config import dotdict
 
 
 def generate_time_axis(config_dict):
@@ -35,7 +31,7 @@ class endorse_2Dtest():
         self.sample_counter = -1
         self.flow_output = None
 
-    def set_parameters(self, data_dict:'dotdict'):
+    def set_parameters(self, data_dict: 'dotdict'):
         param_list = self._config.tsx_hm_model.surrDAMH_parameters.parameters
 
         sub_dict = {p.name: data_dict[p.name] for p in param_list}
@@ -84,7 +80,7 @@ class endorse_2Dtest():
         #hm_succeed = self.call_flow(config_dict, 'hm_params', result_files=["flow_observe.yaml"])
 
         params = config_dict.tsx_hm_model.hm_params
-        template = os.path.join(common.flow123d_inputs_path, params.input_template)
+        template = os.path.join(flow123d_inputs_path, params.input_template)
         self.flow_output = common.call_flow(config_dict.flow_env, template, params)
 
         if not self.flow_output.success:

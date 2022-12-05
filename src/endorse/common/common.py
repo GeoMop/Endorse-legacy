@@ -1,12 +1,8 @@
-import logging
 import os.path
 from typing import *
-import yaml
-import subprocess
 import shutil
 from pathlib import Path
 import numpy as np
-from yamlinclude import YamlIncludeConstructor
 
 from .memoize import File
 
@@ -78,50 +74,6 @@ class workdir:
             shutil.rmtree(self.work_dir)
 
 
-class dotdict(dict):
-    """
-    dot.notation access to dictionary attributes
-    TODO: keep somehow reference to the original YAML in order to report better
-    KeyError origin.
-    """
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-    def __getattr__(self, item):
-        try:
-            return self[item]
-        except KeyError:
-            return self.__getattribute__(item)
-
-    @classmethod
-    def create(cls, cfg : Any):
-        """
-        - recursively replace all dicts by the dotdict.
-        """
-        if isinstance(cfg, dict):
-            items = ( (k, cls.create(v)) for k,v in cfg.items())
-            return dotdict(items)
-        elif isinstance(cfg, list):
-            return [cls.create(i) for i in cfg]
-        elif isinstance(cfg, tuple):
-            return tuple([cls.create(i) for i in cfg])
-        else:
-            return cfg
-
-
-def load_config(path):
-    """
-    Load configuration from given file replace, dictionaries by dotdict
-    uses pyyaml-tags namely for:
-    include tag:
-        geometry: <% include(path="config_geometry.yaml")>
-    """
-    YamlIncludeConstructor.add_to_loader_class(loader_class=yaml.FullLoader, base_dir=os.path.dirname(path))
-    with open(path) as f:
-        cfg = yaml.load(f, Loader=yaml.FullLoader)
-    return dotdict.create(cfg)
-
-
 def substitute_placeholders(file_in: str, file_out: str, params: Dict[str, Any]):
     """
     In the template `file_in` substitute the placeholders in format '<name>'
@@ -150,8 +102,6 @@ def substitute_placeholders(file_in: str, file_out: str, params: Dict[str, Any])
 
 # Directory for all flow123d main input templates.
 # These are considered part of the software.
-_script_dir = os.path.dirname(os.path.realpath(__file__))
-flow123d_inputs_path = os.path.join(_script_dir, "../flow123d_inputs")
 
 # TODO: running with stdout/ stderr capture, test for errors, log but only pass to the main in the case of
 # true error

@@ -4,6 +4,7 @@
 
 
 import os
+
 from endorse import common
 from endorse.mesh import container_position_mesh
 
@@ -15,19 +16,20 @@ script_dir = script_dir = os.path.dirname(os.path.realpath(__file__))
 def test_fine_micro_mesh():
     # about 280 k elements
     # conf_file = os.path.join(script_dir, "./config_full_coarse.yaml")
-    conf_file = os.path.join(script_dir, "./config_full_edz_fine.yaml")
-    cfg = common.load_config(conf_file)
-    #fractures = [
-    #    Fracture(4, np.array([]), np.array(), )
-    #]
-    fractures = []
-    container_position_mesh.fine_micro_mesh(cfg.geometry, fractures, 0, "test_container_position_mesh.msh")
+    with common.workdir("sandbox"):
+        conf_file = os.path.join(script_dir, "./config_full_edz_fine.yaml")
+        cfg = common.config.load_config(conf_file)
+        #fractures = [
+        #    Fracture(4, np.array([]), np.array(), )
+        #]
+        fractures = []
+        container_position_mesh.fine_micro_mesh(cfg.geometry, fractures, 0, "test_container_position_mesh.msh")
 
 def test_coarse_micro_mesh():
     # about 280 k elements
     # conf_file = os.path.join(script_dir, "./config_full_coarse.yaml")
     conf_file = os.path.join(script_dir, "./config_full_edz_fine.yaml")
-    cfg = common.load_config(conf_file)
+    cfg = common.config.load_config(conf_file)
     #fractures = [
     #    Fracture(4, np.array([]), np.array(), )
     #]
