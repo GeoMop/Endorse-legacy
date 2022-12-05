@@ -3,6 +3,7 @@ pe_flow_env: &pe_config
     flow_executable:
     # release
     - /home/paulie/Workspace/flow123d/bin/fterm
+    - rel
     - --no-term
     - run
 
