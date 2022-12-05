@@ -31,9 +31,7 @@ class endorse_2Dtest():
 
     def __init__(self, config):
         # TODO: remove config modifications
-        self.clean = config.tsx_hm_model.clean_sample_dir
         self._config = config
-        self.sample_dir = ""
         self.sample_counter = -1
         self.flow_output = None
 
@@ -62,17 +60,11 @@ class endorse_2Dtest():
 
         # create sample dir
         self.sample_counter = self.sample_counter + 1
-        self.sample_dir = os.path.join(config_dict["work_dir"],
-                                       "solver_" + str(config_dict["solver_id"]).zfill(2) +
-                                       "_sample_" + str(self.sample_counter).zfill(3))
-        os.makedirs(self.sample_dir, mode=0o775, exist_ok=True)
-        os.chdir(self.sample_dir)
 
         print("=========================== RUNNING CALCULATION " +
               "solver {} ".format(config_dict["solver_id"]).zfill(2) +
               "sample {} ===========================".format(self.sample_counter).zfill(3),
               flush=True)
-        print(self.sample_dir)
 
         # collect only
         if config_dict["tsx_hm_model"]["collect_only"]:
@@ -178,56 +170,9 @@ class endorse_2Dtest():
         t_indices = np.isin(obs_times, times).nonzero()
         values = values[t_indices].transpose()
 
-        if self._config.tsx_hm_model.clean_sample_dir:
-            shutil.rmtree(self.sample_dir)
-
         # flatten to format: [Point0_all_all_times, Point1_all_all_times, Point2_all_all_times, ...]
         res = values.flatten()
         return res
-
-    # def call_flow(self, config_dict, param_key, result_files):
-    #     """
-    #     Redirect sstdout and sterr, return true on succesfull run.
-    #     :param result_files: Files to be computed - skip computation if already exist.
-    #     :param param_key: config dict parameters key
-    #     :param config_dict:
-    #     :return:
-    #     """
-    #
-    #     status = False
-    #     params = config_dict[param_key]
-    #     fname = params["in_file"]
-    #     # arguments = config_dict["_aux_flow_path"].copy()
-    #     arguments = ['env', '-i']
-    #     arguments.extend(config_dict["_aux_flow_path"].copy())
-    #     output_dir = "output_" + fname
-    #     config_dict[param_key]["output_dir"] = output_dir
-    #
-    #     if all([os.path.isfile(os.path.join(output_dir, f)) for f in result_files]):
-    #         status = True
-    #     else:
-    #         common.substitute_placeholders(
-    #             os.path.join(config_dict["common_files_dir"],
-    #                          fname + '_tmpl.yaml'),
-    #             fname + '.yaml',
-    #             params)
-    #
-    #         arguments.extend(['--output_dir', output_dir, fname + ".yaml"])
-    #         print("Running: ", " ".join(arguments))
-    #         with open(fname + "_stdout", "w") as stdout:
-    #             with open(fname + "_stderr", "w") as stderr:
-    #                 completed = subprocess.run(arguments, stdout=stdout, stderr=stderr)
-    #         print("Exit status: ", completed.returncode)
-    #         status = completed.returncode == 0
-    #
-    #     if status:
-    #         log_file = os.path.join(self.sample_dir, output_dir, "flow123.0.log")
-    #         conv_check = aux_functions.check_conv_reasons(log_file)
-    #         print("converged: ", conv_check)
-    #         status = conv_check >= 0
-    #
-    #     return status
-
 
     def prepare_mesh(self, cut_tunnel):
         mesh_name = self._config.geometry.tsx_tunnel.mesh_name
