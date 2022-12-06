@@ -83,9 +83,7 @@ def fullscale_transport(cfg_path, source_params, seed):
     inds = indicators(fo.solute.spatial_file, f"{cfg_fine.conc_name}_conc", z_cuts)
     plots.plot_indicators(inds)
     ind_time_max = [ind.time_max()[1] for ind in inds]
-    fixed_indicators = np.zeros((10,))
-    fixed_indicators[:len(ind_time_max)] = np.array(ind_time_max)
-    return fixed_indicators
+    return ind_time_max
 
 def fracture_map(mesh, fractures, n_large) -> Dict[int, Fracture]:
     """

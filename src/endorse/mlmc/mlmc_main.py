@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from mlmc.estimator import Estimate
 from mlmc.sampler import Sampler
-from mlmc.sampling_pool import OneProcessPool
+from mlmc.sampling_pool import OneProcessPool, ProcessPool
 from mlmc.sampling_pool_pbs import SamplingPoolPBS
 from mlmc.quantity.quantity import make_root_quantity
 from mlmc.moments import Legendre
@@ -51,7 +51,7 @@ class FullScaleTransport:
         self.level_parameters = estimator.determine_level_parameters(self.n_levels, step_range)
 
         # Determine number of samples at each level
-        self.n_samples = estimator.determine_n_samples(self.n_levels)
+        self.n_samples = estimator.determine_n_samples(self.n_levels, [20])
 
         if args.command == 'run':
             self.run()
@@ -167,6 +167,7 @@ class FullScaleTransport:
         cfg_pbs = self.cfg.mlmc.get('pbs', None)
         if cfg_pbs is None:
             return OneProcessPool(work_dir=self.work_dir, debug=self.debug)  # Everything runs in one process
+            #return ProcessPool(4, work_dir=self.work_dir, debug=self.debug)  # Everything runs in one process
 
         # Create PBS sampling pool
         sampling_pool = SamplingPoolPBS(work_dir=self.work_dir, debug=self.debug)
@@ -174,7 +175,7 @@ class FullScaleTransport:
         singularity_img = self.cfg.mlmc.singularity_image
         pbs_config = dict(
             optional_pbs_requests=[],  # e.g. ['#PBS -m ae', ...]
-            home_dir="Why we need the home dir!! Should not be necessary.",
+            #home_dir="Why we need the home dir!! Should not be necessary.",
             #home_dir='/storage/liberec3-tul/home/martin_spetlik/',
             python=f'singularity exec {singularity_img} venv/bin/python3',
             #python='singularity exec {} /usr/bin/python3'.format(self.singularity_path),
@@ -261,10 +262,10 @@ class FullScaleTransport:
         result_format = sample_storage.load_result_format()
         root_quantity = make_root_quantity(sample_storage, result_format)
 
-        conductivity = root_quantity['conductivity']
+        conductivity = root_quantity['indicator_conc']
         time = conductivity[1]  # times: [1]
         location = time['0']  # locations: ['0']
-        values = location[0, 0]  # result shape: (1, 1)
+        values = location[0, 0]  # result shape: (10, 1)
 
         # Create estimator for quantities
         x_estimator = self.create_estimator(values, sample_storage)

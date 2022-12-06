@@ -5,8 +5,9 @@ from endorse.mlmc.mlmc_main import FullScaleTransport
 # collect samples
 def test_FullScaleTransport_run():
     #common.EndorseCache.instance().expire_all()
-    case='edz_pos02'
-    #case='edz_pos10'
+
+    #case='edz_pos02'
+    case='edz_pos10'
     #case='noedz_pos02'
     #case='noedz_pos10'
 
