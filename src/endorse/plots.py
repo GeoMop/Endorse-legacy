@@ -1,10 +1,16 @@
-from typing import *
-import matplotlib.pyplot as plt
-from matplotlib import ticker
-from .indicator import IndicatorFn
-
 import numpy as np
 import pandas as pd
+from typing import *
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib import ticker
+
+from endorse.indicator import IndicatorFn, Indicator
+from mlmc.moments import Legendre
+from mlmc.estimator import Estimate
+from mlmc.quantity.quantity import make_root_quantity
+from mlmc.sample_storage_hdf import SampleStorageHDF
+from mlmc.quantity.quantity_estimate import estimate_mean
 
 
 def plot_field(points, values, cut=(1,2), file=None):
@@ -90,3 +96,80 @@ def plot_indicators(ind_functions: List[IndicatorFn], file=None):
         file = f"{file}.pdf"
     fig.savefig(file)
 
+
+def _get_samples(quantity, sample_storage):
+    n_moments = 5
+    estimated_domain = Estimate.estimate_domain(quantity, sample_storage, quantile=0.001)
+    moments_fn = Legendre(n_moments, estimated_domain)
+    estimator = Estimate(quantity=quantity, sample_storage=sample_storage, moments_fn=moments_fn)
+    samples = estimator.get_level_samples(level_id=0)[..., 0]
+    return samples
+
+
+def _get_values(hdf5_path):
+    sample_storage = SampleStorageHDF(file_path=hdf5_path)
+    sample_storage.chunk_size = 1024
+    result_format = sample_storage.load_result_format()
+    root_quantity = make_root_quantity(sample_storage, result_format)
+
+    conductivity = root_quantity['indicator_conc']
+    time = conductivity[1]  # times: [1]
+    location = time['0']  # locations: ['0']
+    values = location  # result shape: (10, 1)
+
+    q_mean = estimate_mean(values)
+
+    std = []
+    for i in range(len(q_mean.mean)):
+        std.append(np.sqrt(estimate_mean(np.power(values[i] - q_mean.mean[i], 2)).mean)[0])
+
+    samples = _get_samples(values, sample_storage)
+
+    return np.array(q_mean.mean[:4]).flatten(), std[:4], samples[:4]
+
+
+def plot_quantile_errorbar(data_dict):
+    matplotlib.rcParams.update({'font.size': 22})
+
+    fig, ax = plt.subplots(figsize=(12, 10))
+
+    pos = np.array([0, 0.1, 0.2, 0.3])
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    xticks_pos = []
+
+    quantiles = [0.005, 0.002, 0.001, 0.0005]
+    err_bars = []
+
+    for case, hdf5_path in data_dict.items():
+        mean, std, samples = _get_values(hdf5_path)
+        for i in range(len(mean)):
+            # add samples
+            s_pos = np.ones(len(samples[i])) * pos[i]
+            ax.scatter(s_pos, samples[i], color=colors[i], marker="v")
+
+            # add errorbar
+            err = ax.errorbar(pos[i], mean[i], yerr=std[i],
+                              lw=2, capsize=6, capthick=2,
+                              color=colors[i], marker="o", markersize=8)
+
+            if len(err_bars) < len(pos):
+                err_bars.append(err)
+
+        xticks_pos.append(pos[int(len(pos)/2)])  # works sufficiently for x labels' centering
+        pos += 1
+
+    ax.set_ylabel('conc ' + r'$[g/m^3]$')
+    ax.set_xticks(xticks_pos)
+    ax.set_xticklabels(list(data_dict.keys()))
+
+    labels = []
+    for q_i in quantiles:
+        ind = Indicator.quantile(q_i)
+        labels.append(ind.indicator_label)
+
+    ax.legend(handles=err_bars, labels=labels, loc=(0.01, 0.7))
+
+    #ax.set_yscale("log")
+    plt.savefig("quantiles.pdf")
+    plt.show()
