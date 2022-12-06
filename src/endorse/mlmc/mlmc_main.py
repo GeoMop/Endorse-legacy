@@ -51,7 +51,7 @@ class FullScaleTransport:
         self.level_parameters = estimator.determine_level_parameters(self.n_levels, step_range)
 
         # Determine number of samples at each level
-        self.n_samples = estimator.determine_n_samples(self.n_levels, [20])
+        self.n_samples = [ 20 ]
 
         if args.command == 'run':
             self.run()
@@ -84,7 +84,7 @@ class FullScaleTransport:
         if recollect:
             raise NotImplementedError("Not supported in the released version yet")
         else:
-            self.generate_jobs(sampler, n_samples=[5], renew=renew)
+            self.generate_jobs(sampler, n_samples=self.n_samples, renew=renew)
             self.all_collect(sampler)  # Check if all samples are finished
 
     def setup_config(self):

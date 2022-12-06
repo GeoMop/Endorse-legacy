@@ -64,6 +64,11 @@ def plot_source(source_file):
 
 
 def plot_indicators(ind_functions: List[IndicatorFn], file=None):
+    # how to use promille
+    # plt.rcParams['text.latex.preamble'] = [r"\usepackage{wasysym}"]
+    # \textperthousand
+    plt.rcParams.update({'font.size': 12})
+
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
 
