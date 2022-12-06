@@ -27,3 +27,13 @@ def test_plot_source():
     cfg_fine = cfg.transport_fullscale
     conc_flux = common.File(cfg_fine.conc_flux_file)
     plots.plot_source(conc_flux)
+
+
+@pytest.mark.skip
+def test_plot_errorbar():
+    data_dict = {"endz_10": "path to edz_pos10/mlmc_1.hdf5",
+                 "noedz_10": "path to noedz_pos10/mlmc_1.hdf5",
+                 "endz_02": "path to  edz_pos02/mlmc_1.hdf5",
+                 "noedz_02": "path to noedz_pos02/mlmc_1.hdf5"
+                 }
+    plots.plot_quantile_errorbar(data_dict)
