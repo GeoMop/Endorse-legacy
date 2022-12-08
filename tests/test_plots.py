@@ -21,19 +21,21 @@ def test_plot_mesh():
 
     print('DONE')
 
+#@pytest.mark.skip
 def test_plot_source():
     conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
     cfg = common.load_config(conf_file)
     cfg_fine = cfg.transport_fullscale
-    conc_flux = common.File(cfg_fine.conc_flux_file)
-    plots.plot_source(conc_flux)
+    conc_flux = common.File(os.path.join(os.path.dirname(conf_file), cfg_fine.conc_flux_file))
+    source_surface = cfg_fine.source_params.source_length * cfg.geometry.borehole.radius * 2 * np.pi
+    plots.plot_source(conc_flux, source_surface)
 
 
 @pytest.mark.skip
 def test_plot_errorbar():
-    data_dict = {"endz_10": "path to edz_pos10/mlmc_1.hdf5",
-                 "noedz_10": "path to noedz_pos10/mlmc_1.hdf5",
-                 "endz_02": "path to  edz_pos02/mlmc_1.hdf5",
-                 "noedz_02": "path to noedz_pos02/mlmc_1.hdf5"
+    data_dict = {"edz_10": "sandbox/edz_pos10/mlmc_1.hdf5",
+                 "noedz_10": "sandbox/noedz_pos10/mlmc_1.hdf5",
+                 "edz_02": "sandbox/edz_pos02/mlmc_1.hdf5",
+                 "noedz_02": "sandbox/noedz_pos02/mlmc_1.hdf5"
                  }
     plots.plot_quantile_errorbar(data_dict)
