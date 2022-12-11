@@ -80,6 +80,14 @@ class IndicatorFn:
     ind_values: List[float]  = attrs.Factory(list)
     _spline: Any= None
 
+    @staticmethod
+    def common_max_time(ind_functions: List['IndicatorFn']) -> float:
+        # Determine time index coles to the average max time of the indicators.
+        max_times = [ind.time_max()[0]  for ind in ind_functions]
+        avg_time = np.mean( max_times )
+        idx = (np.abs(ind_functions[0].times - avg_time)).argmin()
+        return idx
+
     def append(self, field_values):
         """
         Apply indicator reduction operation and append to values.
@@ -95,7 +103,10 @@ class IndicatorFn:
     def times_fine(self):
         return np.linspace(self.times[0], self.times[-1], num=len(self.times) * 10, endpoint=True)
 
-    def time_max(self):
+    def time_max(self) -> (float, float):
+        """
+        :return: time of the max value, max value
+        """
         times = self.times_fine()
         fine_values = self.spline(times)
         itime = np.argmax(fine_values)

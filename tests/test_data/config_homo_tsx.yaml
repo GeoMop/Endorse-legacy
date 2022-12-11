@@ -213,7 +213,8 @@ transport_fullscale:
         #max_fr_cross_section: 5e-3
 
     #diffusivity_effective: 1e-13     # 2e-12 for I, according to SKB 97-20
-    diffusivity_effective: 3e-14     # řádově spodní mez pro Cs a Sr, horní pro I podle SURAO TZ334
+    #diffusivity_effective: 3e-14     # řádově spodní mez pro Cs a Sr, horní pro I podle SURAO TZ334
+    diffusivity_effective: 1e-15    # should be smaller then advection
     dispersivity_L: 1    # [m]
     dispersivity_T: 0.1     # [m]
     #dispersivity_L: 0    # [m]

@@ -1,10 +1,14 @@
+import logging
+
 import numpy as np
 import pandas as pd
 from typing import *
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib import ticker
+import pyvista as pv
+from matplotlib import ticker, cm
 
+from .common import File
 from endorse.indicator import IndicatorFn, Indicator
 from mlmc.moments import Legendre
 from mlmc.estimator import Estimate
@@ -66,15 +70,10 @@ def plot_source(source_file):
     ax1.yaxis.set_major_formatter(formatter)
     fig.tight_layout()
     fig.savefig("source_plot.pdf")
-    plt.show()
+    #plt.show()
 
 
 def plot_indicators(ind_functions: List[IndicatorFn], file=None):
-    # how to use promille
-    # plt.rcParams['text.latex.preamble'] = [r"\usepackage{wasysym}"]
-    # \textperthousand
-    plt.rcParams.update({'font.size': 12})
-
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
 
@@ -121,16 +120,16 @@ def _get_values(hdf5_path):
     time = conductivity[1]  # times: [1]
     location = time['0']  # locations: ['0']
     values = location  # result shape: (10, 1)
-
-    q_mean = estimate_mean(values)
-
-    std = []
-    for i in range(len(q_mean.mean)):
-        std.append(np.sqrt(estimate_mean(np.power(values[i] - q_mean.mean[i], 2)).mean)[0])
-
+    values = values[:4]
+    values = values.select(values < 1e3)
     samples = _get_samples(values, sample_storage)
 
-    return np.array(q_mean.mean[:4]).flatten(), std[:4], samples[:4]
+    values = np.log(values)
+    q_mean = estimate_mean(values)
+    val_squares = estimate_mean(np.power(values - q_mean.mean, 2))
+    std = np.sqrt(val_squares.mean)
+
+    return q_mean.mean, std, samples
 
 
 def plot_quantile_errorbar(data_dict):
@@ -148,21 +147,25 @@ def plot_quantile_errorbar(data_dict):
 
     for case, hdf5_path in data_dict.items():
         mean, std, samples = _get_values(hdf5_path)
+        exp_mean = np.exp(mean)
+        yerr = np.exp(mean + np.array([-std, +std])) - exp_mean
         for i in range(len(mean)):
             # add samples
             s_pos = np.ones(len(samples[i])) * pos[i]
             ax.scatter(s_pos, samples[i], color=colors[i], marker="v")
+            ax.set_yscale('log')
 
             # add errorbar
-            err = ax.errorbar(pos[i], mean[i], yerr=std[i],
-                              lw=2, capsize=6, capthick=2,
-                              color=colors[i], marker="o", markersize=8)
 
-            if len(err_bars) < len(pos):
-                err_bars.append(err)
+            # if len(err_bars) < len(pos):
+            #     err_bars.append(err)
 
         xticks_pos.append(pos[int(len(pos)/2)])  # works sufficiently for x labels' centering
         pos += 1
+
+    err = ax.errorbar(np.arange(4), exp_mean, yerr=(-yerr[0], +yerr[1]),
+                      lw=2, capsize=6, capthick=2,
+                      color=colors[i], marker="o", markersize=8, fmt=' ', linestyle='')
 
     ax.set_ylabel('conc ' + r'$[g/m^3]$')
     ax.set_xticks(xticks_pos)
@@ -177,4 +180,79 @@ def plot_quantile_errorbar(data_dict):
 
     #ax.set_yscale("log")
     plt.savefig("quantiles.pdf")
-    plt.show()
+    #plt.show()
+
+
+def plot_contour(polydata: List[Any], attr_name: str, subtitles: List[str] = [None], title: str = None, file=None):
+    nplots = len(polydata)
+    # annotations of each plot
+    use_titles = True
+    if len(subtitles) != nplots:
+        use_titles = False
+        print('Skipping titles, mismatch with data length')
+    # normalization
+    vmin = min(min(data.point_data[f'{attr_name}']) for data in polydata)
+    vmax = max(max(data.point_data[f'{attr_name}']) for data in polydata)
+    # setup figure
+    fig, ax = plt.subplots(nplots, 1, figsize=(8, 6))
+    if title:
+        fig.suptitle(title, fontsize=14)
+    cs = [None] * nplots
+    for i, data in enumerate(polydata):
+        x = data.points
+        tri = data.faces.reshape((-1, 4))[:, 1:]
+        u = data.point_data[f'{attr_name}']
+        # shift axis to readable coordinates and display origin
+        xaxshift, yaxshift = min(x[:, 0]), min(x[:, 1])
+        # plot contour with common colormap
+        cs[i] = ax[i].tricontourf(x[:, 0] - xaxshift, x[:, 1] - yaxshift, tri, u, vmin=vmin, vmax=vmax,
+                                  cmap=cm.coolwarm)
+        #     unorm = (u-vmin+1e-10)/max(u-vmax)
+        #     ax.tricontourf(x[:,0], x[:,1], tri, unorm, locator=ticker.LogLocator())
+        # setup annotations
+        formatter = ticker.ScalarFormatter(useMathText=True)
+        ax[i].yaxis.set_major_formatter(formatter)
+        ax[i].set_ylabel("y[-]", fontsize=10)
+        ax[i].set_xticks([])
+
+        if use_titles:
+            ax[i].legend([subtitles[i]], fontsize=6)
+
+    ax[-1].xaxis.set_major_locator(ticker.AutoLocator())
+    ax[-1].set_xlabel("x[-]", fontsize=10)
+    ax[-1].text(-3, -5, f'[{xaxshift:.1e}, \n{yaxshift:.1e}]', ha='right', va='top', fontsize=10)
+    # add colorbar
+    fig.subplots_adjust(right=0.825, hspace=0.1, top=0.92)
+    cax = fig.add_axes([ax[-1].get_position().x1 + 0.02, ax[-1].get_position().y0, 0.035,
+                        ax[0].get_position().y1 - ax[-1].get_position().y0])
+    m = cm.ScalarMappable(cmap=cm.coolwarm)
+    m.set_clim(vmin, vmax)
+    cbar = fig.colorbar(m, cax=cax)
+    cbar.set_label('conc [g/m3]', rotation=270, fontsize=10, labelpad=5)
+    # file output
+    if file is None:
+        file = "slices_plot.pdf"
+    else:
+        file = f"{file}.pdf"
+    fig.savefig(file)
+
+
+def plot_slices(pvd_in: File, attr_name: str, z_loc, timeidxs):
+    pvd_content = pv.get_reader(pvd_in.path)
+    times = np.asarray(pvd_content.time_values)
+    for i in timeidxs:
+        if not 0 <= i < len(times):
+            logging.warning(f'Cannot plot slice, index {i} out of range')
+            continue
+        pvd_content.set_active_time_point(i)
+        dataset = pvd_content.read()
+        title = f'Concentration at t={times[i]:.1e}'
+        plane = []
+        subtitles = []
+        for z in z_loc:
+            # assumption of one block for polyblock
+            p = dataset.slice(normal=[0, 0, 1], origin=[0, 0, z], generate_triangles=True)[0]
+            plane.append(p)
+            subt = f'z={z}'
+            subtitles.append(subt)
+        plot_contour(plane, attr_name, subtitles=subtitles, title=title)

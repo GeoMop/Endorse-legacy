@@ -14,7 +14,7 @@ from .mesh_class import Mesh
 from . import apply_fields
 from . import plots
 from . import flow123d_inputs_path
-from .indicator import indicators
+from .indicator import indicators, IndicatorFn
 from bgem.stochastic.fracture import Fracture
 
 def input_files(cfg_tr_full):
@@ -22,6 +22,12 @@ def input_files(cfg_tr_full):
         cfg_tr_full.piezo_head_input_file,
         cfg_tr_full.conc_flux_file
     ]
+
+#
+# def find_nearest(array, value):
+#     array = np.asarray(array)
+#     idx = (np.abs(array - value)).argmin()
+#     return idx, array[idx]
 
 def fullscale_transport(cfg_path, source_params, seed):
     """
@@ -82,6 +88,8 @@ def fullscale_transport(cfg_path, source_params, seed):
     z_cuts = (z_shift - z_dim, z_shift + z_dim)
     inds = indicators(fo.solute.spatial_file, f"{cfg_fine.conc_name}_conc", z_cuts)
     plots.plot_indicators(inds)
+    itime = IndicatorFn.common_max_time(inds)  # not splined version, need slice data
+    plots.plot_slices(fo.solute.spatial_file, f"{cfg_fine.conc_name}_conc", z_cuts, [itime-1, itime, itime+1])
     ind_time_max = [ind.time_max()[1] for ind in inds]
     return ind_time_max
 

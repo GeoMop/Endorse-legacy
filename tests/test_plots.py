@@ -1,6 +1,6 @@
 import os
 import pytest
-from endorse import plots, common
+from endorse import plots, common, indicator
 from bgem.gmsh.gmsh_io import GmshIO
 import matplotlib.pyplot as plt
 import matplotlib
@@ -21,7 +21,7 @@ def test_plot_mesh():
 
     print('DONE')
 
-#@pytest.mark.skip
+@pytest.mark.skip
 def test_plot_source():
     conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
     cfg = common.load_config(conf_file)
@@ -30,8 +30,7 @@ def test_plot_source():
     source_surface = cfg_fine.source_params.source_length * cfg.geometry.borehole.radius * 2 * np.pi
     plots.plot_source(conc_flux, source_surface)
 
-
-@pytest.mark.skip
+#@pytest.mark.skip
 def test_plot_errorbar():
     data_dict = {"edz_10": "sandbox/edz_pos10/mlmc_1.hdf5",
                  "noedz_10": "sandbox/noedz_pos10/mlmc_1.hdf5",
@@ -39,3 +38,16 @@ def test_plot_errorbar():
                  "noedz_02": "sandbox/noedz_pos02/mlmc_1.hdf5"
                  }
     plots.plot_quantile_errorbar(data_dict)
+
+@pytest.mark.skip
+def test_plot_slicese():
+    case = "trans_m_01"
+    pvd_file = common.File(f"test_data/{case}/solute_fields.pvd")
+    with common.workdir('sandbox'):
+        inds = indicator.indicators(pvd_file, 'U235_conc', (-10, 10))
+        plots.plot_indicators(inds, file=case)
+        ind_time_max = [ind.time_max()[1] for ind in inds]
+        print(ind_time_max)
+        itime = indicator.IndicatorFn.common_max_time(inds)  # not splined version, need slice data
+        plots.plot_slices(pvd_file, "U235_conc", [-30, 30], [itime-1, itime, itime+1])
+
