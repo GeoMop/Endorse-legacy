@@ -74,9 +74,12 @@ problem: !Coupling_Sequential
             #value: if((y > <source_y0>)and(y < <source_y1>)and(x > <source_x0>)and(x < <source_x1>),1.0,0) #if((y>-1129275)and(y<-1129250)and(x>-682460)and(x<-682450),1,0)
             # variant for single borehole
             value: if((x > <source_x0>)and(x < <source_x1>),1.0,0.0)
-        - name: bc_flux_t
-          is_boundary: true
-          scalar_field: !FieldTimeFunction
+#        - name: container_conc
+#          is_boundary: true
+#          scalar_field: !FieldFormula
+#            value:
+#        - name: bc_flux_t
+#          scalar_field: !FieldTimeFunction
 #            time_function:
 #              values: !include_csv
 #                file: <conc_flux_file>
@@ -86,15 +89,17 @@ problem: !Coupling_Sequential
 #                  t:
 #                    time: $0
 #                  value: $1
-            time_function:  # conc_flux_UOS_[kg:y]
-              values: !include_csv
-                file: <conc_flux_file>
-                separator: ","
-                n_head_lines: 1
-                format:
-                  t:
-                    time: $0
-                  value: $1
+
+#          scalar_field: !FieldTimeFunction
+#            time_function:  # conc_flux_UOS_[kg:y]
+#              values: !include_csv
+#                file: <conc_flux_file>
+#                separator: ","
+#                n_head_lines: 1
+#                format:
+#                  t:
+#                    time: $0
+#                  value: $1
 
       input_fields:
         - region: [box, fractures]
@@ -111,13 +116,17 @@ problem: !Coupling_Sequential
           disp_t: <dispersivity_T>
 
         - region: [.box_boreholes, .fr_bore]
-          bc_type: total_flux
-          bc_flux: !FieldFormula
-            #value: bc_flux_x * bc_flux_t / (365.2425 * 24 * 3600)
-            value: bc_flux_x * bc_flux_t / (365.2425 * 2.4 * 3.6)
-            #unit: kg*m*md/y  unfortunately does not work so we scale manually from kg/y/m2 to kg/s/m2
-            # even for nonzero diffusion getting zero mass in balance and substantial error (since fluxes are taken from field evaluation)
-            # trying some scaling in between (could be interpreted as change in conc unit anyway)
+          bc_type: diffusive_flux #total_flux
+          bc_robin_sigma: !FieldFormula
+            value: bc_flux_x * (2e-10) / 1  # max. apparent diffusion of I in bentonite m^2/ s ; approx. 1m total bentonite layer
+          bc_conc: !FieldFormula
+            value: 0.1 * exp(-(5 * log(10) / 1000) * maximum(t / (365.2425 * 24 * 3600), 100))
+#          bc_flux: !FieldFormula
+#            #value: bc_flux_x * bc_flux_t / (365.2425 * 24 * 3600)  conc in mg/m3
+#            value: bc_flux_x * bc_flux_t / (365.2425 * 0.24 * 0.36)
+#            #unit: kg*m*md/y  unfortunately does not work so we scale manually from kg/y/m2 to kg/s/m2
+#            # even for nonzero diffusion getting zero mass in balance and substantial error (since fluxes are taken from field evaluation)
+#            # trying some scaling in between (could be interpreted as change in conc unit anyway)
       solver:
         a_tol: <trans_solver__a_tol>
         r_tol: <trans_solver__r_tol>
@@ -132,6 +141,10 @@ problem: !Coupling_Sequential
       format: !vtk
         variant: ascii
       times:
+        - [30, 'y']
+        - [60, 'y']
+        - [120, 'y']
+        - [240, 'y']
         - [500, 'y']
         - [1100, 'y']
         - [2300, 'y']
