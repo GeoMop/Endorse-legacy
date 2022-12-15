@@ -74,6 +74,7 @@ def plot_source(source_file):
 
 
 def plot_indicators(ind_functions: List[IndicatorFn], file=None):
+    matplotlib.rcParams.update({'font.size': 16})
     prop_cycle = plt.rcParams['axes.prop_cycle']
     colors = prop_cycle.by_key()['color']
 
@@ -81,7 +82,8 @@ def plot_indicators(ind_functions: List[IndicatorFn], file=None):
     for i, ind_fn in enumerate(ind_functions):
         tmax, vmax = ind_fn.time_max()
 
-        label = f"{ind_fn.indicator.indicator_label}; max: ({vmax:.2e}, {tmax:.2e})"
+        #label = f"{ind_fn.indicator.indicator_label}; max: ({vmax:.2e}, {tmax:.2e})"
+        label = f"{ind_fn.indicator.indicator_label}"
         ax.plot(ind_fn.times_fine(), ind_fn.spline(ind_fn.times_fine()), c=colors[i], label=label)
         ax.scatter(ind_fn.times, ind_fn.ind_values, marker='.', c=colors[i])
         ax.scatter([tmax], [vmax], s=100, c=colors[i], marker='*')
@@ -90,6 +92,12 @@ def plot_indicators(ind_functions: List[IndicatorFn], file=None):
     formatter.set_scientific(True)
     formatter.set_powerlimits((-1, 1))
     ax.yaxis.set_major_formatter(formatter)
+
+    yf = ticker.ScalarFormatter(useMathText=True)
+    yf.set_scientific(True)
+    yf.set_powerlimits((3, 3))
+    ax.xaxis.set_major_formatter(yf)
+
     ax.set_xlabel("years")
     ax.set_ylabel("conc [g/m3]")
     plt.legend(loc='best')
@@ -121,7 +129,7 @@ def _get_values(hdf5_path):
     location = time['0']  # locations: ['0']
     values = location  # result shape: (10, 1)
     values = values[:4]
-    values = values.select(values < 1e3)
+    values = values.select(values < 1e-1)
     samples = _get_samples(values, sample_storage)
 
     values = np.log(values)
@@ -132,7 +140,7 @@ def _get_values(hdf5_path):
     return q_mean.mean, std, samples
 
 
-def plot_quantile_errorbar(data_dict):
+def plot_quantile_errorbar(data_dict, quantiles):
     matplotlib.rcParams.update({'font.size': 22})
 
     fig, ax = plt.subplots(figsize=(12, 10))
@@ -142,41 +150,42 @@ def plot_quantile_errorbar(data_dict):
     colors = prop_cycle.by_key()['color']
     xticks_pos = []
 
-    quantiles = [0.005, 0.002, 0.001, 0.0005]
     err_bars = []
 
     for case, hdf5_path in data_dict.items():
         mean, std, samples = _get_values(hdf5_path)
         exp_mean = np.exp(mean)
         yerr = np.exp(mean + np.array([-std, +std])) - exp_mean
-        for i in range(len(mean)):
+        for i in [1,3]:
             # add samples
             s_pos = np.ones(len(samples[i])) * pos[i]
             ax.scatter(s_pos, samples[i], color=colors[i], marker="v")
             ax.set_yscale('log')
 
-            # add errorbar
-
-            # if len(err_bars) < len(pos):
-            #     err_bars.append(err)
+            # add errorbar, not able to pass array of colors for every quantile case
+            err = ax.errorbar(pos[i], exp_mean[i], yerr=([-yerr[0, i]], [+yerr[1, i]]),
+                      lw=2, capsize=6, capthick=2,
+                      c=colors[i], marker="o", markersize=8, fmt=' ', linestyle='')
 
         xticks_pos.append(pos[int(len(pos)/2)])  # works sufficiently for x labels' centering
-        pos += 1
 
-    err = ax.errorbar(np.arange(4), exp_mean, yerr=(-yerr[0], +yerr[1]),
-                      lw=2, capsize=6, capthick=2,
-                      color=colors[i], marker="o", markersize=8, fmt=' ', linestyle='')
+        pos += 1
 
     ax.set_ylabel('conc ' + r'$[g/m^3]$')
     ax.set_xticks(xticks_pos)
     ax.set_xticklabels(list(data_dict.keys()))
 
     labels = []
-    for q_i in quantiles:
-        ind = Indicator.quantile(q_i)
-        labels.append(ind.indicator_label)
+    for i in [1,3]:
+        q = quantiles[i]
+        exp = int(np.floor(np.log10(q)))
+        man = int(q / 10 ** exp)
+        label = f"$1 - {man}\\times 10^{{{exp:1d}}}$"
 
-    ax.legend(handles=err_bars, labels=labels, loc=(0.01, 0.7))
+        #ind = Indicator.quantile(q_i)
+        labels.append(label)
+
+    ax.legend(labels=labels, loc=1)
 
     #ax.set_yscale("log")
     plt.savefig("quantiles.pdf")

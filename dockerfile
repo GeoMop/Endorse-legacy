@@ -1,4 +1,5 @@
-FROM flow123d/flow123d-gnu:3.9.1
+FROM flow123d/ci-gnu:4.0.0a_d4c856
+#FROM flow123d/flow123d-gnu:3.9.1
 
 COPY requirements.txt requirements.txt
 

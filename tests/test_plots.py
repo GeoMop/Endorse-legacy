@@ -37,7 +37,8 @@ def test_plot_errorbar():
                  "edz_02": "sandbox/edz_pos02/mlmc_1.hdf5",
                  "noedz_02": "sandbox/noedz_pos02/mlmc_1.hdf5"
                  }
-    plots.plot_quantile_errorbar(data_dict)
+    quantiles = [0.005, 0.002, 0.001, 0.0005]
+    plots.plot_quantile_errorbar(data_dict, quantiles)
 
 @pytest.mark.skip
 def test_plot_slicese():

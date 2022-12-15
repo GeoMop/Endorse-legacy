@@ -36,6 +36,10 @@ mlmc:
         pbs_name: endorse-flow123d
         walltime: 2:00:00
 
+indicators: # quantiles to compute
+  quantiles: [0.005, 0.002, 0.001, 0.0005]
+  plots: 0, 2
+
 
 metacentrum: false
 
@@ -94,7 +98,7 @@ bulk_field_parametric: &bulk_field_parametric
     cond_zero: 1e-16
     cond_max: 1e-11  # permeability 1e-18
     cond_min: 1e-13  # permeability 1e-20
-    por_max: 0.0025
+    por_max: 0.0025    # Use 0.004
     por_min: 0.002
 
     # values with respect to EDZ radius
