@@ -1,7 +1,7 @@
 from typing import *
 import os
 from bgem.gmsh import gmsh
-from endorse.common.common import dotdict, File
+from endorse.common import File, dotdict
 from endorse.mesh import mesh_tools
 
 

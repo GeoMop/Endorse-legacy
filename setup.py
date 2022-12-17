@@ -35,10 +35,14 @@ setuptools.setup(
     ],
     # include_package_data=True, # package includes all files of the package directory
     zip_safe=False,
-    install_requires=[],
+    install_requires=['numpy>=1.13.4', 'pandas', 'scipy', 'bih', 'gmsh>=4.10.4', 'pyyaml',
+                      'pyyaml-include', 'matplotlib', 'pyvista'],
+    # numba
+    # incompatible changes in SDK in release 4.6.0 to be changed in the new release of bgem
     python_requires='>=3',
 
-    packages=['endorse'],
+
+    packages=['endorse', 'endorse.mesh', 'endorse.common',  'endorse.flow123d_inputs'],
     package_dir={'': 'src'},
     entry_points={
         'console_scripts': ['endorse_gui=endorse.gui.app:main']

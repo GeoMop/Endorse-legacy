@@ -1,12 +1,8 @@
-import logging
 import os.path
 from typing import *
-import yaml
-import subprocess
 import shutil
 from pathlib import Path
 import numpy as np
-from yamlinclude import YamlIncludeConstructor
 
 from .memoize import File
 
@@ -20,6 +16,8 @@ class workdir:
     clean: if true the workspace would be deleted at the end of the context manager.
     TODO: clean_before / clean_after
     TODO: File constructor taking current workdir environment, openning virtually copied files.
+    TODO: Workdir would not perform change of working dir, but provides system interface for: subprocess, file openning
+          only perform CD just before executing a subprocess also interacts with concept of an executable.
     portable reference and with lazy evaluation. Optional true copy possible.
     """
     CopyArgs = Union[str, Tuple[str, str]]
@@ -44,7 +42,7 @@ class workdir:
             src = src.path
         if isinstance(dest, File):
             dest = dest.path
-        if dest is ".":
+        if dest == ".":
             if os.path.isabs(src):
                 dest = os.path.basename(src)
             else:
@@ -76,59 +74,21 @@ class workdir:
             shutil.rmtree(self.work_dir)
 
 
-class dotdict(dict):
-    """
-    dot.notation access to dictionary attributes
-    TODO: keep somehow reference to the original YAML in order to report better
-    KeyError origin.
-    """
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-    def __getattr__(self, item):
-        try:
-            return self[item]
-        except KeyError:
-            return self.__getattribute__(item)
-
-    @classmethod
-    def create(cls, cfg : Any):
-        """
-        - recursively replace all dicts by the dotdict.
-        """
-        if isinstance(cfg, dict):
-            items = ( (k, cls.create(v)) for k,v in cfg.items())
-            return dotdict(items)
-        elif isinstance(cfg, list):
-            return [cls.create(i) for i in cfg]
-        elif isinstance(cfg, tuple):
-            return tuple([cls.create(i) for i in cfg])
-        else:
-            return cfg
-
-
-def load_config(path):
-    """
-    Load configuration from given file replace, dictionaries by dotdict
-    uses pyyaml-tags namely for:
-    include tag:
-        geometry: <% include(path="config_geometry.yaml")>
-    """
-    YamlIncludeConstructor.add_to_loader_class(loader_class=yaml.FullLoader, base_dir=os.path.dirname(path))
-    with open(path) as f:
-        cfg = yaml.load(f, Loader=yaml.FullLoader)
-    return dotdict.create(cfg)
-
-
 def substitute_placeholders(file_in: str, file_out: str, params: Dict[str, Any]):
     """
-    In the template `file_in` substitute the placeholders of format '<name>'
+    In the template `file_in` substitute the placeholders in format '<name>'
     according to the dict `params`. Write the result to `file_out`.
+    TODO: set Files into params, in order to compute hash from them.
+    TODO: raise for missing value in dictionary
     """
     used_params = []
+    files = []
     with open(file_in, 'r') as src:
         text = src.read()
     for name, value in params.items():
+        if isinstance(value, File):
+            files.append(value)
+            value = value.path
         placeholder = '<%s>' % name
         n_repl = text.count(placeholder)
         if n_repl > 0:
@@ -136,13 +96,12 @@ def substitute_placeholders(file_in: str, file_out: str, params: Dict[str, Any])
             text = text.replace(placeholder, str(value))
     with open(file_out, 'w') as dst:
         dst.write(text)
-    return File(file_out), used_params
+
+    return File(file_out, files), used_params
 
 
 # Directory for all flow123d main input templates.
 # These are considered part of the software.
-_script_dir = os.path.dirname(os.path.realpath(__file__))
-flow123d_inputs_path = os.path.join(_script_dir, "../flow123d_inputs")
 
 # TODO: running with stdout/ stderr capture, test for errors, log but only pass to the main in the case of
 # true error

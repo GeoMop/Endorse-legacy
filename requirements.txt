@@ -1,12 +1,12 @@
-
-bih
-bgem
-numba
+#numba
+#scikit-learn
+pyvista
 pyyaml
 pyyaml-include
-pytest
 matplotlib
 numpy
 scipy
+pytest
 tox
 tox-gh-actions
+

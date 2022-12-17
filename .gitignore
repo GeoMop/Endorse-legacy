@@ -40,19 +40,18 @@ experiments/repository-model/tmp/**
 **/SIEVERT*
 **/.~lock*
 
-# python cache
+# python cache, and packages
 **/__pycache__/*
 **/.pytest_cache
+**/*.egg-info/**
 
 # kate swap
 *.kate-swp
 
-# python cache
-**/__pycache__/*
-
-# kate swap
-*.kate-swp
-
+tests/test_data/*_fields
+tests/test_data/*_fields.*
+tests/test_data/*_balance.*
+tests/test_data/trans_*
 #
 */output_1/*
 
