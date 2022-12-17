@@ -21,8 +21,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        apt install redis
-        ./setup.sh
+        sudo apt-get install redis
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install tox tox-gh-actions
