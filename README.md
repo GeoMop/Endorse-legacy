@@ -38,6 +38,13 @@ Repository structure:
 In order to create the development environment run:
 
         setup.sh
+        
+As the Docker remote interpreter is supported only in PyCharm Proffesional, we have to debug most of the code just with
+virtual environment and flow123d running in docker.
+        
+More complex tests should be run in the Docker image: [flow123d/geomop-gnu:2.0.0](https://hub.docker.com/repository/docker/flow123d/geomop-gnu)
+In the PyCharm (need Professional edition) use the Docker plugin, and configure the Python interpreter by add interpreter / On Docker ...
+
 
 
 ## Cíl projektu
