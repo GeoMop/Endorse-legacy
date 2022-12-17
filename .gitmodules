@@ -14,3 +14,6 @@
 [submodule "submodules/redis-cache"]
 	path = submodules/redis-cache
 	url = git@github.com:jbrezmorf/redis-simple-cache-3k.git
+[submodule "submodules/swrap"]
+	path = submodules/swrap
+	url = https://github.com/flow123d/swrap
