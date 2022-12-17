@@ -1,9 +1,17 @@
 import setuptools
-
+from setuptools import find_packages
 __version__="0.1.0"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
+
+
+# def packages_list():
+#     packages = []
+#     packages.extend(find_packages(where='src/endorse'))
+#     print("Detected packages: ", packages)
+#     [*find_packages(), 'endorse.mesh', 'endorse.common'],
+#     return packages
 
 setuptools.setup(
     name="endorse1",
@@ -37,13 +45,16 @@ setuptools.setup(
     zip_safe=False,
     install_requires=['numpy>=1.13.4', 'pandas', 'scipy', 'bih', 'gmsh>=4.10.4', 'pyyaml',
                       'pyyaml-include', 'matplotlib', 'pyvista'],
-    # numba
-    # incompatible changes in SDK in release 4.6.0 to be changed in the new release of bgem
     python_requires='>=3',
 
 
-    packages=['endorse', 'endorse.mesh', 'endorse.common',  'endorse.flow123d_inputs'],
-    package_dir={'': 'src'},
+    packages=['endorse', 'endorse.common', 'endorse.mesh', 'endorse.mlmc'],
+    package_dir={
+        'endorse': 'src/endorse',
+    },
+    package_data={
+        'endorse/flow123d_inputs': ['*.yaml']
+    },
     entry_points={
         'console_scripts': ['endorse_gui=endorse.gui.app:main']
     }

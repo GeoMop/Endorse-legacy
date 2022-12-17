@@ -7,7 +7,7 @@ from endorse.mesh import repository_mesh, mesh_tools
 #from bgem.stochastic.fracture import Fracture
 
 
-script_dir = script_dir = os.path.dirname(os.path.realpath(__file__))
+script_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def test_make_mesh():
