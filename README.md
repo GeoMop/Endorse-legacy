@@ -25,6 +25,21 @@ Repository structure:
 
 
 
+
+
+## Repository structure
+
+- `doc` - software documentation and various reports from the Endorse project
+- `experiments` - various numerical experiments and developments as part of the Endorse project
+- `src` - main sources
+- `tests` - various software tests, test data
+
+## Development environment
+In order to create the development environment run:
+
+        setup.sh
+
+
 ## Cíl projektu
 
 Vytvořit SW nástroj a metodiku, pro predikci veličin charakterizujících bezpečnost dílčí části úložiště

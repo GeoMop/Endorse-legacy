@@ -75,12 +75,10 @@ geometry:
   n_frac_limit: 3
   # mesh step on outer boundary
   boundary_mesh_step: 50
-  # mesh step on outer boundary of EDZ (just around boreholes right now)
-  edz_mesh_step: 1
   # mesh step on inner boreholes
-  boreholes_mesh_step: 0.3   # haxagon boreholes
+  boreholes_mesh_step: 1.5   # haxagon boreholes
   #boreholes_mesh_step: 0.3   # EDZ minimal resolution
-  main_tunnel_mesh_step: 2
+  main_tunnel_mesh_step: 3
 
   # Main tunnel - main access tunnel
   main_tunnel:
@@ -101,20 +99,13 @@ geometry:
       width: 5.5
       length: 23
 
-  # Storage boreholes
-  # Total number of side boreoholes (one side) resolved and homogenized.
-  n_side_boreholes: 0
-  # Number of explicit side boreholes (addition to the central source borehole)
-  n_explicit_boreholes: 0
-
+  # Storage boreholes (fixed number of boreholes == 3)
   borehole_radius: 1.1
   borehole_length: 300
-  # horizontal gaps between boreholes; (2 * n_side_boreholes) * borehole_distance should be < main_tunnel.length
-  # not checked in the code
+  # horizontal gaps between boreholes
   borehole_distance: 25
 
-
-  edz_radius: 2.1
+  edz_thickness: 2
 
   # shifting the mesh to real in-situ coordinates
   # TODO: do not shift the computation mesh but the input data to the local coordinate system
