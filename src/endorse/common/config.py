@@ -3,7 +3,11 @@ from typing import *
 
 import os
 import yaml
+import re
+from glob import iglob
+
 from yamlinclude import YamlIncludeConstructor
+from yamlinclude.constructor import WILDCARDS_REGEX, get_reader_class_by_name
 
 
 
@@ -115,15 +119,70 @@ def apply_variant(cfg:dotdict, variant:Dict[str, dotdict]) -> dotdict:
         new_cfg = deep_update(new_cfg, PathIter(path), val)
     return new_cfg
 
+class YamlInclude(YamlIncludeConstructor):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.included_files = []
 
-def load_config(path):
+    def load(
+            self,
+            loader,
+            pathname: str,
+            recursive: bool = False,
+            encoding: str = '',
+            reader: str = ''
+    ):  # pylint:disable=too-many-arguments
+        if not encoding:
+            encoding = self._encoding or self.DEFAULT_ENCODING
+        if self._base_dir:
+            pathname = os.path.join(self._base_dir, pathname)
+        reader_clz = None
+        if reader:
+            reader_clz = get_reader_class_by_name(reader)
+        if re.match(WILDCARDS_REGEX, pathname):
+            result = []
+            iterable = iglob(pathname, recursive=recursive)
+            for path in filter(os.path.isfile, iterable):
+                self.included_files.append(path)
+                if reader_clz:
+                    result.append(reader_clz(path, encoding=encoding, loader_class=type(loader))())
+                else:
+                    result.append(self._read_file(path, loader, encoding))
+            return result
+        self.included_files.append(pathname)
+        if reader_clz:
+            return reader_clz(pathname, encoding=encoding, loader_class=type(loader))()
+        return self._read_file(pathname, loader, encoding)
+
+
+def load_config(path, collect_files=False):
     """
     Load configuration from given file replace, dictionaries by dotdict
     uses pyyaml-tags namely for:
     include tag:
         geometry: <% include(path="config_geometry.yaml")>
     """
-    YamlIncludeConstructor.add_to_loader_class(loader_class=yaml.FullLoader, base_dir=os.path.dirname(path))
+    instance = YamlInclude.add_to_loader_class(loader_class=yaml.FullLoader, base_dir=os.path.dirname(path))
     with open(path) as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
-    return dotdict.create(cfg)
+    dd = dotdict.create(cfg)
+    if collect_files:
+        referenced = instance.included_files
+        referenced.extend(collect_referenced_files(dd))
+        dd['_file_refs'] = referenced
+    return dd
+
+FilePath = NewType('FilePath', str)
+def collect_referenced_files(cfg:dotdict) -> List[FilePath]:
+    referenced = []
+    if isinstance(cfg, (dict, dotdict)):
+        referenced = [collect_referenced_files(v) for v in cfg.values()]
+    elif isinstance(cfg, (list, tuple)):
+        referenced = [collect_referenced_files(v) for v in cfg]
+    else:
+        if isinstance(cfg, str) and os.path.isfile(cfg):
+            return [cfg]
+        else:
+            return []
+    # flatten
+    return [i for l in referenced for i in l]

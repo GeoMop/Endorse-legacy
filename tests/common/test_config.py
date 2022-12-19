@@ -50,7 +50,15 @@ def test_apply_variant():
         common.apply_variant(cfg, {'a/b':0})
 
 def test_load_config():
-    conf_file = os.path.join(script_dir, "../test_data/config.yaml")
-    cfg = common.load_config(conf_file)
-    assert isinstance(cfg.geometry, common.dotdict)
-    assert isinstance(cfg.geometry, common.dotdict)
+    conf_file = os.path.join(script_dir, "cfg_main.yaml")
+    cfg = common.load_config(conf_file, collect_files=True)
+
+    assert cfg.a.other.content == "inner empty"
+    assert cfg.c[0] == 'other_file1.any'
+    assert cfg.c[1].c == 'other_file2.any'
+    print(cfg._file_refs)
+    assert len(cfg._file_refs) == 4
+    assert 'other_file1.any' in cfg._file_refs
+    assert 'other_file2.any' in cfg._file_refs
+    assert os.path.abspath('_cfg_a.yaml') in cfg._file_refs
+    assert os.path.abspath('_cfg_b.yaml') in cfg._file_refs
