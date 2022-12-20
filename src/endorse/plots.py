@@ -140,6 +140,14 @@ def _get_values(hdf5_path):
     return q_mean.mean, std, samples
 
 
+"""
+Refactor to plot a table:
+[case, point, mean_log, std_log, samples]
+cases makes main groups
+points forms individual colors
+samples are plotted right now, modified graph needed for reconstructed density
+"""
+
 def plot_quantile_errorbar(data_dict, quantiles):
     matplotlib.rcParams.update({'font.size': 22})
 
@@ -189,6 +197,51 @@ def plot_quantile_errorbar(data_dict, quantiles):
 
     #ax.set_yscale("log")
     plt.savefig("quantiles.pdf")
+    #plt.show()
+
+
+
+def plot_log_errorbar_groups(group_data, value_label):
+    """
+    Input for individual bar plots, list of:
+    [group1, group2, mean_log, std_log, samples]
+    """
+    matplotlib.rcParams.update({'font.size': 22})
+    fig, ax = plt.subplots(figsize=(12, 10))
+    prop_cycle = plt.rcParams['axes.prop_cycle']
+    colors = prop_cycle.by_key()['color']
+    groups1 = sorted({g[0] for g in group_data})
+    groups2 = sorted({g[1] for g in group_data})
+    igroup1 = {g:i for i, g in enumerate(groups1) }
+    igroup2 = {g:i for i, g in enumerate(groups2) }
+
+    g2_space = 0.1
+    g1_space = 0.2
+    g2_x_size = ((len(groups2) - 1) * g2_space + g1_space)
+    for group in group_data:
+        g1, g2, mean_log, std_log, samples = group
+        ig1 = igroup1[g1]
+        ig2 = igroup2[g2]
+        x = g2_x_size * ig1 + g2_space * ig2
+
+        exp_mean = np.exp(mean_log)
+        yerr = np.exp(mean_log + np.array([-std_log, +std_log])) - exp_mean
+        Y = np.exp(samples)
+        X = np.full_like(Y, x)
+        ax.scatter(X, Y, color=colors[ig2], marker="v")
+        ax.set_yscale('log')
+
+        # add errorbar, not able to pass array of colors for every quantile case
+        err = ax.errorbar(x, exp_mean, yerr=([-yerr[0]], [+yerr[1]]),
+                      lw=2, capsize=6, capthick=2,
+                      c=colors[ig2], marker="o", markersize=8, fmt=' ', linestyle='')
+
+    xticks_pos = (g2_x_size - g1_space) / 2 + g2_x_size * np.arange(len(groups1))
+    ax.set_ylabel(value_label)
+    ax.set_xticks(xticks_pos)
+    ax.set_xticklabels(groups1)
+    ax.legend(labels=groups2, loc=1)
+    plt.savefig("cases_plot.pdf")
     #plt.show()
 
 

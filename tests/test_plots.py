@@ -31,14 +31,18 @@ def test_plot_source():
     plots.plot_source(conc_flux, source_surface)
 
 #@pytest.mark.skip
-def test_plot_errorbar():
-    data_dict = {"edz_10": "sandbox/edz_pos10/mlmc_1.hdf5",
-                 "noedz_10": "sandbox/noedz_pos10/mlmc_1.hdf5",
-                 "edz_02": "sandbox/edz_pos02/mlmc_1.hdf5",
-                 "noedz_02": "sandbox/noedz_pos02/mlmc_1.hdf5"
-                 }
-    quantiles = [0.005, 0.002, 0.001, 0.0005]
-    plots.plot_quantile_errorbar(data_dict, quantiles)
+def test_plot_log_errorbar_groups():
+    g1 = 'g1'
+    g2 = 'g2'
+    p1 = "1:5"
+    p2 = "2:5"
+    data = [
+        [g1, p1, -1, 0.3, [-1.3, -0.3, 0.1, -2] ],
+        [g1, p2, -11, 2, [-11, -12, -10]],
+        [g2, p2, -6, 1, [-6, -6.5, -5]],
+        [g2, p1, -3, 0.5, [-3, -4, -3.5]]
+    ]
+    plots.plot_log_errorbar_groups(data, 'conc ' + r'$[g/m^3]$')
 
 @pytest.mark.skip
 def test_plot_slicese():
