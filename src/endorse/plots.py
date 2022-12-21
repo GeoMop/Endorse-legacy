@@ -234,7 +234,7 @@ def plot_log_errorbar_groups(group_data, value_label):
         # add errorbar, not able to pass array of colors for every quantile case
         err = ax.errorbar(x, exp_mean, yerr=([-yerr[0]], [+yerr[1]]),
                       lw=2, capsize=6, capthick=2,
-                      c=colors[ig2], marker="o", markersize=8, fmt=' ', linestyle='')
+                      c=colors[ig2], marker="o", markersize=8, linestyle='')
 
     xticks_pos = (g2_x_size - g1_space) / 2 + g2_x_size * np.arange(len(groups1))
     ax.set_ylabel(value_label)

@@ -1,6 +1,12 @@
+from typing import *
 import os
 import sys
 import numpy as np
+import attrs
+import argparse
+import fnmatch
+import shutil
+
 from mlmc.estimator import Estimate
 from mlmc.sampler import Sampler
 from mlmc.sampling_pool import OneProcessPool, ProcessPool
@@ -13,12 +19,13 @@ from mlmc import estimator
 from mlmc.quantity.quantity_estimate import estimate_mean, moments
 from mlmc.sim.fullscale_transport_sim import FullScaleTransportSim
 
-from endorse.common.config import load_config
-import os
+from endorse import common
+from endorse import plots
 
 _script_dir = os.path.dirname(os.path.realpath(__file__))
 _endorse_repository = os.path.abspath(os.path.join(_script_dir, '../../../'))
 
+MAIN_CONFIG_FILE = 'config.yaml'
 
 """
 tested parameters: run ../ --clean
@@ -31,14 +38,13 @@ class FullScaleTransport:
 
         self.work_dir = os.path.abspath(args.work_dir)
         self.cfg_file = main_cfg_file
-        cfg = load_config(os.path.join(main_cfg_file))
+        cfg = common.load_config(os.path.join(main_cfg_file))
         self.cfg = cfg
 
         #cfg.flow_env.mlmc.singularity
         #self.singularity_image = os.path.abspath(cfg.mlmc.singularity_image)
         #self.endorse_repository = os.path.abspath(args.endorse_dir)
         # Add samples to existing ones
-        self.clean = args.clean
         # Remove HDF5 file, start from scratch
         self.debug = args.debug
         # 'Debug' mode is on - keep sample directories
@@ -53,18 +59,9 @@ class FullScaleTransport:
         # Determine number of samples at each level
         self.n_samples = [ 20 ]
 
-        if args.command == 'run':
-            self.run()
-        elif args.command == 'recollect':
-            self.run(recollect=True)
-        elif args.command == "process":
-            self.process()
-        else:
-            self.clean = False
-            self.run(renew=True) if args.command == 'renew' else self.run()
 
     def run(self, renew=False, recollect=False):
-        """
+        """0
         Run MLMC
         :param renew: If True then rerun failed samples with same sample id
         :return: None
@@ -72,20 +69,22 @@ class FullScaleTransport:
         # Create working directory if necessary
         os.makedirs(self.work_dir, mode=0o775, exist_ok=True)
 
-        if self.clean:
-            # Remove HFD5 file
-            if os.path.exists(os.path.join(self.work_dir, "mlmc_{}.hdf5".format(self.n_levels))):
-                os.remove(os.path.join(self.work_dir, "mlmc_{}.hdf5".format(self.n_levels)))
-
         # Create sampler (mlmc.Sampler instance) - crucial class that actually schedule samples
         sampler = self.setup_config()
 
-        # Schedule samples
-        if recollect:
-            raise NotImplementedError("Not supported in the released version yet")
-        else:
-            self.generate_jobs(sampler, n_samples=self.n_samples, renew=renew)
-            self.all_collect(sampler)  # Check if all samples are finished
+        self.generate_jobs(sampler, n_samples=self.n_samples, renew=renew)
+        self.all_collect(sampler)  # Check if all samples are finished
+
+    def recollect(self):
+        self.run(recollect=True)
+
+    def renew(self):
+        self.clean = False
+        self.run(renew=True)
+
+
+
+
 
     def setup_config(self):
         """
@@ -334,63 +333,258 @@ class FullScaleTransport:
             level_parameters.append([step_range[0] ** (1 - level_param) * step_range[1] ** level_param])
         return level_parameters
 
+CaseName = NewType('CaseName', str)
+CasePatch = Dict[common.config.Path, common.dotdict]
 
-# class dotdict(dict):
-#     """
-#     dot.notation access to dictionary attributes
-#     TODO: keep somehow reference to the original YAML in order to report better
-#     KeyError origin.
-#     """
-#     __setattr__ = dict.__setitem__
-#     __delattr__ = dict.__delitem__
-#
-#     def __getattr__(self, item):
-#         try:
-#             return self[item]
-#         except KeyError:
-#             return self.__getattribute__(item)
-#
-#     @classmethod
-#     def create(cls, cfg : Any):
-#         """
-#         - recursively replace all dicts by the dotdict.
-#         """
-#         if isinstance(cfg, dict):
-#             items = ( (k, cls.create(v)) for k,v in cfg.items())
-#             return dotdict(items)
-#         elif isinstance(cfg, list):
-#             return [cls.create(i) for i in cfg]
-#         elif isinstance(cfg, tuple):
-#             return tuple([cls.create(i) for i in cfg])
-#         else:
-#             return cfg
+@attrs.define
+class SourceDensity:
+    """
+    For odd length N the density is (1/N, ..., 1/N),  N items
+    for even length N the density is (1/2N, 1/N, ..., 1/N, 1/2N) N + 1 items
+    """
+    # first container indexed from 0
+    center: int
+    # number of containers in the source
+    length: int
+
+    def plot_label(self):
+        return f"pos: {self.center}, len: {self.length}"
+
+    def fs_name_items(self):
+        c_str =  f"{self.center:03d}"
+        if self.length > 1:
+            return [c_str, str(self.source.length)]
+        else:
+            return [c_str]
+
+    #@staticmethod
+    #def from_center(center: int, length: int):
+    #    return SourceDensity(center - , length)
+
+@attrs.define
+class SimCase:
+    case_name: str
+    case_patch: CasePatch
+    source: SourceDensity
+
+    @property
+    def directory(self):
+        items = [self.case_name, *self.source.fs_name_items()]
+        return "-".join(items)
+
+    @property
+    def hdf5_path(self):
+        return os.path.join(self.directory, "mlmc_1.hdf5")
+
+
+    def mean_std_log(self):
+        i_quantile = 1
+        sample_storage = SampleStorageHDF(file_path=self.hdf5_path)
+        sample_storage.chunk_size = 1024
+        result_format = sample_storage.load_result_format()
+        root_quantity = make_root_quantity(sample_storage, result_format)
+
+        conductivity = root_quantity['indicator_conc']
+        time = conductivity[1]  # times: [1]
+        location = time['0']  # locations: ['0']
+        values = location  # result shape: (10, 1)
+        values = values[i_quantile, 0]  # selected quantile
+        values = values.select(values < 1e-1)
+        values = np.log(values)
+        samples = self._get_samples(values, sample_storage)[0]
+
+
+        q_mean = estimate_mean(values)
+        val_squares = estimate_mean(np.power(values - q_mean.mean, 2))
+        std = np.sqrt(val_squares.mean)
+
+        return q_mean.mean[0], std[0], samples
+
+    def _get_samples(self, quantity, sample_storage):
+        n_moments = 2
+        estimated_domain = Estimate.estimate_domain(quantity, sample_storage, quantile=0.001)
+        moments_fn = Legendre(n_moments, estimated_domain)
+        estimator = Estimate(quantity=quantity, sample_storage=sample_storage, moments_fn=moments_fn)
+        samples = estimator.get_level_samples(level_id=0)[..., 0]
+        return samples
+
+
+@attrs.define
+class SimCases:
+    """
+    Organize set of stochastic simulation variants.
+    That consists of cartesian product of variants (cases) of forward simulation parameters
+    and distribution of contamination source (sources), currently just as discrete containers.
+
+    Set of all named configuration cases is defined by 'cases.yaml' (file must be referenced in main 'config.yaml') that
+    contains dictionary {<case_name> : <dict of config changes>}.
+
+    Source distribution should be considered as prescribed set of concentration sources, i.s. concentration source density C(x)
+    is sum of densities for individual containers. The diffusion through the bentonite would be described by a time changing
+    and random parameter however the distribution is independent on the container position.
+    This way the process is linear with respect to the concentration density and better describes differences between
+    compared configurations.
+
+    To this end we consider source given by its position and span (how many source containers we consider) the concentration is normalized
+    so that total initial concentration is 1. Time decrease is part of configuration (see cases).
+    <i> = [i:i+1:1]
+    <i>-<n> = [i-n/2 : i+n/2+(1) :1]
+    """
+
+
+    cfg_cases : Dict[CaseName, CasePatch]
+    source_densities: List[SourceDensity]
+
     @staticmethod
-    def get_arguments(arguments):
-        """
-        Getting arguments from console
-        :param arguments: list of arguments
-        :return: namespace
-        """
-        import argparse
-        parser = argparse.ArgumentParser()
+    def def_args(parser):
+        help = """
+               Space separated names of cases. Subset of cases defined as keys of `cases.yaml`."
+               """
+        parser.add_argument("cases", help=help)
+        help = '''
+        Defines basis functions of the linear space of source densities.Space separated index ranges. E.g. "1:10:2 2 6:8"
+        '''
+        parser.add_argument("sources", help=help)
 
-        parser.add_argument('command', choices=['run', 'collect', 'renew'],
-                            help='run - create new execution,'
-                                 'collect - keep collected, append existing HDF file'
-                                 'renew - renew failed samples, run new samples with failed sample ids (which determine random seed)')
-        parser.add_argument('work_dir', help='Work directory')
-        #parser.add_argument('singularity_path', help='Path to singularity image')
-        #parser.add_argument('endorse_dir', help='Path to endorse repository')
-        parser.add_argument("-c", "--clean", default=False, action='store_true',
-                            help="Clean before run, used only with 'run' command")
+    @classmethod
+    def initialize(cls, args):
+        """
+        Initialize from cfg._cases file and arguments.
+        :param args:
+        :return:
+        """
+        cfg = common.load_config(MAIN_CONFIG_FILE)
+        cases = cls.active_cases(args.cases, cfg.cases_file)
+        sources = cls.source_basis(args.sources, cfg.geometry.containers.n_containers)
+        return cls(cases, sources)
+
+    @staticmethod
+    def active_cases(arg_cases, cases_file):
+        cfg = common.load_config(cases_file)
+        if not isinstance(cfg, dict):
+            cfg = {}
+        all_cases = list(cfg.keys())
+        selected_cases = []
+        for case_pattern in arg_cases:
+            selected_cases.extend(fnmatch.filter(all_cases, case_pattern))
+        return {k:cfg[k] for k in selected_cases}
+
+    @staticmethod
+    def source_basis(arg_sources, n_containers):
+        sources = []
+        all_containers = list(range(n_containers))
+        for slice_token in arg_sources.split(" "):
+            slice_items = [int(x.strip()) if x.strip() else None for x in slice_token.split(':')]
+            if len(slice_items) == 1:
+                # single number interpreted as single index contrary to the standard slice
+                source_slice = slice(slice_items[0], slice_items[0] + 1, 1)
+            else:
+                source_slice = slice(*slice_items)
+            subset = all_containers[source_slice]
+            if not subset:
+                continue
+            step = subset[1] - subset[0] if len(subset) > 1 else 1
+            for i in subset:
+                sources.append(SourceDensity(i, step))
+        return sources
+
+    def iterate(self):
+        for case_key, case_patch in self.cfg_cases.items():
+            for source in self.source_densities:
+                yield SimCase(case_key, case_patch, source)
+
+
+
+
+class CleanCmd:
+    @staticmethod
+    def def_args(parser):
+        help="Remove whole cases directories."
+        parser.add_argument('--all', action='store_true', help=help)
+        SimCases.def_args(parser)
+
+    # Remove HFD5 file
+    def execute(self, args):
+        cases = SimCases.initialize(args)
+        for case in cases.iterate():
+            try:
+                if args.all:
+                    shutil.rmtree(case.directory, ignore_errors=False, onerror=None)
+                else:
+                    os.remove(os.path.join(case.directory, f"mlmc_{cases.cfg.mlmc.n_levels}.hdf5"))
+            except FileNotFoundError:
+                pass
+
+
+
+
+
+@attrs.define
+class RunCmd:
+    @staticmethod
+    def def_args(parser):
         parser.add_argument("-d", "--debug", default=False, action='store_true',
-                            help="Keep sample directories")
+                        help="Keep sample directories")
+        SimCases.def_args(parser)
 
-        args = parser.parse_args(arguments)
+    def execute(self, args):
+        pass
 
-        return args
+
+
+class CasesPlot:
+
+    @staticmethod
+    def def_args(parser):
+        SimCases.def_args(parser)
+
+    def execute(self, args):
+        cases = SimCases.initialize(args)
+        data = [(case.case_name, case.source.plot_label(), *case.mean_std_log()) for case in cases.iterate()]
+        print(data)
+        plots.plot_log_errorbar_groups(data, 'conc ' + r'$[g/m^3]$')
+
+
+@attrs.define
+class PlotCmd:
+    @staticmethod
+    def def_args(parser):
+        add_subparsers(parser, 'plot', 'plot_class', [CasesPlot])
+
+    def execute(self, args):
+        plot_instance = args.plot_class()
+        plot_instance.execute(args)
+
+
+
+def add_subparsers(parser:argparse.ArgumentParser, suffix, fn_arg:str, classes: List[Any]):
+    subparsers = parser.add_subparsers()
+    for cls in classes:
+        cmd = cls.__name__.lower().rstrip(suffix)
+        subparser = subparsers.add_parser(cmd)
+        cls.def_args(subparser)
+        subparser.set_defaults(**{fn_arg: cls})
+
+def get_arguments(arguments):
+    """
+    Getting arguments from console
+    :param arguments: list of arguments
+    :return: namespace
+    """
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-w', '--workdir',
+                        default=os.getcwd(),
+                        type=str, help='Main directory of the whole project. Default is current directory.')
+    add_subparsers(parser, 'cmd', 'cmd_class', [CleanCmd, RunCmd, PlotCmd])
+    args = parser.parse_args(arguments)
+    return args
+
 
 if __name__ == "__main__":
-    args = FullScaleTransport.get_arguments(sys.argv[1:])
-    pr = FullScaleTransport("config_homo_tsx.yaml", args)
+    args = get_arguments(sys.argv[1:])
+    with common.workdir(args.workdir):
+        command_instance = args.cmd_class()
+        command_instance.execute(args)
+
 

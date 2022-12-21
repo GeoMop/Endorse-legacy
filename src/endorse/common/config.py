@@ -163,26 +163,35 @@ def load_config(path, collect_files=False):
         geometry: <% include(path="config_geometry.yaml")>
     """
     instance = YamlInclude.add_to_loader_class(loader_class=yaml.FullLoader, base_dir=os.path.dirname(path))
+    cfg_dir = os.path.dirname(path)
     with open(path) as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
     dd = dotdict.create(cfg)
     if collect_files:
         referenced = instance.included_files
-        referenced.extend(collect_referenced_files(dd))
+        referenced.append(path)
+        referenced.extend(collect_referenced_files(dd, ['.', cfg_dir]))
         dd['_file_refs'] = referenced
     return dd
 
+
+def path_search(filename, path):
+    for dir in path:
+        if not isinstance(filename, str):
+            continue
+        full_name = os.path.join(dir, filename)
+        if os.path.isfile(full_name):
+            return [os.path.abspath(full_name)]
+    return []
+
 FilePath = NewType('FilePath', str)
-def collect_referenced_files(cfg:dotdict) -> List[FilePath]:
+def collect_referenced_files(cfg:dotdict, search_path:List[str]) -> List[FilePath]:
     referenced = []
     if isinstance(cfg, (dict, dotdict)):
-        referenced = [collect_referenced_files(v) for v in cfg.values()]
+        referenced = [collect_referenced_files(v, search_path) for v in cfg.values()]
     elif isinstance(cfg, (list, tuple)):
-        referenced = [collect_referenced_files(v) for v in cfg]
+        referenced = [collect_referenced_files(v, search_path) for v in cfg]
     else:
-        if isinstance(cfg, str) and os.path.isfile(cfg):
-            return [cfg]
-        else:
-            return []
+        return path_search(cfg, search_path)
     # flatten
     return [i for l in referenced for i in l]
