@@ -241,6 +241,7 @@ def plot_log_errorbar_groups(group_data, value_label):
     ax.set_xticks(xticks_pos)
     ax.set_xticklabels(groups1)
     ax.legend(labels=groups2, loc=1)
+    plt.savefig("cases_plot.svg")
     plt.savefig("cases_plot.pdf")
     #plt.show()
 
