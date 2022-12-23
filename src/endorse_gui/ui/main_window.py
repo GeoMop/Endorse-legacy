@@ -43,7 +43,7 @@ class MainWindow(QtWidgets.QMainWindow):
             project_text = ""
             project_text_status = ""
 
-        self._inversion_label.setText("Project: {}, Inversion: {}".format(project_text_status, name))
+        #self._inversion_label.setText("Project: {}, Inversion: {}".format(project_text_status, name))
 
         if project_path:
             if name:

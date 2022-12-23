@@ -247,6 +247,70 @@ class GsPoint2(QtWidgets.QGraphicsEllipseItem):
         self.update()
 
 
+class GsContainer(QtWidgets.QGraphicsRectItem):
+    SIZE = 2
+    SIZE_SELECTED = 6
+    STD_ZVALUE = 21+7
+    SELECTED_ZVALUE = 20+7
+    __pen_table={}
+
+    no_brush = QtGui.QBrush(QtCore.Qt.NoBrush)
+    no_pen = QtGui.QPen(QtCore.Qt.NoPen)
+    add_brush = QtGui.QBrush(QtCore.Qt.darkGreen, QtCore.Qt.SolidPattern)
+
+    @classmethod
+    def make_pen(cls, color):
+        brush = QtGui.QBrush(color, QtCore.Qt.SolidPattern)
+        pen = QtGui.QPen(color, 1.4, QtCore.Qt.SolidLine)
+        return (brush, pen)
+
+    @classmethod
+    def pen_table(cls, color):
+        brush_pen = cls.__pen_table.setdefault(color, cls.make_pen(QtGui.QColor(color)))
+        return brush_pen
+
+    def __init__(self, x, y, length, radius, color, color_selected, color_computed, el_id):
+        self.my_x = x
+        self.my_y = y
+        self.my_length = length
+        self.my_radius = radius
+        self.color = color
+        self.color_selected = color_selected
+        self.color_computed = color_computed
+        self.selected = False
+        self.computed = False
+        self.el_id = el_id
+        super().__init__(0, -self.my_radius, self.my_length, self.my_radius*2)
+        self.setAcceptedMouseButtons(QtCore.Qt.LeftButton | QtCore.Qt.RightButton)
+        self.setOpacity(0.75)
+        self.update()
+
+    def paint(self, painter, option, widget):
+        painter.setBrush(self.region_brush)
+        painter.setPen(GsPoint2.no_pen)
+        painter.drawRect(self.rect())
+
+    def update(self):
+        self.setPos(self.my_x, self.my_y)
+
+        if self.selected:
+            self.region_brush, self.region_pen = GsPoint2.pen_table(self.color_selected)
+        elif self.computed:
+            self.region_brush, self.region_pen = GsPoint2.pen_table(self.color_computed)
+        else:
+            self.region_brush, self.region_pen = GsPoint2.pen_table(self.color)
+
+        super().update()
+
+    def set_selected(self, selected=True):
+        self.selected = selected
+        self.update()
+
+    def set_computed(self, computed=True):
+        self.computed = computed
+        self.update()
+
+
 class GsPointCloud(QtWidgets.QGraphicsEllipseItem):
     SIZE = 2
     STD_ZVALUE = -90
@@ -575,18 +639,18 @@ class MeshCutTool:
         self.margin_line4 = MeshCutToolLine(margin_pen, z)
 
         # add items to scene
-        self._scene.addItem(self.line1)
-        self._scene.addItem(self.line2)
-        self._scene.addItem(self.line3)
-        self._scene.addItem(self.line4)
-        self._scene.addItem(self.point3)
-        self._scene.addItem(self.point0)
-        self._scene.addItem(self.point1)
-        self._scene.addItem(self.point2)
-        self._scene.addItem(self.margin_line1)
-        self._scene.addItem(self.margin_line2)
-        self._scene.addItem(self.margin_line3)
-        self._scene.addItem(self.margin_line4)
+        # self._scene.addItem(self.line1)
+        # self._scene.addItem(self.line2)
+        # self._scene.addItem(self.line3)
+        # self._scene.addItem(self.line4)
+        # self._scene.addItem(self.point3)
+        # self._scene.addItem(self.point0)
+        # self._scene.addItem(self.point1)
+        # self._scene.addItem(self.point2)
+        # self._scene.addItem(self.margin_line1)
+        # self._scene.addItem(self.margin_line2)
+        # self._scene.addItem(self.margin_line3)
+        # self._scene.addItem(self.margin_line4)
 
         self.update()
 
@@ -724,10 +788,10 @@ class SideViewTool:
         self.margin_line1 = MeshCutToolLine(margin_pen, z)
 
         # add items to scene
-        self._scene.addItem(self.line1)
-        self._scene.addItem(self.point0)
-        self._scene.addItem(self.point1)
-        self._scene.addItem(self.margin_line1)
+        # self._scene.addItem(self.line1)
+        # self._scene.addItem(self.point0)
+        # self._scene.addItem(self.point1)
+        # self._scene.addItem(self.margin_line1)
 
         self.update()
 
@@ -1418,11 +1482,34 @@ class DiagramView(QtWidgets.QGraphicsView):
         self.side_view.hide_electrodes()
 
     def update_selected_electrodes(self, selected_el):
+        return
         el = set(selected_el)
         for item in self._scene.electrode_item_list:
             item.set_selected(item.el_id in el)
 
         self.side_view.update_selected_electrodes(selected_el)
+
+    def show_containers(self, containers_cfg, borehole_radius):
+        #self.hide_electrodes()
+
+        color_ind = 0
+        for i in range(containers_cfg.n_containers):
+            x = containers_cfg.offset + i * (containers_cfg.length + containers_cfg.spacing)
+            y = 0.0
+            gpt = GsContainer(x, y, containers_cfg.length, borehole_radius, "gray",
+                           "orange", "blue",
+                           i)
+            self._scene.addItem(gpt)
+            gpt.update()
+            self.el_map[i] = gpt
+            self._scene.electrode_item_list.append(gpt)
+
+        #self.side_view.show_electrodes(electrode_groups)
+
+    def update_selected_containers(self, selected, computed):
+        for i in range(len(self.el_map)):
+            self.el_map[i].set_selected(i in selected)
+            self.el_map[i].set_computed(i in computed)
 
     def show_laser(self, file_name):
         reg_id = self._scene.regions.add_region(dim=1)
@@ -1638,18 +1725,37 @@ class DiagramView(QtWidgets.QGraphicsView):
 
         self.side_view.hide_point_cloud()
 
+    def modify_mesh(self, in_file, out_file):
+        """Keeps only elements of dim 2 and 3. Sets physical id to 2 for inversion region and 1 for no inversion region."""
+        el_type_to_dim = {15: 0, 1: 1, 2: 2, 4: 3}
+
+        mesh = GmshIO(in_file)
+
+        new_elements = {}
+        for id, elm in mesh.elements.items():
+            el_type, tags, nodes = elm
+            if tags[0] in [20, 22]:
+                new_elements[id] = (el_type, tags, nodes)
+        mesh.elements = new_elements
+
+        mesh.write_ascii(out_file)
+
     def show_gallery_mesh(self, genie):
         self.hide_gallery_mesh()
 
         prj_dir = genie.cfg.current_project_dir
         cfg = genie.project_cfg
-        file_name = os.path.join(prj_dir, "gallery_mesh.msh")
-        if not os.path.isfile(file_name):
+        file_name = "/home/radek/work/Endorse/tests/meshes/sandbox/one_borehole.msh2"
+
+        #self.modify_mesh(file_name, file_name2)
+        file_name2 = os.path.join(os.path.dirname(__file__), "..", "..", "one_borehole2.msh2")
+
+        if not os.path.isfile(file_name2):
             return
 
         pen = QtGui.QPen(QtGui.QColor("black"), 0, QtCore.Qt.SolidLine)
 
-        mesh = GmshIO(file_name)
+        mesh = GmshIO(file_name2)
 
         lines = set()
 
@@ -1662,8 +1768,10 @@ class DiagramView(QtWidgets.QGraphicsView):
             a = mesh.nodes[n1]
             b = mesh.nodes[n2]
 
-            line = QtWidgets.QGraphicsLineItem(a[0] + cfg.gallery_mesh_origin_x, a[1] + cfg.gallery_mesh_origin_y,
-                                               b[0] + cfg.gallery_mesh_origin_x, b[1] + cfg.gallery_mesh_origin_y)
+            # line = QtWidgets.QGraphicsLineItem(a[0] + cfg.gallery_mesh_origin_x, a[1] + cfg.gallery_mesh_origin_y,
+            #                                    b[0] + cfg.gallery_mesh_origin_x, b[1] + cfg.gallery_mesh_origin_y)
+            line = QtWidgets.QGraphicsLineItem(a[0], a[1],
+                                               b[0], b[1])
             line.setZValue(-80)
             line.setPen(pen)
             self._scene.addItem(line)

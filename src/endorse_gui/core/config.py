@@ -71,6 +71,10 @@ class ProjectConfig:
 
     empty: bool = True
 
+    endorse_cfg: str = ""
+    variants: List[str] = ""
+    containers: List[int] = ""
+
 
 @json_data.jsondata
 class GenieConfig:

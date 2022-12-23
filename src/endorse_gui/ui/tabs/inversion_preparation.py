@@ -3,10 +3,13 @@ from ..panels.scene import DiagramView, SideView
 #import core.electrode_parser
 from endorse_gui.core.data_types import ElectrodeGroup, Electrode, Measurement
 from ..panels.electrode_views import ElectrodeGroupModel, ElectrodeGroupView
+from ..panels.variant_view import VariantModel, VariantView
+from ..panels.container_view import ContainerModel, ContainerView
 from ..panels.measurement_view import MeasurementModel, MeasurementGroupView
 from ..panels.measurement_table_view import MeasurementTableModel, MeasurementTableView
 from ..panels.measurement_histogram import MeasurementHistogram
 from ..panels.misfit_log import MisfitLog
+from ..panels.indicators_plot import IndicatorsPlot
 from ..panels.region_panel import RegionPanel
 from ..panels.mesh_cut_tool_panel import MeshCutToolPanel
 from ..panels.side_view_panel import SideViewPanel
@@ -23,6 +26,7 @@ from ..dialogs.edit_inversions_dialog import EditInversionsDialog
 #from ui.dialogs.gen_mesh_dialog import GenerateMeshDlg
 from endorse_gui.core.global_const import GENIE_PROJECT_FILE_NAME, GenieMethod
 from endorse_gui.core.config import ProjectConfig, InversionConfig, FirstArrival
+from endorse_gui.core.common import load_config
 
 from PyQt5 import QtWidgets, QtCore
 
@@ -51,8 +55,13 @@ class InversionPreparation(QtWidgets.QMainWindow):
 
         self._electrode_group_model = ElectrodeGroupModel(self._electrode_groups)
 
+        self._variant_model = VariantModel(["v1", "v2"])
+
+        self.variant_view = VariantView(self, self._variant_model)
+        self.edit_electrodes.setWidget(self.variant_view)
+
         self.el_group_view = ElectrodeGroupView(self, self._electrode_group_model)
-        self.edit_electrodes.setWidget(self.el_group_view)
+        #self.edit_electrodes.setWidget(self.variant_view)
         self.el_group_view.setMinimumWidth(200)
         self.el_group_view.setMaximumWidth(400)
 
@@ -66,21 +75,25 @@ class InversionPreparation(QtWidgets.QMainWindow):
         splitter.setHandleWidth(2)
         splitter.setStyleSheet("QSplitter::handle { background : black; }")
         splitter.addWidget(self.diagram_view)
-        splitter.addWidget(self.side_view)
+        #splitter.addWidget(self.side_view)
         tab.addTab(splitter, "Situation")
 
         if self.genie.method == GenieMethod.ERT:
             self._measurement_table_model = MeasurementTableModel(self._electrode_groups, self._measurements, self.genie)
             self.meas_table_view = MeasurementTableView(self, self._measurement_table_model)
-            tab.addTab(self.meas_table_view, "Measurement table")
+            #tab.addTab(self.meas_table_view, "Measurement table")
 
             self.meas_hist = MeasurementHistogram(self, self.meas_table_view)
-            tab.addTab(self.meas_hist, "Measurement histogram")
+            #tab.addTab(self.meas_hist, "Measurement histogram")
 
             tab.currentChanged.connect(self._tab_change)
 
         self.misfit_log = MisfitLog(self)
-        tab.addTab(self.misfit_log, "Misfit log")
+        #tab.addTab(self.misfit_log, "Misfit log")
+
+        self.indicators_plot = IndicatorsPlot(self)
+        tab.addTab(self.indicators_plot, "Indicators plot")
+
 
         # self.region_panel = RegionPanel(self, self.diagram_view._scene)
         # self.region_panel._update_region_list()
@@ -108,8 +121,11 @@ class InversionPreparation(QtWidgets.QMainWindow):
 
         self._measurement_model = MeasurementModel(self._measurements)
 
+        self._container_model = ContainerModel(["c1", "c2"])
+
         self.measurement_view = MeasurementGroupView(self, self._measurement_model)
-        self.measurements_dock.setWidget(self.measurement_view)
+        self.container_view = ContainerView(self, self._container_model)
+        self.measurements_dock.setWidget(self.container_view)
         self.measurement_view.setMinimumWidth(200)
         self.measurement_view.setMaximumWidth(400)
 
@@ -138,15 +154,19 @@ class InversionPreparation(QtWidgets.QMainWindow):
 
         self.main_window.menuBar.view.actionElectrodes.triggered.connect(self.edit_electrodes.show)
         self.main_window.menuBar.view.actionMeshCutTool.triggered.connect(self.mesh_cut_tool_panel_dock.show)
-        self.main_window.menuBar.view.actionSideView.triggered.connect(self.side_view_panel_dock.show)
+        #self.main_window.menuBar.view.actionSideView.triggered.connect(self.side_view_panel_dock.show)
         self.main_window.menuBar.view.actionMeasurements.triggered.connect(self.measurements_dock.show)
 
         self.main_window.menuBar.action.actionAnalyseMeasurement.triggered.connect(self._handle_analyse_measurementButton)
         self.main_window.menuBar.action.actionFirstArrivalEditor.triggered.connect(self._handle_analyse_measurementButton)
 
-        self._enable_project_ctrl(False)
+        #self._enable_project_ctrl(False)
 
         self._selection_disable = False
+
+        #self.diagram_view.show_gallery_mesh(self.genie)
+
+        self._handle_open_project_action()
 
     def _tab_change(self, index):
         if index == 2:
@@ -155,7 +175,7 @@ class InversionPreparation(QtWidgets.QMainWindow):
     def _init_docks(self):
         """Initializes docks"""
         if self.genie.method == GenieMethod.ERT:
-            label = "Electrodes"
+            label = "Variants"
         else:
             label = "Sensors"
         self.edit_electrodes = QtWidgets.QDockWidget(label, self)
@@ -175,9 +195,12 @@ class InversionPreparation(QtWidgets.QMainWindow):
         self.side_view_panel_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.side_view_panel_dock)
 
-        self.measurements_dock = QtWidgets.QDockWidget("Measurements", self)
+        self.measurements_dock = QtWidgets.QDockWidget("Containers", self)
         self.measurements_dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.measurements_dock)
+
+        self.mesh_cut_tool_panel_dock.hide()
+        self.side_view_panel_dock.hide()
 
     def _enable_project_ctrl(self, enable=True):
         self.main_window.menuBar.inversions.setEnabled(enable)
@@ -246,48 +269,85 @@ class InversionPreparation(QtWidgets.QMainWindow):
         self.open_project(prj_dir)
 
     def open_project(self, prj_dir):
-        file_name = os.path.join(prj_dir, GENIE_PROJECT_FILE_NAME)
-        try:
-            with open(file_name) as fd:
-                config = json.load(fd)
-        except (FileNotFoundError, IOError):
-            QtWidgets.QMessageBox.critical(
-                self, 'No project',
-                'Directory do not contain project.')
-            return
-
-        # check version
-        expect_versions = [ProjectConfig().version]
-        expect_versions.extend(["0.4.0-a", "0.4.1-a"])
-        if self.genie.method == GenieMethod.ERT:
-            expect_versions.extend(["0.3.0-a"])
-        if config["version"] not in expect_versions:
-            QtWidgets.QMessageBox.critical(
-                self, 'Bad project version',
-                "Expected project version is {}, but opening project has {}.".format(expect_versions[0], config["version"]))
-            return
-        config["version"] = expect_versions[0]
-
-        project_cfg = ProjectConfig.deserialize(config)
-
-        # check method
-        expect_version = ProjectConfig().version
-        if project_cfg.method != self.genie.method:
-            QtWidgets.QMessageBox.critical(
-                self, 'Bad project method',
-                "Expected project method is {}, but opening project method is {}."
-                    .format(self.genie.method.name, project_cfg.method.name))
-            return
-
-        self._handle_close_project_action()
+        # file_name = os.path.join(prj_dir, GENIE_PROJECT_FILE_NAME)
+        # try:
+        #     with open(file_name) as fd:
+        #         config = json.load(fd)
+        # except (FileNotFoundError, IOError):
+        #     QtWidgets.QMessageBox.critical(
+        #         self, 'No project',
+        #         'Directory do not contain project.')
+        #     return
+        #
+        # # check version
+        # expect_versions = [ProjectConfig().version]
+        # expect_versions.extend(["0.4.0-a", "0.4.1-a"])
+        # if self.genie.method == GenieMethod.ERT:
+        #     expect_versions.extend(["0.3.0-a"])
+        # if config["version"] not in expect_versions:
+        #     QtWidgets.QMessageBox.critical(
+        #         self, 'Bad project version',
+        #         "Expected project version is {}, but opening project has {}.".format(expect_versions[0], config["version"]))
+        #     return
+        # config["version"] = expect_versions[0]
+        #
+        # project_cfg = ProjectConfig.deserialize(config)
+        #
+        # # check method
+        # expect_version = ProjectConfig().version
+        # if project_cfg.method != self.genie.method:
+        #     QtWidgets.QMessageBox.critical(
+        #         self, 'Bad project method',
+        #         "Expected project method is {}, but opening project method is {}."
+        #             .format(self.genie.method.name, project_cfg.method.name))
+        #     return
 
         self.genie.cfg.current_project_dir = prj_dir
-        self.genie.project_cfg = project_cfg
+        self.genie.project_cfg = ProjectConfig(method=self.genie.method)
 
-        self._update_el_meas()
-        self.diagram_view.show_point_cloud(self.genie)
-        self.diagram_view.show_map(self.genie)
+        #from endorse import common
+        conf_file = os.path.join(prj_dir, "config.yaml")
+        self.genie.project_cfg.endorse_cfg = load_config(conf_file)
+
+        # parse dir
+        names = os.listdir(os.path.join(prj_dir, "results"))
+        variants = set()
+        containers =  set()
+        for name in names:
+            s = name.split(sep="-")
+            variants.add(s[0])
+            containers.add(int(s[1]))
+        self.genie.project_cfg.variants = list(variants)
+        self.genie.project_cfg.containers = list(containers)
+
+        # update views
+        self._variant_model = VariantModel(self.genie.project_cfg.variants)
+        self.variant_view.view.setModel(self._variant_model)
+        self._container_model = ContainerModel(self.genie.project_cfg.containers)
+        self.container_view.view.setModel(self._container_model)
+
+        sel = self.container_view.view.selectionModel()
+        sel.selectionChanged.connect(self._container_view_sel_change)
+
+
+
+        # first inversion
+        self._add_inversion("inv_1")
+        self.genie.project_cfg.curren_inversion_name = self.genie.project_cfg.inversions[0]
+
+        #self._handle_close_project_action()
+
+        # self.genie.cfg.current_project_dir = prj_dir
+        # self.genie.project_cfg = project_cfg
+
+        # self._update_el_meas()
+        # self.diagram_view.show_point_cloud(self.genie)
+        # self.diagram_view.show_map(self.genie)
         self.diagram_view.show_gallery_mesh(self.genie)
+
+        self.diagram_view.show_containers(self.genie.project_cfg.endorse_cfg.geometry.containers,
+                                          self.genie.project_cfg.endorse_cfg.geometry.borehole.radius)
+        self.diagram_view.update_selected_containers(set(), set(self.genie.project_cfg.containers))
 
         self._load_current_inversion()
 
@@ -343,13 +403,13 @@ class InversionPreparation(QtWidgets.QMainWindow):
         self.measurement_view.view.setModel(self._measurement_model)
         self.diagram_view.hide_point_cloud()
         self.diagram_view.hide_map()
-        self.diagram_view.hide_gallery_mesh()
+        #self.diagram_view.hide_gallery_mesh()
         self.diagram_view.hide_electrodes()
 
         self.tab_wiget.hide_3d()
         self.tab_wiget.hide_meas_model()
 
-        self._enable_project_ctrl(False)
+        #self._enable_project_ctrl(False)
         self._show_current_inversion()
 
         self.mesh_cut_tool_panel.reset_view()
@@ -687,6 +747,14 @@ class InversionPreparation(QtWidgets.QMainWindow):
             sm.select(selection, QtCore.QItemSelectionModel.Select)
         self._selection_disable = False
 
+    def _container_view_sel_change(self, selected, deselected):
+        sm = self.container_view.view.selectionModel()
+        rows = [r.row() for r in sm.selectedRows()]
+
+        print(rows)
+
+        self.diagram_view.update_selected_containers({self._container_model._container_list[r] for r in rows}, set(self.genie.project_cfg.containers))
+
     def _init_first_arrivals(self):
         def find_fa(file, channel):
             for fa in self.genie.current_inversion_cfg.first_arrivals:
@@ -861,6 +929,12 @@ class InversionPreparation(QtWidgets.QMainWindow):
                 'No measurement selected.\nSelect one or more in the Measurements panel.')
 
     def _handle_run_invButton(self):
+        from endorse_gui.core.trasport_vis import show
+        show('/home/radek/work/edz_pos02/output/L00_S0000006/output/solute_fields.pvd',
+             '/home/radek/work/edz_pos02/output/L00_S0000006/output/flow_fields.pvd')
+
+        return
+
         prj_dir = self.genie.cfg.current_project_dir
         cloud_file = os.path.join(prj_dir, "point_cloud.xyz")
         mesh_file = os.path.join(prj_dir, "gallery_mesh.msh")
