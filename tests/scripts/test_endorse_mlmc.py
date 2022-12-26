@@ -9,7 +9,7 @@ endorse_dir = os.path.join(script_dir, "../..")
 
 
 def run_script(args):
-    script_args = ['python', os.path.join(endorse_dir, 'src/endorse/scripts/mlmc_main.py')]
+    script_args = ['python', os.path.join(endorse_dir, 'src/endorse/scripts/endorse_mlmc.py')]
     # TODO: run as subprocess
     workdir = os.path.join(script_dir, '../sandbox/mlmc_run')
 
