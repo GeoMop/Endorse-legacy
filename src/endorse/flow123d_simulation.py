@@ -23,7 +23,7 @@ def generate_time_axis(config_dict):
     return times
 
 
-class endorse_2Dtest():
+class Edz_HM_TSX_2D():
 
     def __init__(self, config):
         # TODO: remove config modifications

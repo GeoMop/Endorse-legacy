@@ -6,7 +6,7 @@ import scipy as sp
 
 import endorse.mesh_class
 from .common import File, sample_from_population, workdir, dotdict, FlowOutput
-from .flow123d_simulation import endorse_2Dtest
+from .flow123d_simulation import Edz_HM_TSX_2D
 from .plots import plot_field
 
 
@@ -149,7 +149,7 @@ class TunnelInterpolator:
 def run_hm_simulation(cfg: dotdict, i_sim: int, parameters: Dict[str,Union[int, float]]):
     work_dir_name = f"hm_sample_{i_sim:00d}"
     with workdir(work_dir_name):
-        sim = endorse_2Dtest(cfg)
+        sim = Edz_HM_TSX_2D(cfg)
         sim.set_parameters(parameters)
         res, obs_data = sim.get_observations()
         print("Flow123d res: ", res)
