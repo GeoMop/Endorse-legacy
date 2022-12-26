@@ -23,7 +23,8 @@ jobs:
       run: |
         sudo apt-get install redis
         python -m pip install --upgrade pip
-        git submodule update
+        git submodule update --init
+        echo "ls -l submodules/bgem"
         ls -l submodules/bgem
         pip install -r requirements.txt
         pip install tox tox-gh-actions
