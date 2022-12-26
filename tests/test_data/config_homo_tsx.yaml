@@ -37,6 +37,10 @@ mlmc:
         pbs_name: endorse-flow123d
         walltime: 2:00:00
 
+indicators: # quantiles to compute
+  quantiles: [0.005, 0.002, 0.001, 0.0005]
+  plots: 0, 2
+
 
 metacentrum: false
 
@@ -51,15 +55,23 @@ mc_samples: 10
 
 geometry: &one_borehole_geometry !include config_geometry.yaml
 fractures: &fractures
+    # SKB fracture parameters for upper domain
     population:  !include config_fractures.yaml
     # upper limit on the number of fractures
     n_frac_limit: 10
 
 #
 fractures_repo: &fractures_repo
+    # SKB fracture population for repository domain
     population:  !include config_fr_Forsmark_repo.yaml
-    # upper limit on the number of fractures
-    n_frac_limit: 10
+    # upper limit on the number of (small) fractures
+    n_frac_limit: 30
+    fixed_seed: 101
+    large_min_r: 30
+    large_box:  [100, 80, 60]
+    # Would be better to have separate domains for known large fractures close to tunnel and
+    # uncertain large fractures, need support in Population
+
 
 # Set to None to generate new meshes. ABSOLUTE PATH
 #mesh_repository:
@@ -90,9 +102,9 @@ fine_conductivity_interpolated:
 
 bulk_field_parametric: &bulk_field_parametric
     cond_zero: 1e-16
-    cond_max: 1e-11  # permeability 1e-16
-    cond_min: 1e-13  # permeability 1e-18
-    por_max: 0.01
+    cond_max: 1e-11  # permeability 1e-18
+    cond_min: 1e-13  # permeability 1e-20
+    por_max: 0.0025    # Use 0.004
     por_min: 0.002
 
     # values with respect to EDZ radius
@@ -147,7 +159,7 @@ transport_macroscale:
 
 transport_fine:
     geometry: *one_borehole_geometry
-    fractures: *fractures
+    fractures: *fractures_repo
     bulk_fields: *bulk_field_parametric
     mesh:
         # mesh step on fractures
@@ -187,7 +199,8 @@ transport_fullscale:
 
     # relative to main config
     piezo_head_input_file: "large_model_local.msh2"
-    conc_flux_file: "conc_flux_UOS_[kg:y].csv"
+    conc_flux_file: "conc_flux_UOS_kg_y.csv"
+    conc_name: U235
     mesh:
         # mesh step on fractures
         fracture_mesh_step: 10
@@ -210,7 +223,8 @@ transport_fullscale:
         #max_fr_cross_section: 5e-3
 
     #diffusivity_effective: 1e-13     # 2e-12 for I, according to SKB 97-20
-    diffusivity_effective: 3e-14     # řádově spodní mez pro Cs a Sr, horní pro I podle SURAO TZ334
+    #diffusivity_effective: 3e-14     # řádově spodní mez pro Cs a Sr, horní pro I podle SURAO TZ334
+    diffusivity_effective: 1e-15    # should be smaller then advection
     dispersivity_L: 1    # [m]
     dispersivity_T: 0.1     # [m]
     #dispersivity_L: 0    # [m]

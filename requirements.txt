@@ -1,5 +1,6 @@
 #numba
 #scikit-learn
+pyvista
 pyyaml
 pyyaml-include
 matplotlib
@@ -8,4 +9,9 @@ scipy
 pytest
 tox
 tox-gh-actions
+
+-e ./submodules/bgem
+-e ./submodules/bih
+-e ./submodules/redis-cache
+-e ./submodules/MLMC
 

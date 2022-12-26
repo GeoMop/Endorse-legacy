@@ -7,6 +7,7 @@
 .idea/modules.xml
 *.iml
 
+# auxiliary
 **/*.orig
 **/large_model*
 tests/**/sandbox/**
@@ -15,6 +16,13 @@ experiments/mlmc-modelling-2019/2019_plots
 tests/run_macro_transport
 tests/fine_flow
 tests/sample_*
+failed_runs
+results
+sandbox
+
+# environments
+.tox
+venv
 
 # temporary excluded
 **/*.zip
@@ -51,6 +59,7 @@ experiments/repository-model/tmp/**
 tests/test_data/*_fields
 tests/test_data/*_fields.*
 tests/test_data/*_balance.*
+tests/test_data/trans_*
 #
 */output_1/*
 
