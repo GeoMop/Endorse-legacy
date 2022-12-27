@@ -15,11 +15,13 @@ jobs:
         
     steps:
     - name: Checkout Endorse repository.
-    - uses: actions/checkout@v2
-    - name: Checkout submodules
-      uses: srt32/git-actions@v0.0.3
+    - uses: actions/checkout@v3
       with:
-        args: git submodule update --init --recursive
+        submodules: true
+    #- name: Checkout submodules
+    #  uses: srt32/git-actions@v0.0.3
+    #  with:
+    #    args: git submodule update --init --recursive
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
