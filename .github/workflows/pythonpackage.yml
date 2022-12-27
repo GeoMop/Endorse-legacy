@@ -26,9 +26,10 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+    # GLU for GMSH, Redis for redis-cache
     - name: Install dependencies
       run: |
-        sudo apt-get install redis
+        sudo apt-get install libglu1-mesa redis
         python -m pip install --upgrade pip
         echo "ls -l submodules/bgem"
         ls -l submodules/bgem
