@@ -1,23 +1,28 @@
 import logging
 import os
+import shutil
 from typing import *
 
 import numpy as np
-from endorse.mesh.repository_mesh import fullscale_transport_mesh
 
 from . import common
-from .common import dotdict, File
+from .common import dotdict, memoize, File, call_flow, workdir, report
+from .mesh import repository_mesh as repo_mesh, mesh_tools
+from .homogenisation import  subdomains_mesh, Homogenisation, Subdomain, MacroSphere, make_subproblems, Subproblems
+from .mesh.repository_mesh import one_borehole
 from .mesh_class import Mesh
 from . import apply_fields
 from . import plots
 from . import flow123d_inputs_path
 from .indicator import indicators, IndicatorFn
 from bgem.stochastic.fracture import Fracture
+from endorse import hm_simulation
 
-def input_files(cfg_tr_full):
+def input_files(cfg):
     return [
-        cfg_tr_full.piezo_head_input_file,
-        cfg_tr_full.conc_flux_file
+        cfg.transport_fullscale.piezo_head_input_file,
+        cfg.transport_fullscale.conc_flux_file,
+        "test_data/accepted_parameters.csv"
     ]
 
 #
@@ -52,7 +57,7 @@ def fullscale_transport(cfg_path, source_params, seed):
     # mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
     # mesh_modified = Mesh.load_mesh(mesh_modified_file)
 
-    input_fields_file, est_velocity = compute_fields(cfg, full_mesh, el_to_ifr, fractures)
+    input_fields_file, est_velocity = compute_fields(cfg, cfg_basedir, full_mesh, el_to_ifr, fractures)
 
     # input_fields_file = compute_fields(cfg, full_mesh, el_to_fr)
     params = cfg_fine.copy()
@@ -139,25 +144,22 @@ def set_source_limits(cfg):
     return source_params
 
 
-def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, int], fractures:List[Fracture]):
+def compute_fields(cfg:dotdict, cfg_basedir, mesh:Mesh, fr_map: Dict[int, int], fractures:List[Fracture]):
     """
     :param params: transport parameters dictionary
     :param mesh: GmshIO of the computational mesh (read only)
     :param fr_map: map ele id to the fracture (only for fracture 2d elements
     :return: el_ids:List[int], cond:List[float], cross:List[float]
     """
-    cfg_geom = cfg.geometry
     cfg_trans = cfg.transport_fullscale
-
-
     cfg_bulk_fields = cfg_trans.bulk_field_params
 
     conductivity = np.full( (len(mesh.elements),), float(cfg_bulk_fields.cond_min))
     cross_section = np.full( (len(mesh.elements),), float(1.0))
     porosity = np.full((len(mesh.elements),), 1.0)
-    # Bulk fields
     el_slice_3d = mesh.el_dim_slice(3)
-    bulk_cond, bulk_por = apply_fields.bulk_fields_mockup(cfg_geom, cfg_bulk_fields, mesh.el_barycenters()[el_slice_3d])
+    # Bulk fields
+    bulk_cond, bulk_por = compute_hm_bulk_fields(cfg, cfg_basedir, mesh.el_barycenters()[el_slice_3d])
     conductivity[el_slice_3d] = bulk_cond
     porosity[el_slice_3d] = bulk_por
     logging.info(f"3D slice: {el_slice_3d}")
@@ -193,6 +195,40 @@ def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, int], fractures:Li
     pos_fr = fr_cond > 0
     est_velocity = (np.quantile(bulk_cond, 0.4)/10, np.quantile(fr_cond[pos_fr],  0.4))
     return cond_file, est_velocity
+
+def compute_hm_bulk_fields(cfg, cfg_basedir, points):
+    cfg_geom = cfg.geometry
+
+    # TEST
+    # bulk_cond, bulk_por = apply_fields.bulk_fields_mockup(cfg_geom, cfg.transport_fullscale.bulk_field_params, points)
+
+    # RUN HM model
+    fo = hm_simulation.run_single_sample(cfg, cfg_basedir)
+    mesh_interp = hm_simulation.TunnelInterpolator(cfg_geom, flow123d_output=fo)
+    bulk_cond, bulk_por = apply_fields.bulk_fields_mockup_from_hm(cfg, mesh_interp, points)
+
+    # bulk_cond = apply_fields.rescale_along_xaxis(cfg_geom, bulk_cond, points)
+    # bulk_por = apply_fields.rescale_along_xaxis(cfg_geom, bulk_por, points)
+    return bulk_cond, bulk_por
+
+
+@report
+@memoize
+def fullscale_transport_mesh(cfg, seed):
+    main_box_dimensions = cfg.geometry.box_dimensions
+
+    # Fixed large fractures
+    fix_seed = cfg.fractures.fixed_seed
+    large_min_r = cfg.fractures.large_min_r
+    large_box_dimensions = cfg.fractures.large_box
+    fractures = mesh_tools.generate_fractures(cfg.fractures, (large_min_r, None), large_box_dimensions, fix_seed)
+    n_large = len(fractures)
+    # random small scale fractures
+    small_fr = mesh_tools.generate_fractures(cfg.fractures, (None, large_min_r), main_box_dimensions, seed)
+    fractures.extend(small_fr)
+    logging.info(f"Generated fractures: {n_large} large, {len(small_fr)} small.")
+    return one_borehole(cfg.geometry, fractures, cfg.mesh), fractures, n_large
+
 
 # def transport_observe_points(cfg):
 #     cfg_geom = cfg.geometry

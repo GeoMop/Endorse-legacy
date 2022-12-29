@@ -2,7 +2,7 @@
 # TODO: rename as the container position need not to be related to the container spacing
 # fine EDZ (0.3): about  300k elements, 10 s
 
-
+import pytest
 import os
 
 from endorse import common
@@ -13,6 +13,7 @@ from endorse.mesh import container_position_mesh
 
 script_dir = script_dir = os.path.dirname(os.path.realpath(__file__))
 
+@pytest.mark.skip
 def test_fine_micro_mesh():
     # about 280 k elements
     # conf_file = os.path.join(script_dir, "./config_full_coarse.yaml")

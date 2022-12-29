@@ -1,0 +1,5 @@
+edz:
+    bulk_field_parametric/cond_max: 1e-11
+    
+noedz:
+    bulk_field_parametric/cond_max: 1e-13

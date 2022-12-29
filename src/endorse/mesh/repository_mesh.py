@@ -1,9 +1,10 @@
+import logging
 from typing import *
 import os
 import math
 from bgem.gmsh import gmsh, options
 import numpy as np
-from endorse.common import dotdict, File
+from endorse.common import dotdict, File, report, memoize
 from endorse.mesh import mesh_tools
 
 
@@ -200,3 +201,20 @@ def one_borehole(cfg_geom:dotdict, fractures:List['Fracture'], cfg_mesh:dotdict)
     del factory
     return File(mesh_file)
 
+
+@report
+@memoize
+def fullscale_transport_mesh(cfg, seed):
+    main_box_dimensions = cfg.geometry.box_dimensions
+
+    # Fixed large fractures
+    fix_seed = cfg.fractures.fixed_seed
+    large_min_r = cfg.fractures.large_min_r
+    large_box_dimensions = cfg.fractures.large_box
+    fractures = mesh_tools.generate_fractures(cfg.fractures, (large_min_r, None), large_box_dimensions, fix_seed)
+    n_large = len(fractures)
+    # random small scale fractures
+    small_fr = mesh_tools.generate_fractures(cfg.fractures, (None, large_min_r), main_box_dimensions, seed)
+    fractures.extend(small_fr)
+    logging.info(f"Generated fractures: {n_large} large, {len(small_fr)} small.")
+    return one_borehole(cfg.geometry, fractures, cfg.mesh), fractures, n_large

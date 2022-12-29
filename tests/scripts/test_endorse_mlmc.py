@@ -1,7 +1,7 @@
 import os
 import pytest
 from endorse import common
-from endorse.scripts.mlmc_main import FullScaleTransport
+from endorse.scripts.endorse_mlmc import FullScaleTransport
 import subprocess
 script_dir = os.path.dirname(os.path.realpath(__file__))
 endorse_dir = os.path.join(script_dir, "../..")
@@ -34,5 +34,9 @@ def test_FullScaleTransport_run():
 
 
 
-def test_script():
+@pytest.mark.skip
+def test_script_run():
     run_script(['plot', 'cases', '*', '2 10'])
+
+def test_script_sample():
+    run_script(['run', '*', '2 10'])

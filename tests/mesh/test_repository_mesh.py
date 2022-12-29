@@ -11,13 +11,16 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def test_make_mesh():
-    #common.EndorseCache.instance().expire_all()
+    common.EndorseCache.instance().expire_all()
     # about 280 k elements
     # conf_file = os.path.join(script_dir, "./config_full_coarse.yaml")
-    conf_file = os.path.join(script_dir, "../test_data/config_homogenisation.yaml")
+    conf_file = os.path.join(script_dir, "../test_data/config.yaml")
     cfg = common.load_config(conf_file)
     with common.workdir("sandbox"):
         #fractures = [
         #    Fracture(4, np.array([]), np.array(), )
         #]
-        repository_mesh.fullscale_transport_mesh(cfg.transport_fine)
+        mesh, fractures, n_large = repository_mesh.fullscale_transport_mesh(cfg.transport_fine, 10)
+        assert mesh.path.split('/')[-3:] == ["mesh", "sandbox", "one_borehole.msh2"]
+        assert len(fractures) == 27
+        assert n_large == 8

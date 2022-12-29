@@ -48,15 +48,15 @@ setuptools.setup(
     python_requires='>=3',
 
 
-    packages=['endorse', 'endorse.common', 'endorse.mesh', 'endorse.mlmc'],
+    packages=['endorse', 'endorse.common', 'endorse.mesh', 'endorse.mlmc', 'endorse.scripts'],
     package_dir={
         'endorse': 'src/endorse',
     },
     package_data={
-        'endorse/flow123d_inputs': ['*.yaml']
+        'src/endorse/flow123d_inputs': ['*.yaml']
     },
     entry_points={
-        'console_scripts': ['endorse_gui=endorse.gui.app:main']
+        'console_scripts': ['endorse_gui=endorse.gui.app:main', 'endorse_mlmc=endorse.scripts.endorse_mlmc:main']
     }
 )
 

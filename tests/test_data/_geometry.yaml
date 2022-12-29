@@ -62,7 +62,7 @@ containers:
     # distance between containers, empty, backfill [m]
     spacing: 10
     # number of containers (automaticaly reduced to fit into 'main_tunnel_length')
-    n_containers: 6
+    n_containers: 20
     # position of the first container from the beginning of the tunnel (interface tunnel-
     offset: 4
 
