@@ -58,7 +58,5 @@ def test_load_config():
     assert cfg.c[1].c == 'other_file2.any'
     print(cfg._file_refs)
     assert len(cfg._file_refs) == 5 #other_file1, other_file2, _cfg_a, cfg_b, cfg_main
-    assert 'other_file1.any' in cfg._file_refs
-    assert 'other_file2.any' in cfg._file_refs
-    assert os.path.abspath('_cfg_a.yaml') in cfg._file_refs
-    assert os.path.abspath('_cfg_b.yaml') in cfg._file_refs
+    for f in ['other_file1.any', 'other_file2.any', '_cfg_a.yaml', '_cfg_b.yaml']:
+        assert os.path.join(script_dir, f) in cfg._file_refs

@@ -3,7 +3,7 @@
 # Author: Jan Stebel
 # Source for reference: qualitative
 
-flow123d_version: 3.1.0
+flow123d_version: 4.0.0
 problem: !Coupling_Sequential
   description: |
       Transport problem with Darcy flow driven by the boundary condition from the larger model.
@@ -137,6 +137,7 @@ problem: !Coupling_Sequential
         - field: conc
           interpolation: [P0_value, P1_average, D1_value] #[P0_value, P1_average, D1_value]
         - region_id
+        - peclet_number
     output_stream:
       format: !vtk
         variant: ascii
@@ -155,7 +156,7 @@ problem: !Coupling_Sequential
 
 
     time:
-      end_time: [200000, 'y']
+      end_time: [<end_time_years>, 'y']
       max_dt: [20000, 'y']
       dt_limits:
         - time: [0, 'y']

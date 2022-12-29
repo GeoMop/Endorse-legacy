@@ -14,7 +14,7 @@ with open("README.md", "r") as fh:
 #     return packages
 
 setuptools.setup(
-    name="endorse1",
+    name="endorse",
     version=__version__,
     license='GPL 3.0',
     description='Stochastic model of excavation damage zone and its safety indicators.',
@@ -47,13 +47,16 @@ setuptools.setup(
                       'pyyaml-include', 'matplotlib', 'pyvista'],
     python_requires='>=3',
 
-
-    packages=['endorse', 'endorse.common', 'endorse.mesh', 'endorse.mlmc', 'endorse.scripts'],
+    # according to setuptols documentation
+    # the including 'endorse.flow123d_inputs' should not be neccessary,
+    # however packege_data 'endorse.flow123d_inputs' doesn't work without it
+    packages=['endorse', 'endorse.common', 'endorse.flow123d_inputs', 'endorse.mesh', 'endorse.mlmc', 'endorse.scripts'],
     package_dir={
-        'endorse': 'src/endorse',
+        "": "src"
     },
     package_data={
-        'src/endorse/flow123d_inputs': ['*.yaml']
+        "endorse" : ["*.txt"],
+        "endorse.flow123d_inputs": ['*.yaml']
     },
     entry_points={
         'console_scripts': ['endorse_gui=endorse.gui.app:main', 'endorse_mlmc=endorse.scripts.endorse_mlmc:main']

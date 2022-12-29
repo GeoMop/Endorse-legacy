@@ -123,13 +123,13 @@ def call_flow(cfg:'dotdict', file_in:File, params: Dict[str,str]) -> FlowOutput:
     """
     main_input = _prepare_inputs(file_in, params)
     stdout, stderr, completed = _flow_subprocess(cfg.flow_executable.copy(), main_input)
-    fo = FlowOutput(completed, stdout.path, stderr.path)
-
     logging.info(f"Exit status: {completed.returncode}")
     if completed.returncode != 0:
         with open(stderr.path, "r") as stderr:
             print(stderr.read())
         raise Exception("Flow123d ended with error")
+
+    fo = FlowOutput(completed, stdout.path, stderr.path)
     conv_check = fo.check_conv_reasons()
     logging.info(f"converged: {conv_check}")
     return fo

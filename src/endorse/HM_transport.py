@@ -83,7 +83,7 @@ def fullscale_transport(cfg_path, source_params, seed):
     )
     params.update(new_params)
     params.update(set_source_limits(cfg))
-    template = os.path.join(flow123d_inputs_path, cfg_fine.input_template)
+    template = flow123d_inputs_path.joinpath(cfg_fine.input_template)
     fo = common.call_flow(cfg.flow_env, template, params)
     z_dim = 0.9 * 0.5 * cfg.geometry.box_dimensions[2]
     z_shift = cfg.geometry.borehole.z_pos

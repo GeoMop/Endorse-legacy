@@ -21,6 +21,6 @@ def test_make_mesh():
         #    Fracture(4, np.array([]), np.array(), )
         #]
         mesh, fractures, n_large = repository_mesh.fullscale_transport_mesh(cfg.transport_fine, 10)
-        assert mesh.path.split('/')[-3:] == ["mesh", "sandbox", "one_borehole.msh2"]
+        assert mesh.path.split('/')[-2:] == ["sandbox", "one_borehole.msh2"]
         assert len(fractures) == 27
         assert n_large == 8

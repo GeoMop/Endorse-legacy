@@ -6,7 +6,7 @@ import numpy as np
 from endorse.mesh.repository_mesh import fullscale_transport_mesh
 
 from . import common
-from .common import dotdict, File
+from .common import dotdict, File, report, memoize
 from .mesh_class import Mesh
 from . import apply_fields
 from . import plots
@@ -26,7 +26,12 @@ def input_files(cfg_tr_full):
 #     idx = (np.abs(array - value)).argmin()
 #     return idx, array[idx]
 
-def fullscale_transport(cfg_path, source_params, seed):
+def fullscale_transport(cfg_path, seed):
+    cfg = common.load_config(cfg_path)
+    cfg_basedir = os.path.dirname(cfg_path)
+    transport_run(cfg, cfg_basedir, seed)
+
+def transport_run(cfg, cfg_basedir, seed):
     """
     1. apply conouctivity to given mesh:
        - on borehole neighbourhood, select elements
@@ -36,8 +41,6 @@ def fullscale_transport(cfg_path, source_params, seed):
     2. substitute source term space distribution
     3. return necessary files
     """
-    cfg = common.load_config(cfg_path)
-    cfg_basedir = os.path.dirname(cfg_path)
     #files = input_files(cfg.transport_fullscale)
 
     cfg_fine = cfg.transport_fullscale
@@ -47,7 +50,7 @@ def fullscale_transport(cfg_path, source_params, seed):
 
     full_mesh_file, fractures, n_large = fullscale_transport_mesh(cfg_fine, seed)
 
-    full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol=1e-4)
+    full_mesh = report(Mesh.load_mesh)(full_mesh_file, heal_tol=1e-4)
     el_to_ifr = fracture_map(full_mesh, fractures, n_large)
     # mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
     # mesh_modified = Mesh.load_mesh(mesh_modified_file)
@@ -58,13 +61,13 @@ def fullscale_transport(cfg_path, source_params, seed):
     params = cfg_fine.copy()
 
     # estimate times
-    bulk_vel_est, fr_vel_est = est_velocity
-    end_time = (50 / bulk_vel_est + 50 / fr_vel_est)
-    dt = 0.5 / bulk_vel_est
+    #bulk_vel_est, fr_vel_est = est_velocity
+    #end_time = (50 / bulk_vel_est + 50 / fr_vel_est)
+    #dt = 0.5 / bulk_vel_est
     # convert to years
 
-    end_time = end_time / common.year
-    dt = dt / common.year
+    #end_time = end_time / common.year
+    #dt = dt / common.year
 
     #end_time = 10 * dt
     new_params = dict(
@@ -72,14 +75,20 @@ def fullscale_transport(cfg_path, source_params, seed):
         piezo_head_input_file=large_model,
         conc_flux_file=conc_flux,
         input_fields_file = input_fields_file,
-        end_time = end_time,
-        max_time_step = dt,
-        output_step = 10 * dt
+
+        end_time_years = cfg_fine.end_time,
+        #max_time_step = dt,
+        #output_step = 10 * dt
     )
     params.update(new_params)
     params.update(set_source_limits(cfg))
-    template = os.path.join(flow123d_inputs_path, cfg_fine.input_template)
+    template = flow123d_inputs_path.joinpath(cfg_fine.input_template)
     fo = common.call_flow(cfg.flow_env, template, params)
+    return get_indicator(cfg, fo)
+
+@report
+def get_indicator(cfg, fo):
+    cfg_fine = cfg.transport_fullscale
     z_dim = 0.9 * 0.5 * cfg.geometry.box_dimensions[2]
     z_shift = cfg.geometry.borehole.z_pos
     z_cuts = (z_shift - z_dim, z_shift + z_dim)
@@ -90,6 +99,7 @@ def fullscale_transport(cfg_path, source_params, seed):
     ind_time_max = [ind.time_max()[1] for ind in inds]
     return ind_time_max
 
+@report
 def fracture_map(mesh, fractures, n_large) -> Dict[int, Fracture]:
     """
     - join all fracture regions into single "fractures" region
@@ -138,7 +148,7 @@ def set_source_limits(cfg):
     )
     return source_params
 
-
+@report
 def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, int], fractures:List[Fracture]):
     """
     :param params: transport parameters dictionary

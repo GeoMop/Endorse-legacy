@@ -8,7 +8,7 @@ from endorse.common.memoize import File
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_run_random_samples():
     # Test execution of few random samples from the Byes inversion
     # implementation steps:
@@ -20,14 +20,14 @@ def test_run_random_samples():
     # - run 1 sample, HM simulation but with modified geometry, interpolation to other 3D tranport mesh, homogenized transport execution (under 10mins localy)
     #common.EndorseCache.instance().expire_all()
     np.random.seed(0)
-    conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
+    conf_file = os.path.join(script_dir, "test_data/config.yaml")
     cfg = common.load_config(conf_file)
     hm_simulation.run_random_samples(cfg, 1)
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_tunnel_interpolation():
-    conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
+    conf_file = os.path.join(script_dir, "test_data/config.yaml")
     cfg = common.load_config(conf_file)
     flow_msh = mesh_class.Mesh.load_mesh(File(os.path.join(script_dir, "test_data/flow_fields.msh")))
     mech_msh = mesh_class.Mesh.load_mesh(File(os.path.join(script_dir, "test_data/mechanics_fields.msh")))

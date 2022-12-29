@@ -197,7 +197,7 @@ transport_fullscale:
     # relative to main config
     piezo_head_input_file: "large_model_local.msh2"
     conc_flux_file: "conc_flux_UOS_kg_y.csv"
-    conc_name: U235
+    conc_name: I
     mesh:
         # mesh step on fractures
         fracture_mesh_step: 10
@@ -227,7 +227,7 @@ transport_fullscale:
     #dispersivity_L: 0    # [m]
     #dispersivity_T: 0     # [m]
 
-
+    end_time: 200000
 
 
     # setup for point source

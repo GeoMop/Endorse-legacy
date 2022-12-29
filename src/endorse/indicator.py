@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import InterpolatedUnivariateSpline
 
-from .common import File, memoize, year
+from .common import File, report, memoize, year
 
 
 @attrs.define
@@ -113,6 +113,7 @@ class IndicatorFn:
         return times[itime], fine_values[itime]
 
 #@memoize
+@report
 def indicators(pvd_in : File, attr_name, z_loc):
     #extractor = Extractor.from_point_data(attr_name, z_loc)
     extractor = Extractor.from_cell_data(attr_name, z_loc)
