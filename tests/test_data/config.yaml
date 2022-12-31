@@ -11,7 +11,10 @@ jb_flow_env: &jb_config
     # release
     - /home/jb/workspace/flow123d/bin/fterm
     - --no-term
+    - rel
     - run
+    - --profiler_path 
+    - profile
   #   - /storage/liberec3-tul/home/jan_brezina/workspace/flow123d/bin/flow123d
   #    - cmd
   #    - c:/Users/peta/AppData/Local/Flow123d/v3.0.3/bin/flow123d.bat

@@ -61,7 +61,7 @@ def _load_mesh(mesh_file: File, heal_tol):
         gmsh_io = GmshIO(mesh_file.path)
         return Mesh(gmsh_io, file = mesh_file)
     else:
-        hm = report(heal_mesh.HealMesh.read_mesh)(mesh_file.path, node_tol=heal_tol * 0.1)
+        hm = heal_mesh.HealMesh.read_mesh(mesh_file.path, node_tol=heal_tol * 0.1)
         report(hm.heal_mesh)(gamma_tol=heal_tol)
             #hm.move_all(geom_dict["shift_vec"])
             #elm_to_orig_reg = hm.map_regions(new_reg_map)

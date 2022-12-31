@@ -81,6 +81,8 @@ class File:
         return f
 
     TODO: there is an (unsuccessful) effort to provide special handle for writting.
+    TODO: Override deserialization in order to check that the file is unchanged.
+          Seems that caching just returns the object without actuall checking.
     """
 
     # @classmethod
@@ -105,20 +107,20 @@ class File:
         :param files: List of referenced files.
         """
         self.path = os.path.abspath(path)
-        # if hash is None:
-        #     if postponed:
-        #         self.hash = None
-        #     else:
-        #         self._set_hash()
-        # else:
-        #     if type(hash) is str:
-        #         pass #hash = hash(hash)
-        #     self.hash:bytes = hash
         if files is None:
             files = []
-        self._set_hash(files)
+        self.referenced_files = files
+        self._set_hash()
 
-    def _set_hash(self, files):
+    def __getstate__(self):
+        return (self.path, self.referenced_files)
+
+    def __setstate__(self, args):
+        self.path, self.referenced_files = args
+        self._set_hash()
+
+    def _set_hash(self):
+        files = self.referenced_files
         md5 = self.hash_for_file(self.path)
         for f in files:
             md5.update(repr(f).encode())
@@ -173,9 +175,12 @@ class File:
         '''
         block_size = 256 * 128
         md5 = File._hash_fn()
-        with open(path, 'rb') as f:
-            for chunk in iter(lambda: f.read(block_size), b''):
-                md5.update(chunk)
+        try:
+            with open(path, 'rb') as f:
+                for chunk in iter(lambda: f.read(block_size), b''):
+                    md5.update(chunk)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Missing cached file: {path}")
         return md5
 
 

@@ -41,8 +41,20 @@ class dotdict(dict):
         else:
             return cfg
 
+    @staticmethod
+    def serialize(cfg):
+        if isinstance(cfg, (dict, dotdict)):
+            return { k:dotdict.serialize(v) for k,v in cfg.items()}
+        elif isinstance(cfg, list):
+            return [dotdict.serialize(i) for i in cfg]
+        elif isinstance(cfg, tuple):
+            return tuple([dotdict.serialize(i) for i in cfg])
+        else:
+            return cfg
+
 Key = Union[str, int]
 Path = Tuple[Key]
+VariantPatch = Dict[str, dotdict]
 
 @dataclass
 class PathIter:
@@ -86,7 +98,7 @@ def _item_update(key:Key, val:dotdict, sub_path:Key, sub:dotdict):
 def deep_update(cfg: dotdict, iter:PathIter, substitute:dotdict):
     if iter.is_leaf():
         return substitute
-    new_cfg = cfg.copy()
+    new_cfg = dotdict(cfg)
     if isinstance(cfg, list):
         key, sub_path = iter.idx()
     elif isinstance(cfg, (dict, dotdict)):
@@ -98,7 +110,7 @@ def deep_update(cfg: dotdict, iter:PathIter, substitute:dotdict):
 
 
 
-def apply_variant(cfg:dotdict, variant:Dict[str, dotdict]) -> dotdict:
+def apply_variant(cfg:dotdict, variant:VariantPatch) -> dotdict:
     """
     In the `variant` dict the keys are interpreted as the address
     in the YAML file. The address is a list of strings and ints separated by '/'
@@ -114,7 +126,7 @@ def apply_variant(cfg:dotdict, variant:Dict[str, dotdict]) -> dotdict:
     """
     new_cfg = cfg
     for path_str, val in variant.items():
-        path = path_str.split('/')
+        path = tuple(path_str.split('/'))
         assert path
         new_cfg = deep_update(new_cfg, PathIter(path), val)
     return new_cfg
@@ -166,6 +178,7 @@ def load_config(path, collect_files=False):
     cfg_dir = os.path.dirname(path)
     with open(path) as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
+    cfg['_config_root_dir'] = os.path.abspath(cfg_dir)
     dd = dotdict.create(cfg)
     if collect_files:
         referenced = instance.included_files
@@ -176,9 +189,15 @@ def load_config(path, collect_files=False):
 
 
 def path_search(filename, path):
+    if not isinstance(filename, str):
+        return []
+    # Abs paths intentionally not included
+    # if os.path.isabs(filename):
+    #     if os.path.isabs(filename) and os.path.isfile(filename):
+    #         return [os.path.abspath(filename)]
+    #     else:
+    #         return []
     for dir in path:
-        if not isinstance(filename, str):
-            continue
         full_name = os.path.join(dir, filename)
         if os.path.isfile(full_name):
             return [os.path.abspath(full_name)]
@@ -186,7 +205,6 @@ def path_search(filename, path):
 
 FilePath = NewType('FilePath', str)
 def collect_referenced_files(cfg:dotdict, search_path:List[str]) -> List[FilePath]:
-    referenced = []
     if isinstance(cfg, (dict, dotdict)):
         referenced = [collect_referenced_files(v, search_path) for v in cfg.values()]
     elif isinstance(cfg, (list, tuple)):
