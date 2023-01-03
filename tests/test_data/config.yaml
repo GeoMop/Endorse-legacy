@@ -41,7 +41,7 @@ mlmc:
         pbs_name: endorse-flow123d
         walltime: 2:00:00
     n_levels: 1
-        
+    
 indicators: # quantiles to compute
   quantiles: [0.005, 0.002, 0.001, 0.0005]
   plots: 0, 2
@@ -229,8 +229,9 @@ transport_fullscale:
     dispersivity_T: 0.1     # [m]
     #dispersivity_L: 0    # [m]
     #dispersivity_T: 0     # [m]
-
-    end_time: 200000
+    dg_penalty: 10
+    
+    end_time: 400000
 
 
     # setup for point source

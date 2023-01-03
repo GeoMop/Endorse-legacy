@@ -110,7 +110,7 @@ problem: !Coupling_Sequential
           # dg_penalty: 1       # mass: 80, error: 4.5, default value, solution highly oscilates
           # dg_penalty: 10      # mass: 40, error: 4.0,  high error, hard to converge
           # dg_penalty: 100     # mass: 27, error: 16,  high error, hard to converge
-          dg_penalty: 10
+          dg_penalty: <dg_penalty>
           diff_m: <diffusivity_effective>
           disp_l: <dispersivity_L>
           disp_t: <dispersivity_T>

@@ -3,6 +3,7 @@ import copy
 import shutil
 import numpy as np
 from typing import *
+from endorse.fullscale_transport import transport_run
 
 import mlmc.random.correlated_field as cf
 from typing import List
@@ -13,12 +14,13 @@ from mlmc.level_simulation import LevelSimulation
 
 class FullScaleTransportSim(Simulation):
 
-    def __init__(self, config):
+    def __init__(self, cfg, mesh_steps):
         """
         :param config: Dict, simulation configuration
         """
         #super().__init__()
-        self._config = config
+        self._config = cfg
+        self._mesh_steps = mesh_steps
 
     def level_instance(self, fine_level_params: List[float], coarse_level_params: List[float]) -> LevelSimulation:
         """
@@ -37,7 +39,7 @@ class FullScaleTransportSim(Simulation):
 
         return LevelSimulation(config_dict=config,
                                calculate=FullScaleTransportSim.calculate,
-                               task_size=config["mesh_steps"][fine_level_params[0]],  # @TODO: set size
+                               task_size=self._mesh_steps[fine_level_params[0]],  # @TODO: set size
                                need_sample_workspace=True)
 
     @staticmethod
@@ -49,7 +51,6 @@ class FullScaleTransportSim(Simulation):
         :return: np.ndarray, np.ndarray
         """
 
-        from endorse.fullscale_transport import fullscale_transport
 
         from endorse import common
         from endorse.common import dotdict, memoize, File, call_flow, workdir, report
@@ -64,13 +65,13 @@ class FullScaleTransportSim(Simulation):
         #cfg.flow_env["flow_executable"] = config["flow_executable"]
         #cfg["work_dir"] = config["work_dir"]
 
-        val = fullscale_transport(config['main_cfg_file'], config['source_params'], seed)
+        val = transport_run(config, seed)
         q10 = list(val)
         add_values = (10 - len(q10)) * [0.0]
         q10.extend(add_values) #fixed_indicators[:len(ind_time_max)] = np.array(ind_time_max)
         res_fine = np.asarray(q10)
         #fine_res = fo.hydro
-
+        #res_fine = np.arange(10)
         #####################
         ### coarse sample ###
         #####################

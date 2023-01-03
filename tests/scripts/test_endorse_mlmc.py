@@ -1,7 +1,7 @@
 import os
 import pytest
 from endorse import common
-from endorse.scripts.endorse_mlmc import FullScaleTransport
+#from endorse.scripts.endorse_mlmc import FullScaleTransport
 import subprocess
 script_dir = os.path.dirname(os.path.realpath(__file__))
 endorse_dir = os.path.join(script_dir, "../..")
@@ -13,7 +13,7 @@ def run_script(args):
     # TODO: run as subprocess
     workdir = os.path.join(script_dir, '../sandbox/mlmc_run')
 
-    cfg = common.load_config('inputs/config.yaml', collect_files=True)
+    cfg = common.load_config('../test_data/config.yaml', collect_files=True)
     inputs = cfg._file_refs
     with common.workdir(workdir, inputs):
         subprocess.run(script_args + args)
@@ -33,10 +33,13 @@ def test_FullScaleTransport_run():
     pr = FullScaleTransport(f"test_data/cfg_mlmc_{case}.yaml", args)
 
 
-
 @pytest.mark.skip
-def test_script_run():
+def test_plot_cases():
     run_script(['plot', 'cases', '*', '2 10'])
 
+#@pytest.mark.skip
 def test_script_sample():
-    run_script(['run', '*', '2 10'])
+    #run_script(['run', '*', '2 10'])
+    #run_script(['run', '-c', 'edz', '2'])
+    #run_script(['run', '-c', 'edz_base edz_lower_tol edz_high_gamma edz_both', '2'])
+    run_script(['run', '-c', 'edz_base', '2'])

@@ -14,7 +14,7 @@ from . import flow123d_inputs_path
 from .indicator import indicators, IndicatorFn
 from bgem.stochastic.fracture import Fracture
 
-def input_files(cfg_tr_full):
+def input_files(cfg):
     return [
         cfg_tr_full.piezo_head_input_file,
         cfg_tr_full.conc_flux_file
@@ -28,10 +28,9 @@ def input_files(cfg_tr_full):
 
 def fullscale_transport(cfg_path, seed):
     cfg = common.load_config(cfg_path)
-    cfg_basedir = os.path.dirname(cfg_path)
-    transport_run(cfg, cfg_basedir, seed)
+    return transport_run(cfg, seed)
 
-def transport_run(cfg, cfg_basedir, seed):
+def transport_run(cfg, seed):
     """
     1. apply conouctivity to given mesh:
        - on borehole neighbourhood, select elements
@@ -42,7 +41,7 @@ def transport_run(cfg, cfg_basedir, seed):
     3. return necessary files
     """
     #files = input_files(cfg.transport_fullscale)
-
+    cfg_basedir = cfg._config_root_dir
     cfg_fine = cfg.transport_fullscale
     large_model = File(os.path.join(cfg_basedir, cfg_fine.piezo_head_input_file))
     conc_flux = File(os.path.join(cfg_basedir, cfg_fine.conc_flux_file))
@@ -50,7 +49,7 @@ def transport_run(cfg, cfg_basedir, seed):
 
     full_mesh_file, fractures, n_large = fullscale_transport_mesh(cfg_fine, seed)
 
-    full_mesh = report(Mesh.load_mesh)(full_mesh_file, heal_tol=1e-4)
+    full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol=1e-4)
     el_to_ifr = fracture_map(full_mesh, fractures, n_large)
     # mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
     # mesh_modified = Mesh.load_mesh(mesh_modified_file)
@@ -75,8 +74,11 @@ def transport_run(cfg, cfg_basedir, seed):
         piezo_head_input_file=large_model,
         conc_flux_file=conc_flux,
         input_fields_file = input_fields_file,
-
+        dg_penalty = cfg_fine.dg_penalty,
         end_time_years = cfg_fine.end_time,
+        trans_solver__a_tol= cfg_fine.trans_solver__a_tol,
+        trans_solver__r_tol= cfg_fine.trans_solver__r_tol
+
         #max_time_step = dt,
         #output_step = 10 * dt
     )

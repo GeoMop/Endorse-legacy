@@ -3,3 +3,28 @@ edz:
     
 noedz:
     bulk_field_parametric/cond_max: 1e-13
+
+    
+edz_base:
+    bulk_field_parametric/cond_max: 1e-11
+    transport_fullscale/trans_solver__a_tol: 1e-8
+    transport_fullscale/trans_solver__r_tol: 1e-4
+    transport_fullscale/dg_penalty: 10
+
+edz_lower_tol:
+    bulk_field_parametric/cond_max: 1e-11
+    transport_fullscale/trans_solver__a_tol: 1e-15
+    transport_fullscale/trans_solver__r_tol: 1e-7
+    transport_fullscale/dg_penalty: 10
+    
+edz_high_gamma:
+    bulk_field_parametric/cond_max: 1e-11
+    transport_fullscale/trans_solver__a_tol: 1e-8
+    transport_fullscale/trans_solver__r_tol: 1e-7
+    transport_fullscale/dg_penalty: 40
+
+edz_both:
+    bulk_field_parametric/cond_max: 1e-11
+    transport_fullscale/trans_solver__a_tol: 1e-15
+    transport_fullscale/trans_solver__r_tol: 1e-7
+    transport_fullscale/dg_penalty: 40
