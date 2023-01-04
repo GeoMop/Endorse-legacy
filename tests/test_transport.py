@@ -12,10 +12,10 @@ def test_flow123d_templates():
     template = flow123d_inputs_path.joinpath("transport_fullscale_tmpl.yaml")
     assert os.path.isfile(template)
 
-@pytest.mark.skip
+#@pytest.mark.skip
 def test_macro_transport():
    # with common.workdir("sandbox"):
-    common.EndorseCache.instance().expire_all()
+    #common.EndorseCache.instance().expire_all()
     conf_file = os.path.join(script_dir, "test_data/config.yaml")
     #cfg = common.load_config(conf_file)
     #files = input_files(cfg.transport_fullscale)
@@ -27,7 +27,7 @@ def test_macro_transport():
         ind_time_max = transport_run(cfg, seed)
         print("Result:", ind_time_max)
 
-#@pytest.mark.skip
+@pytest.mark.skip
 def test_transport_2d():
    # with common.workdir("sandbox"):
     common.EndorseCache.instance().expire_all()

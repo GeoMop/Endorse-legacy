@@ -102,9 +102,9 @@ fine_conductivity_interpolated:
 
 bulk_field_parametric: &bulk_field_parametric
     cond_zero: 1e-16
-    cond_max: 1e-11  # permeability 1e-18
-    cond_min: 1e-13  # permeability 1e-20
-    por_max: 0.0025    # Use 0.004
+    cond_max: 1e-10  #
+    cond_min: 1e-12  # set one order higher then at TSX (1e-13) to get it closer to fracture conductivities,
+    por_max: 0.0025
     por_min: 0.002
 
     # values with respect to EDZ radius
@@ -241,13 +241,13 @@ transport_fullscale:
         source_length: 4 # length of the container [m]
         source_space: 2
 
-    flow_solver__a_tol: 1e-16
-    flow_solver__r_tol: 1e-8
+    flow_solver__a_tol: 1e-14
+    flow_solver__r_tol: 1e-20
     #flow_solver__options:
 
 
-    trans_solver__a_tol: 1e-8
-    trans_solver__r_tol: 1e-4
+    trans_solver__a_tol: 1e-10
+    trans_solver__r_tol: 1e-20
         # -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg
 #        # Boomeramg options:
 #        # -ksp_type richardson              - recomended usage when solving just by multigrid

@@ -45,6 +45,7 @@ problem: !Coupling_Sequential
           mesh_data_file: <input_fields_file>
           field_name: cross_section
           #interpolation: P0_intersection
+        sigma: 0.01
     n_schurs: 2
     output:
       fields:

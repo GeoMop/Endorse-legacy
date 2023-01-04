@@ -557,7 +557,7 @@ class RunCmd:
             #cfg_file = "cfg_variant.yaml"
             #with open(cfg_file, "w") as f:
             #        yaml.dump(common.dotdict.serialize(cfg_var), f)
-            n_samples = 20
+            n_samples = 10
             cfg_var._model_dim = model_dim
             run_fixed(cfg_var, n_samples, debug=True, n_proc=np)
 

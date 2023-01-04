@@ -55,11 +55,11 @@ def transport_2d(cfg, seed):
     full_mesh_file, fractures, n_large = fullscale_transport_mesh_2d(cfg_fine, fr_pop, seed)
 
     full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol=1e-4)
-    el_to_ifr = fracture_map(full_mesh, fractures, n_large)
+    el_to_ifr = fracture_map(full_mesh, fractures, n_large, dim=2)
     # mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
     # mesh_modified = Mesh.load_mesh(mesh_modified_file)
 
-    input_fields_file, est_velocity = compute_fields(cfg, full_mesh, el_to_ifr, fractures)
+    input_fields_file, est_velocity = compute_fields(cfg, full_mesh, el_to_ifr, fractures, dim=2)
 
     # input_fields_file = compute_fields(cfg, full_mesh, el_to_fr)
     params = cfg_fine.copy()
@@ -116,11 +116,11 @@ def transport_run(cfg, seed):
     full_mesh_file, fractures, n_large = fullscale_transport_mesh_3d(cfg_fine, fr_pop, seed)
 
     full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol=1e-4)
-    el_to_ifr = fracture_map(full_mesh, fractures, n_large)
+    el_to_ifr = fracture_map(full_mesh, fractures, n_large, dim=3)
     # mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
     # mesh_modified = Mesh.load_mesh(mesh_modified_file)
 
-    input_fields_file, est_velocity = compute_fields(cfg, full_mesh, el_to_ifr, fractures)
+    input_fields_file, est_velocity = compute_fields(cfg, full_mesh, el_to_ifr, fractures, dim=3)
 
     # input_fields_file = compute_fields(cfg, full_mesh, el_to_fr)
     params = cfg_fine.copy()
@@ -168,7 +168,7 @@ def get_indicator(cfg, fo):
     return ind_time_max
 
 @report
-def fracture_map(mesh, fractures, n_large) -> Dict[int, Fracture]:
+def fracture_map(mesh, fractures, n_large, dim) -> Dict[int, Fracture]:
     """
     - join all fracture regions into single "fractures" region
     - return dictionary mapping element idx to fracture
@@ -182,8 +182,8 @@ def fracture_map(mesh, fractures, n_large) -> Dict[int, Fracture]:
     max_reg = max( [gmsh_id for gmsh_id, dim in mesh.gmsh_io.physical.values()] )
     small_reg_id = max_reg + 1
     large_reg_id = max_reg + 2
-    large_reg_map = {(own_to_gmsh_id[fr.region.id], 1): (large_reg_id, 1, "fr_large")  for fr in fractures[:n_large] if fr.region.id in own_to_gmsh_id}
-    small_reg_map = {(own_to_gmsh_id[fr.region.id], 1): (small_reg_id, 1, "fr_small")  for fr in fractures[n_large:] if fr.region.id in own_to_gmsh_id}
+    large_reg_map = {(own_to_gmsh_id[fr.region.id], dim - 1): (large_reg_id, dim - 1, "fr_large")  for fr in fractures[:n_large] if fr.region.id in own_to_gmsh_id}
+    small_reg_map = {(own_to_gmsh_id[fr.region.id], dim - 1): (small_reg_id, dim - 1, "fr_small")  for fr in fractures[n_large:] if fr.region.id in own_to_gmsh_id}
     new_reg_map = large_reg_map
     new_reg_map.update(small_reg_map)
 
@@ -217,7 +217,7 @@ def set_source_limits(cfg):
     return source_params
 
 @report
-def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, int], fractures:List[Fracture]):
+def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, int], fractures:List[Fracture], dim):
     """
     :param params: transport parameters dictionary
     :param mesh: GmshIO of the computational mesh (read only)
@@ -234,28 +234,28 @@ def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, int], fractures:Li
     cross_section = np.full( (len(mesh.elements),), float(1.0))
     porosity = np.full((len(mesh.elements),), 1.0)
     # Bulk fields
-    el_slice_2d = mesh.el_dim_slice(2)
-    bulk_cond, bulk_por = apply_fields.bulk_fields_mockup(cfg_geom, cfg_bulk_fields, mesh.el_barycenters()[el_slice_2d])
-    conductivity[el_slice_2d] = bulk_cond
-    porosity[el_slice_2d] = bulk_por
-    logging.info(f"2D slice: {el_slice_2d}")
+    el_slice_bulk = mesh.el_dim_slice(dim)
+    bulk_cond, bulk_por = apply_fields.bulk_fields_mockup(cfg_geom, cfg_bulk_fields, mesh.el_barycenters()[el_slice_bulk])
+    conductivity[el_slice_bulk] = bulk_cond
+    porosity[el_slice_bulk] = bulk_por
+    logging.info(f"bulk slice: {el_slice_bulk}")
     c_min, c_max = np.min(conductivity), np.max(conductivity)
     logging.info(f"cond range: {c_min}, {c_max}")
-    plots.plot_field(mesh.el_barycenters()[el_slice_2d], bulk_cond, file="conductivity_yz.pdf")
-    plots.plot_field(mesh.el_barycenters()[el_slice_2d], bulk_por, file="porosity_yz.pdf")
+    plots.plot_field(mesh.el_barycenters()[el_slice_bulk], bulk_cond, file="conductivity_yz.pdf")
+    plots.plot_field(mesh.el_barycenters()[el_slice_bulk], bulk_por, file="porosity_yz.pdf")
 
     # Fracture
     cfg_fr = cfg_trans.fractures
     cfg_fr_fields = cfg_trans.fr_field_params
-    el_slice_1d = mesh.el_dim_slice(1)
-    logging.info(f"2D slice: {el_slice_1d}")
+    el_slice_fr = mesh.el_dim_slice(dim - 1)
+    logging.info(f"fr slice: {el_slice_fr}")
     i_default = len(fractures)
-    fr_map_slice = [fr_map.get(i, i_default) for i in range(el_slice_1d.start, el_slice_1d.stop)]
+    fr_map_slice = [fr_map.get(i, i_default) for i in range(el_slice_fr.start, el_slice_fr.stop)]
     fr_cond, fr_cross, fr_por = apply_fields.fr_fields_repo(cfg_fr, cfg_fr_fields,
-                                                            mesh.elements[el_slice_1d], fr_map_slice, fractures)
-    conductivity[el_slice_1d] = fr_cond
-    cross_section[el_slice_1d] = fr_cross
-    porosity[el_slice_1d] = fr_por
+                                                            mesh.elements[el_slice_fr], fr_map_slice, fractures)
+    conductivity[el_slice_fr] = fr_cond
+    cross_section[el_slice_fr] = fr_cross
+    porosity[el_slice_fr] = fr_por
     fields = dict(
         conductivity=conductivity,
         cross_section=cross_section,
