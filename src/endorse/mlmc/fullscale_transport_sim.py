@@ -3,7 +3,7 @@ import copy
 import shutil
 import numpy as np
 from typing import *
-from endorse.fullscale_transport import transport_run
+from endorse.fullscale_transport import transport_run, transport_2d
 
 import mlmc.random.correlated_field as cf
 from typing import List
@@ -64,8 +64,8 @@ class FullScaleTransportSim(Simulation):
         #cfg = common.load_config(conf_file)
         #cfg.flow_env["flow_executable"] = config["flow_executable"]
         #cfg["work_dir"] = config["work_dir"]
-
-        val = transport_run(config, seed)
+        model_fn = {2: transport_2d, 3:transport_run}
+        val = model_fn[config._model_dim](config, seed)
         q10 = list(val)
         add_values = (10 - len(q10)) * [0.0]
         q10.extend(add_values) #fixed_indicators[:len(ind_time_max)] = np.array(ind_time_max)

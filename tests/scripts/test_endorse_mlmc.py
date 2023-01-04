@@ -37,9 +37,15 @@ def test_FullScaleTransport_run():
 def test_plot_cases():
     run_script(['plot', 'cases', '*', '2 10'])
 
-#@pytest.mark.skip
+@pytest.mark.skip
 def test_script_sample():
     #run_script(['run', '*', '2 10'])
     #run_script(['run', '-c', 'edz', '2'])
     #run_script(['run', '-c', 'edz_base edz_lower_tol edz_high_gamma edz_both', '2'])
-    run_script(['run', '-c', 'edz_base', '2'])
+    run_script(['run', '-c', '-nt=1', '-np=4', 'edz_base', '2'])
+
+def test_script_sample_2d():
+    #run_script(['run', '*', '2 10'])
+    #run_script(['run', '-c', 'edz', '2'])
+    #run_script(['run', '-c', 'edz_base edz_lower_tol edz_high_gamma edz_both', '2'])
+    run_script(['run', '-c', '-np=4', '--dim=2', 'edz_base', '2'])

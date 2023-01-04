@@ -112,12 +112,12 @@ def create_level_params(cfg_mlmc):
     return estimator.determine_level_parameters(cfg_mlmc.n_levels, step_range)
 
 
-def create_sampler(cfg, work_dir, debug):
+def create_sampler(cfg, work_dir, debug, n_proc):
     """
     Simulation dependent configuration
     :return: mlmc.sampler instance
     """
-    sampling_pool = create_sampling_pool(cfg.mlmc, work_dir, debug, max_n_proc=2)
+    sampling_pool = create_sampling_pool(cfg.mlmc, work_dir, debug, max_n_proc=n_proc)
     level_parameters = create_level_params(cfg.mlmc)
     # General simulation config
     # conf_file = os.path.join(self.work_dir, "test_data/config_homogenisation.yaml")
@@ -156,7 +156,7 @@ def all_collect(sampling_params, sampler):
         print("N running: ", running)
 
 
-def run_fixed(cfg, n_samples, debug):
+def run_fixed(cfg, n_samples, debug, n_proc):
     """
     Run MLMC.
     Fixed number of samples.
@@ -164,7 +164,7 @@ def run_fixed(cfg, n_samples, debug):
     """
     work_dir = os.path.abspath(".")
     sampling_params = create_sampling_params(work_dir)
-    sampler = create_sampler(cfg, work_dir, debug)
+    sampler = create_sampler(cfg, work_dir, debug, n_proc)
     sampler.set_initial_n_samples(n_samples)
     sampler.schedule_samples()
     #sampler.ask_sampling_pool_for_samples(sleep=self.sample_sleep, timeout=self.sample_timeout)
@@ -519,31 +519,36 @@ class CleanCmd:
 class RunCmd:
     @staticmethod
     def def_args(parser):
-        parser.add_argument("-n", "--n_proc", default=1, type=int,
-                        help="Number of main sampling threads.")
+        parser.add_argument("-nt", "--n_thread", default=4, type=int,
+                        help="Number of sampling threads, sampling cases in parallel.")
+        parser.add_argument("-np", "--n_proc", default=2, type=int,
+                        help="Number of processes per thread.")
         parser.add_argument("-d", "--debug", default=False, action='store_true',
                         help="Keep sample directories")
         parser.add_argument("-c", "--clean", default=False, action='store_true',
                         help="Remove previous HDF5 storage.")
+        parser.add_argument("--dim", default=3, choices=[2,3], type=int,
+                        help="Model dimension (2,3) for testing purpose.")
         SimCases.def_args(parser)
 
     def execute(self, args):
         #if args.clean:
         #    common.EndorseCache.instance().expire_all()
+
         futures = []
         cases = SimCases.initialize(args)
-        with ThreadPoolExecutor() as pool:
+        with ThreadPoolExecutor(max_workers = args.n_thread) as pool:
             for case in cases.iterate():
                 if args.clean:
                     case.clean()
                 print("submit case:", case)
-                f = pool.submit(self.run_case, case)
+                f = pool.submit(self.run_case, case, args.dim, args.n_proc)
                 futures.append((f, case))
         for f, case in futures:
             print(case, "result: ", f.result())
 
     @staticmethod
-    def run_case(case : SimCase):
+    def run_case(case : SimCase, model_dim, np):
         print("running case:", case)
         cfg = common.load_config(MAIN_CONFIG_FILE, collect_files=True)
         cfg_var = common.config.apply_variant(cfg, case.case_patch)
@@ -553,7 +558,8 @@ class RunCmd:
             #with open(cfg_file, "w") as f:
             #        yaml.dump(common.dotdict.serialize(cfg_var), f)
             n_samples = 20
-            run_fixed(cfg_var, 20, debug=True)
+            cfg_var._model_dim = model_dim
+            run_fixed(cfg_var, n_samples, debug=True, n_proc=np)
 
 class CasesPlot:
 
