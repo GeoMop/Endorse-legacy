@@ -12,20 +12,20 @@ import math
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-from genie.core import snap_electrodes, snap_surf
-from genie.core.config import InversionConfig, ProjectConfig
-from genie.core import mesh_gen, mesh_surf
-from genie.core import cut_point_cloud
-from genie.core.data_types import MeasurementsInfo, MeshFrom, MeasurementModelInfoItem, MeasurementsModelInfo
-from genie.core.global_const import GenieMethod
-from genie.core import misc
+#from genie.core import snap_electrodes, snap_surf
+#from genie.core.config import InversionConfig, ProjectConfig
+#from genie.core import mesh_gen, mesh_surf
+#from genie.core import cut_point_cloud
+#from genie.core.data_types import MeasurementsInfo, MeshFrom, MeasurementModelInfoItem, MeasurementsModelInfo
+#from genie.core.global_const import GenieMethod
+#from genie.core import misc
 from bgem.gmsh.gmsh_io import GmshIO
 from bgem.gmsh import gmsh, field
 
 import numpy as np
 #import pybert as pb
-import pygimli as pg
-import pymeshlab
+#import pygimli as pg
+#import pymeshlab
 
 
 def main():

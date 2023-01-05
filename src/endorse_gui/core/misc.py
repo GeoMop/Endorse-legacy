@@ -1,7 +1,7 @@
 import math
 
 
-import pygimli as pg
+#import pygimli as pg
 
 
 TOLERANCE = 1e-12

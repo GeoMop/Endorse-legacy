@@ -1,6 +1,6 @@
 import pandas as pd
 #import pybert as pb
-import pygimli as pg
+#import pygimli as pg
 import numpy as np
 
 from .data_types import MeasurementInfoItem, MeasurementsInfo

@@ -11,7 +11,7 @@ import operator
 import json
 from endorse_gui.core import json_data
 import pandas as pd
-import obspy
+#import obspy
 
 
 _WHITE_SPACE_PATTERN = re.compile(r"\s")

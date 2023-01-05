@@ -37,8 +37,8 @@ import json
 import shutil
 
 import numpy as np
-from obspy.signal.trigger import recursive_sta_lta
-import pygimli
+#from obspy.signal.trigger import recursive_sta_lta
+#import pygimli
 
 
 class InversionPreparation(QtWidgets.QMainWindow):

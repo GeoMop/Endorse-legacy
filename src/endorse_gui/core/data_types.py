@@ -6,7 +6,7 @@ from enum import IntEnum
 from typing import List, Dict, Optional
 import attr
 from endorse_gui.core import json_data
-import obspy
+#import obspy
 
 
 @json_data.jsondata

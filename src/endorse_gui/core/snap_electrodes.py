@@ -1,6 +1,6 @@
 from bgem.gmsh.gmsh_io import GmshIO
 import bih
-import pygimli as pg
+#import pygimli as pg
 
 import numpy as np
 import time

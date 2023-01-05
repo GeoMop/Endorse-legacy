@@ -1,5 +1,5 @@
 import pandas as pd
-import pygimli as pg
+#import pygimli as pg
 import numpy as np
 
 from endorse_gui.core import cut_point_cloud

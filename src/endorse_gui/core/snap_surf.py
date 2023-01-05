@@ -1,4 +1,4 @@
-import pygimli as pg
+#import pygimli as pg
 
 import numpy as np
 

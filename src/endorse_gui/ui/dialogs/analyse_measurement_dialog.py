@@ -11,7 +11,7 @@ import sys
 import json
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-import pygimli as pg
+#import pygimli as pg
 import numpy as np
 import math
 
