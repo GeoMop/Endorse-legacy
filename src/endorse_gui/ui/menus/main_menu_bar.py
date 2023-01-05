@@ -27,9 +27,9 @@ class MainMenuBar(QtWidgets.QMenuBar):
 
         # add menus to main menu
         self.addAction(self.file.menuAction())
-        self.addAction(self.inversions.menuAction())
-        self.addAction(self.view.menuAction())
-        self.addAction(self.action.menuAction())
+        # self.addAction(self.inversions.menuAction())
+        # self.addAction(self.view.menuAction())
+        # self.addAction(self.action.menuAction())
 
 
 class FileMenu(QtWidgets.QMenu):
@@ -50,19 +50,19 @@ class FileMenu(QtWidgets.QMenu):
         self.actionExit = create_action(self, "Exit", "Ctrl+Q")
 
         # add actions to menu
-        self.addAction(self.actionNewProject)
+        #self.addAction(self.actionNewProject)
         self.addAction(self.actionOpenProject)
-        #self.addAction(self.actionSaveProject)
-        self.addAction(self.actionCloseProject)
-        self.addSeparator()
-        self.addAction(self.actionImportExcel)
-        if genie.method == GenieMethod.ST:
-            self.addAction(self.actionImportFirstArrivals)
-        self.addAction(self.actionImportPointCloud)
-        self.addAction(self.actionImportGalleryMesh)
-        self.addAction(self.actionImportMap)
-        #self.addSeparator()
-        #self.addAction(self.actionExit)
+        # #self.addAction(self.actionSaveProject)
+        # self.addAction(self.actionCloseProject)
+        # self.addSeparator()
+        # self.addAction(self.actionImportExcel)
+        # if genie.method == GenieMethod.ST:
+        #     self.addAction(self.actionImportFirstArrivals)
+        # self.addAction(self.actionImportPointCloud)
+        # self.addAction(self.actionImportGalleryMesh)
+        # self.addAction(self.actionImportMap)
+        # #self.addSeparator()
+        # #self.addAction(self.actionExit)
 
 
 class ViewMenu(QtWidgets.QMenu):
