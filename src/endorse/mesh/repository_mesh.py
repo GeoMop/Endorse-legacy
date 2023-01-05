@@ -1,9 +1,13 @@
+import logging
 from typing import *
 import os
 import math
+
+import bgem
 from bgem.gmsh import gmsh, options
+from bgem.stochastic.fracture import FisherOrientation
 import numpy as np
-from endorse.common import dotdict, File
+from endorse.common import dotdict, File, report, memoize
 from endorse.mesh import mesh_tools
 
 
@@ -21,8 +25,10 @@ def create_fractures_rectangles(gmsh_geom, fractures, shift, base_shape: 'Object
         shape = base_shape.copy()
         print("fr: ", i, "tag: ", shape.dim_tags)
         shape = shape.scale([fr.rx, fr.ry, 1]) \
+            .rotate(axis=[0,0,1], angle=fr.shape_angle) \
             .rotate(axis=fr.rotation_axis, angle=fr.rotation_angle) \
             .translate(fr.center + shift).set_region(fr.region)
+
         shapes.append(shape)
 
     fracture_fragments = gmsh_geom.fragment(*shapes)
@@ -175,7 +181,60 @@ def make_geometry(factory, cfg_geom, fractures, cfg_mesh):
     return bulk_geom, edz_refined
 
 
-def one_borehole(cfg_geom:dotdict, fractures:List['Fracture'], cfg_mesh:dotdict):
+def make_geometry_2d(factory, cfg_geom, fractures, cfg_mesh):
+    #box_drilled, box, access_tunnels, boreholes = basic_shapes(factory, cfg_geom)
+    #box_drilled, box, tunnels = basic_shapes_simple(factory, geom_dict)
+    bh_top = 2 * cfg_geom.borehole.radius
+    x, y, z = cfg_geom.box_dimensions
+    XZ_rot = ([1, 0, 0], np.pi / 2)
+    x_shift_vec = outer_box_shift(cfg_geom)
+    box = factory.rectangle([x, z/2]).rotate(*XZ_rot).translate([x_shift_vec[0], 0, z/4 + bh_top]).set_region("box")
+    borehole_side = factory.line([-x/2,  -z/4, 0],  [x/2, -z/4, 0] ).rotate(*XZ_rot).translate([x_shift_vec[0], 0, z/4 + bh_top])
+
+    base_shape = factory.line([-0.5, 0, 0], [0.5, 0, 0])
+    fr_shapes = create_fractures_rectangles(factory, fractures, [0,0,0], base_shape)
+
+    fr_shapes = factory.group(*fr_shapes).rotate(*XZ_rot).translate(x_shift_vec)
+    fractures_group = fr_shapes.intersect(box.copy())
+
+    #b_rec = box_drilled.get_boundary()#.set_region(".sides")
+
+    box_fr, fractures_fr = factory.fragment(box.copy(), fractures_group)
+    fractures_fr.mesh_step(cfg_mesh.fracture_mesh_step) #.set_region("fractures")
+
+    b_box_fr = box_fr.get_boundary().split_by_dimension()[1]
+    b_fractures_fr = fractures_fr.get_boundary().split_by_dimension()[0]
+
+    # select outer boundary
+    select = borehole_side
+    boundary_mesh_step = cfg_mesh.boundary_mesh_step
+    outer = box.get_boundary().copy().cut(select)
+    b_box = b_box_fr.select_by_intersect(outer).set_region(".box_outer").mesh_step(boundary_mesh_step)
+    b_fractures = b_fractures_fr.select_by_intersect(box.get_boundary().copy()).set_region(".fr_outer").mesh_step(boundary_mesh_step)
+
+    # select inner boreholes boundary
+    boreholes_step = cfg_mesh.boreholes_mesh_step
+
+    b_box_boreholes = b_box_fr.select_by_intersect(select)\
+                  .set_region(".box_boreholes").mesh_step(boreholes_step)
+    b_fr_boreholes = b_fractures_fr.select_by_intersect(select)\
+                 .set_region(".fr_boreholes").mesh_step(boreholes_step)
+
+
+    boundary = factory.group(b_box, b_fractures,
+                             b_box_boreholes, b_fr_boreholes)
+    bulk_geom = factory.group(box_fr, fractures_fr, boundary)
+    edz_refined = factory.group(b_box_boreholes, b_fr_boreholes)
+    #boundary = factory.group(b_box)
+
+    # Following makes some mesing issues:
+    #factory.group(b_box_inner, b_fr_inner).mesh_step(geom_dict['main_tunnel_mesh_step'])
+    #boundary.select_by_intersect(boreholes.get_boundary()).mesh_step(geom_dict['boreholes_mesh_step'])
+
+    return bulk_geom, edz_refined
+
+
+def one_borehole(cfg_geom:dotdict, fractures:List['Fracture'], cfg_mesh:dotdict, geom_fn):
     """
     :param cfg_geom: repository mesh configuration cfg.repository_mesh
     :param fractures:  generated fractures
@@ -191,7 +250,7 @@ def one_borehole(cfg_geom:dotdict, fractures:List['Fracture'], cfg_mesh:dotdict)
     gopt.Tolerance = 0.0001
     gopt.ToleranceBoolean = 0.001
 
-    bulk, refined = make_geometry(factory, cfg_geom, fractures, cfg_mesh)
+    bulk, refined = geom_fn(factory, cfg_geom, fractures, cfg_mesh)
 
 
     factory.set_mesh_step_field(mesh_tools.edz_refinement_field(factory, cfg_geom, cfg_mesh))
@@ -200,7 +259,35 @@ def one_borehole(cfg_geom:dotdict, fractures:List['Fracture'], cfg_mesh:dotdict)
     del factory
     return File(mesh_file)
 
-def fullscale_transport_mesh(cfg_fullscale):
-    main_box_dimensions = cfg_fullscale.geometry.box_dimensions
-    fractures = mesh_tools.generate_fractures(cfg_fullscale.fractures, main_box_dimensions)
-    return one_borehole(cfg_fullscale.geometry, fractures, cfg_fullscale.mesh)
+
+
+
+
+def fracture_set(cfg, fr_population, seed):
+    main_box_dimensions = cfg.geometry.box_dimensions
+
+    # Fixed large fractures
+    fix_seed = cfg.fractures.fixed_seed
+    large_min_r = cfg.fractures.large_min_r
+    large_box_dimensions = cfg.fractures.large_box
+    fr_limit = cfg.fractures.n_frac_limit
+    fractures = mesh_tools.generate_fractures(fr_population, (large_min_r, None), fr_limit, large_box_dimensions, fix_seed)
+    n_large = len(fractures)
+    # random small scale fractures
+    small_fr = mesh_tools.generate_fractures(fr_population, (None, large_min_r), fr_limit, main_box_dimensions, seed)
+    fractures.extend(small_fr)
+    logging.info(f"Generated fractures: {n_large} large, {len(small_fr)} small.")
+    return fractures, n_large
+
+@report
+@memoize
+def fullscale_transport_mesh_3d(cfg, fr_population, seed):
+    fractures, n_large = fracture_set(cfg, fr_population, seed)
+    return one_borehole(cfg.geometry, fractures, cfg.mesh, make_geometry), fractures, n_large
+
+
+@report
+@memoize
+def fullscale_transport_mesh_2d(cfg, fr_population, seed):
+    fractures, n_large = fracture_set(cfg, fr_population, seed)
+    return one_borehole(cfg.geometry, fractures, cfg.mesh, make_geometry_2d), fractures, n_large

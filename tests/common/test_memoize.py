@@ -43,7 +43,9 @@ def test_file_memoization():
     f2 = file_func(f, output_file)    # Re create output_file.txt, skipped.
     with pytest.raises(FileExistsError):
         f3 = file_func(f1, output_file)   # Trying to overwrite the created file. Should raise.
-
+    """
+    Test file pickle and depickle with file validation.
+    """
 
 @common.report
 @common.memoize

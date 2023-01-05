@@ -24,12 +24,30 @@ class EquationOutput:
         self.balance_file: File = search_file(balance_name+"_balance", ".txt"),
         self.observe_file: File = search_file(eq_name+"_observe", ".yaml")
 
-    def observe_dict(self):
-        if self.observe_file is None:
-            raise FileNotFoundError(f"Not found Flow123d output file: {self.eq_name}_observe.yaml.")
-        with open(self.observe_file.path, "r") as f:
+    def _load_yaml_output(self, file, basename):
+        if file is None:
+            raise FileNotFoundError(f"Not found Flow123d output file: {self.eq_name}_{basename}.yaml.")
+        with open(file.path, "r") as f:
             loaded_yaml = yaml.load(f, yaml.CSafeLoader)
         return dotdict.create(loaded_yaml)
+
+    def observe_dict(self):
+        return self._load_yaml_output(self.observe_file, 'observe')
+
+    def balance_dict(self):
+        return self._load_yaml_output(self.balance_file, 'balance')
+
+    def balance_df(self):
+        """
+        create a dataframe for the Balance file
+        rows for times, columns are tuple (region, value),
+        values =[ flux,  flux_in,  flux_out,  mass,  source,  source_in,  source_out,  flux_increment,  source_increment,  flux_cumulative,  source_cumulative,  error ]
+        :return:
+        TODO: ...
+        """
+        dict = self.balance_dict()
+        pass
+
 
 
 class FlowOutput:
@@ -93,7 +111,7 @@ def _flow_subprocess(arguments, main_input):
     return File(stdout_path), File(stderr_path), completed
 
 @report
-#@memoize
+@memoize
 def call_flow(cfg:'dotdict', file_in:File, params: Dict[str,str]) -> FlowOutput:
     """
     Run Flow123d in actual work dir with main input given be given template and dictionary of parameters.
@@ -105,13 +123,13 @@ def call_flow(cfg:'dotdict', file_in:File, params: Dict[str,str]) -> FlowOutput:
     """
     main_input = _prepare_inputs(file_in, params)
     stdout, stderr, completed = _flow_subprocess(cfg.flow_executable.copy(), main_input)
-    fo = FlowOutput(completed, stdout.path, stderr.path)
-
     logging.info(f"Exit status: {completed.returncode}")
     if completed.returncode != 0:
         with open(stderr.path, "r") as stderr:
             print(stderr.read())
         raise Exception("Flow123d ended with error")
+
+    fo = FlowOutput(completed, stdout.path, stderr.path)
     conv_check = fo.check_conv_reasons()
     logging.info(f"converged: {conv_check}")
     return fo

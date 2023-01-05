@@ -4,15 +4,16 @@ from typing import List
 import numpy as np
 
 from . import common
-from .common import dotdict, memoize, File, call_flow, workdir
+from .apply_fields import conductivity_mockup
+from .common import dotdict, memoize, File, call_flow, workdir, report
 from .mesh import container_position_mesh
-from .homogenisation import  subdomains_mesh, Homogenisation, Subdomain
+from .homogenisation import MacroSphere, Subproblems
 from .mesh_class import Mesh
 from . import large_mesh_shift
 
 
 def macro_transport(cfg:dotdict):
-    work_dir = f"run_macro_transport"
+    work_dir = f"sandbox/run_macro_transport"
     macro_cfg = cfg.transport_macroscale
     large_model = File(macro_cfg.piezo_head_input_file)
 
@@ -20,7 +21,6 @@ def macro_transport(cfg:dotdict):
         macro_mesh: Mesh = make_macro_mesh(cfg)
         # select elements with homogenized properties
         macro_model_el_indices = homogenized_elements(cfg.geometry, macro_mesh)
-
         conductivity_file = macro_conductivity(cfg, macro_mesh, macro_model_el_indices)
         # TODO:  run macro model
 
@@ -38,14 +38,14 @@ def fine_macro_transport(cfg):
     cfg_fine = cfg.transport_fine
     micro_mesh = make_micro_mesh(cfg)
     template = os.path.join(common.flow123d_inputs_path, cfg_fine.input_template)
-    conductivity_file = apply_fine_conductivity_parametric(cfg, micro_mesh)
+    conductivity_file = conductivity_mockup(cfg, micro_mesh)
     large_model = large_model = File(cfg_fine.piezo_head_input_file)
     params = dict(
         mesh_file=micro_mesh.file.path,
         piezo_head_input_file=os.path.basename(large_model.path),
         input_fields_file = conductivity_file.path
     )
-    with common.workdir("fine_flow", inputs=[micro_mesh.file.path, large_model.path, conductivity_file.path], clean=False):
+    with common.workdir("sandbox/fine_flow", inputs=[micro_mesh.file.path, large_model.path, conductivity_file.path], clean=False):
         common.call_flow(cfg.flow_env, template, params)
 
 @memoize
@@ -79,37 +79,12 @@ def make_macro_mesh(cfg):
 
 @memoize
 def make_micro_mesh(cfg):
-    mesh_file = container_position_mesh.fine_mesh(cfg.geometry)
+    mesh_file = container_position_mesh.fine_mesh(cfg.geometry, cfg.transport_microscale.mesh_params)
     return Mesh.load_mesh(mesh_file)
 
-@memoize
-def apply_fine_conductivity_parametric(cfg, output_mesh:Mesh):
-    cfg_cond = cfg.fine_conductivity_parametric
-    X, Y, Z = output_mesh.el_barycenters()
-    cond_file = "fine_conductivity.msh2"
-    cond_max = float(cfg_cond.cond_max)
-    cond_min = float(cfg_cond.cond_min)
-
-    edz_r = cfg.geometry.edz_radius # 2.5
-    in_r = cfg_cond.inner_radius
-    Z = Z - cfg.geometry.borehole.z_pos
-    # axis wit respect to EDZ radius
-    Y_rel = Y / cfg_cond.h_axis
-    Z_rel = Z / cfg_cond.v_axis
-
-    # distance from center, 1== edz_radius
-    distance = np.sqrt((Y_rel * Y_rel + Z_rel * Z_rel)) / (edz_r)
-
-    theta = (1 - distance)/(1 - in_r)
-    cond_field = np.minimum(cond_max, np.maximum(cond_min, np.exp(theta * np.log(cond_max) + (1-theta) * np.log(cond_min))))
-    abs_dist = np.sqrt(Y * Y + Z * Z)
-    cond_field[abs_dist < cfg.geometry.borehole.radius] = 1e-18
-    output_mesh.write_fields(cond_file,
-                            dict(conductivity=cond_field))
-    return File(cond_file)
 
 
-@memoize
+#@memoize
 def macro_conductivity(cfg:dotdict, macro_mesh: Mesh, homogenized_els: List[int]) -> File:
     """
     - merge default conductvity and homogenized conductivity tensors
@@ -125,10 +100,14 @@ def macro_conductivity(cfg:dotdict, macro_mesh: Mesh, homogenized_els: List[int]
     """
 
     micro_mesh: Mesh = make_micro_mesh(cfg)
-    subdomains = [Subdomain.for_element(micro_mesh, macro_mesh.elements[ie]) for ie in homogenized_els]
-    homo = Homogenisation(subdomains)
+    macro_shape = MacroSphere(rel_radius=1)
+    subdivision = np.array([2, 2, 1])
+    #subprobs = make_subproblems(macro_mesh, micro_mesh, macro_shape, subdivision)
+
+    #subdomains = [Subdomain.for_element(micro_mesh, macro_mesh.elements[ie]) for ie in homogenized_els]
+    homo = Subproblems.create(macro_mesh, homogenized_els, micro_mesh, macro_shape, subdivision)
     # debugging output of the subdomains
-    subdomains_mesh(subdomains)
+    #subdomains_mesh(subdomains)
 
     cfg_micro = cfg.transport_microscale
     gen_load_responses = (micro_load_response(cfg, homo, il, load) for il, load in enumerate(cfg_micro.pressure_loads))
@@ -150,36 +129,64 @@ def macro_conductivity(cfg:dotdict, macro_mesh: Mesh, homogenized_els: List[int]
     return File(input_fields_file)
 
 
-
 @memoize
-def micro_load_response(cfg, homogenisation, i_load, load):
+def micro_load_response(cfg, subprobs:Subproblems, i_load, load):
     """
     1. run micro model(s)
     2. average over subdomains
     Return (n_subdomains, (load_avg, respons_avg))
     TODO: finish param to Flow, test
     """
-    work_dir = f"load_{i_load}"
     cfg_micro = cfg.transport_microscale
-    fine_conductivity = apply_fine_conductivity_parametric(cfg, homogenisation.micro_mesh)
+    cfg_flow = cfg.flow_env
+    fine_conductivity_params=cfg
 
-    template = os.path.join(common.flow123d_inputs_path, cfg_micro.input_template)
-    mesh_file = homogenisation.micro_mesh.file.path
-    with workdir(work_dir, inputs=[mesh_file, fine_conductivity]):
+    def micro(iprob, subprob):
+        tag = f"load_{i_load}_{iprob}"
+        return conductivity_micro_problem(cfg_micro, cfg_flow, tag, subprob, fine_conductivity_params, load)
+
+    subdomain_response, subdomain_load = zip(*[micro(iprob, subprob) for iprob, subprob in enumerate(subprobs.subproblems)])
+
+    return subprobs.subdomains_average(subdomain_response), subprobs.subdomains_average(subdomain_load)
+
+@report
+@memoize
+def subproblem_input(subproblem, conductivity_params):
+    mesh = subproblem.submesh
+    return conductivity_mockup(conductivity_params, mesh)
+
+@report
+def micro_postprocess(cfg_micro, subproblem, micro_model):
+    def load():
+        return Mesh.load_mesh(micro_model.hydro.spatial_file)
+    output_mesh: Mesh = report(load)()
+    response_field = cfg_micro.response_field_p0
+    def response():
+        return output_mesh.get_static_p0_values(response_field)
+    response_el_values = report(response)()
+    def load_f():
+        return get_load_data(cfg_micro, output_mesh, response_el_values)
+    load_el_values = report(load_f)()
+    def avg_r():
+        return subproblem.average(response_el_values)
+    def avg_l():
+        return subproblem.average(load_el_values)
+    return report(avg_r)(), report(avg_l)()
+
+
+def conductivity_micro_problem(cfg_micro, cfg_flow, tag, subproblem, fine_conductivity_params, load):
+
+    with workdir(f"load_{tag}", inputs=[]):
+        fine_conductivity_file = subproblem_input(subproblem, fine_conductivity_params)
         params = dict(
-            mesh_file=mesh_file,
+            mesh_file=fine_conductivity_file.path,
             pressure_grad=str(load),
-            fine_conductivity=fine_conductivity.path
+            fine_conductivity=fine_conductivity_file.path
         )
-        micro_model = call_flow(cfg.flow_env, template, params)
-        output_mesh : Mesh = Mesh.load_mesh(micro_model.hydro.spatial_file)
+        template = os.path.join(common.flow123d_inputs_path, cfg_micro.input_template)
+        micro_model = call_flow(cfg_flow, template, params)
+        return micro_postprocess(cfg_micro, subproblem, micro_model)
 
-        response_field = cfg_micro.response_field_p0
-        response_el_values = output_mesh.get_static_p0_values(response_field)
-        load_el_values = get_load_data(cfg_micro, output_mesh, response_el_values)
-        return homogenisation.average(load_el_values), homogenisation.average(response_el_values)
-
-        return micro_model_response(cfg_micro, subdomains, output_mesh)
 
 
 def grad_for_p1(loc_el_mat, node_values):
@@ -212,3 +219,5 @@ def get_load_data(cfg_micro:dotdict, output_mesh: Mesh, response_el_values:np.ar
     if load_field:
         conductivity = output_mesh.get_static_p0_values(load_field)
         return response_el_values / conductivity
+
+

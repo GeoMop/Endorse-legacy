@@ -1,13 +1,19 @@
 
 [submodule "submodules/jsondata"]
 	path = submodules/jsondata
-	url = git@github.com:GeoMop/JsonData.git
-[submodule "submodules/redis-cache"]
-	path = submodules/redis-cache
-	url = https://github.com/jbrezmorf/redis-simple-cache-3k.git
+	url = ../../GeoMop/JsonData.git
 [submodule "submodules/bgem"]
 	path = submodules/bgem
-	url = git@github.com:GeoMop/bgem.git
+	url = ../../GeoMop/bgem.git
 [submodule "submodules/bih"]
 	path = submodules/bih
-	url = git@github.com:flow123d/bih.git
+	url = ../../flow123d/bih.git
+[submodule "submodules/MLMC"]
+	path = submodules/MLMC
+	url = ../../GeoMop/MLMC.git
+[submodule "submodules/redis-cache"]
+	path = submodules/redis-cache
+	url = ../../jbrezmorf/redis-simple-cache-3k.git
+[submodule "submodules/swrap"]
+	path = submodules/swrap
+	url = ../../flow123d/swrap

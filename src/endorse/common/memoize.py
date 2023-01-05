@@ -1,5 +1,5 @@
 import logging
-
+from typing import *
 import redis_cache
 import hashlib
 from functools import wraps
@@ -81,6 +81,8 @@ class File:
         return f
 
     TODO: there is an (unsuccessful) effort to provide special handle for writting.
+    TODO: Override deserialization in order to check that the file is unchanged.
+          Seems that caching just returns the object without actuall checking.
     """
 
     # @classmethod
@@ -95,22 +97,34 @@ class File:
     #     Path is checked to not exists yet.
     #     """
     #     return cls(path, postponed=True)
-
-    def __init__(self, path: str):  # , hash:Union[bytes, str]=None) #, postponed=False):
+    _hash_fn = hashlib.md5
+    def __init__(self, path: str, files:List['File'] = None):  # , hash:Union[bytes, str]=None) #, postponed=False):
+        """
+        For file 'path' create object containing both path and content hash.
+        Optionaly the files referenced by the file 'path' could be passed by `files` argument
+        in order to include their hashes.
+        :param path: str
+        :param files: List of referenced files.
+        """
         self.path = os.path.abspath(path)
-        # if hash is None:
-        #     if postponed:
-        #         self.hash = None
-        #     else:
-        #         self._set_hash()
-        # else:
-        #     if type(hash) is str:
-        #         pass #hash = hash(hash)
-        #     self.hash:bytes = hash
+        if files is None:
+            files = []
+        self.referenced_files = files
+        self._set_hash()
+
+    def __getstate__(self):
+        return (self.path, self.referenced_files)
+
+    def __setstate__(self, args):
+        self.path, self.referenced_files = args
         self._set_hash()
 
     def _set_hash(self):
-        self.hash = self.hash_for_file(self.path).hexdigest()
+        files = self.referenced_files
+        md5 = self.hash_for_file(self.path)
+        for f in files:
+            md5.update(repr(f).encode())
+        self.hash = md5.hexdigest()
 
     @staticmethod
     def open(path, mode="wt"):
@@ -137,6 +151,7 @@ class File:
     def __str__(self):
         return f"File('{self.path}', hash={self.hash})"
 
+
     """
     Could be used from Python 3.11    
     @staticmethod
@@ -159,10 +174,13 @@ class File:
         Here I have blocks of 4096 octets (Default NTFS)
         '''
         block_size = 256 * 128
-        md5 = hashlib.md5()
-        with open(path, 'rb') as f:
-            for chunk in iter(lambda: f.read(block_size), b''):
-                md5.update(chunk)
+        md5 = File._hash_fn()
+        try:
+            with open(path, 'rb') as f:
+                for chunk in iter(lambda: f.read(block_size), b''):
+                    md5.update(chunk)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Missing cached file: {path}")
         return md5
 
 

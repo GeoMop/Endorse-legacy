@@ -1,7 +1,7 @@
 from typing import *
 import os
 from bgem.gmsh import gmsh
-from endorse.common.common import dotdict, File
+from endorse.common import File, dotdict
 from endorse.mesh import mesh_tools
 
 
@@ -18,7 +18,6 @@ homogenization mesh - subset of fine mesh, same geometry, but cut by given cylin
 def macro_outer_box(cfg_geom, factory):
     b_cfg = cfg_geom.borehole
     x_size = 0.9 * b_cfg.length
-    container_period = mesh_tools.container_period(cfg_geom)
     x_shift = x_size / 2
     yz_size = 5 * cfg_geom.edz_radius
     return factory.box([x_size, yz_size, yz_size]).translate([x_shift, 0, b_cfg.z_pos])
@@ -38,15 +37,14 @@ def macro_mesh(cfg_geom:dotdict, macro_mesh_step:float):
     box = macro_outer_box(cfg_geom, factory)
     box.mesh_step(macro_mesh_step)
     mesh_file = base + ".msh"
-    mesh_tools.edz_meshing(cfg_geom, factory, [box], mesh_file)
+    mesh_tools.edz_meshing(factory, [box], mesh_file)
     del factory
     return File(mesh_file)
 
-def fine_mesh(cfg_geom:dotdict):
+def fine_mesh(cfg_geom:dotdict, cfg_mesh:dotdict):
     """
     macro mesh with cut borehole and refined around
     """
-    macro_mesh_step = 3
     b_cfg = cfg_geom.borehole
 
     base = "fine_borehole"
@@ -70,9 +68,9 @@ def fine_mesh(cfg_geom:dotdict):
     #gopt = options.Geometry()
     #gopt.Tolerance = 0.0001
     #gopt.ToleranceBoolean = 0.001
-    factory.set_mesh_step_field(mesh_tools.edz_refinement_field(cfg_geom, factory))
+    factory.set_mesh_step_field(mesh_tools.edz_refinement_field(factory, cfg_geom, cfg_mesh))
     #factory.get_logger().stop()
-    mesh_tools.edz_meshing(cfg_geom, factory, [outer, borehole], mesh_file)
+    mesh_tools.edz_meshing(factory, [outer, borehole], mesh_file)
     # factory.show()
     del factory
     return File(mesh_file)
@@ -102,7 +100,7 @@ def borehole_single_mesh(cfg:dotdict, x_size:float, yz_size_float, h_min:float, 
     #edz = factory.cylinder(cfg.borehole_radius, axis=[cfg.borehole_length, 0, 0])
 
     factory.get_logger().start()
-    factory.set_mesh_step_field(mesh_tools.edz_refinement_field(cfg, factory))
+    factory.set_mesh_step_field(mesh_tools.edz_refinement_field(factory, None, cfg))
     factory.get_logger().stop()
     mesh_tools.edz_meshing(cfg, factory, [outer, borehole], mesh_file)
     # factory.show()

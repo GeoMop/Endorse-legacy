@@ -1,12 +1,20 @@
 import setuptools
-
+from setuptools import find_packages
 __version__="0.1.0"
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+
+# def packages_list():
+#     packages = []
+#     packages.extend(find_packages(where='src/endorse'))
+#     print("Detected packages: ", packages)
+#     [*find_packages(), 'endorse.mesh', 'endorse.common'],
+#     return packages
+
 setuptools.setup(
-    name="endorse1",
+    name="endorse",
     version=__version__,
     license='GPL 3.0',
     description='Stochastic model of excavation damage zone and its safety indicators.',
@@ -35,13 +43,23 @@ setuptools.setup(
     ],
     # include_package_data=True, # package includes all files of the package directory
     zip_safe=False,
-    install_requires=[],
+    install_requires=['numpy>=1.13.4', 'pandas', 'scipy', 'bih', 'gmsh>=4.10.4', 'pyyaml',
+                      'pyyaml-include', 'matplotlib', 'pyvista'],
     python_requires='>=3',
 
-    packages=['endorse'],
-    package_dir={'': 'src'},
+    # according to setuptols documentation
+    # the including 'endorse.flow123d_inputs' should not be neccessary,
+    # however packege_data 'endorse.flow123d_inputs' doesn't work without it
+    packages=['endorse', 'endorse.common', 'endorse.flow123d_inputs', 'endorse.mesh', 'endorse.mlmc', 'endorse.scripts'],
+    package_dir={
+        "": "src"
+    },
+    package_data={
+        "endorse" : ["*.txt"],
+        "endorse.flow123d_inputs": ['*.yaml']
+    },
     entry_points={
-        'console_scripts': ['endorse_gui=endorse.gui.app:main']
+        'console_scripts': ['endorse_gui=endorse.gui.app:main', 'endorse_mlmc=endorse.scripts.endorse_mlmc:main']
     }
 )
 
