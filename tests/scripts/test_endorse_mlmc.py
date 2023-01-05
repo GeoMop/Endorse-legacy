@@ -32,12 +32,12 @@ def test_FullScaleTransport_run():
     args = FullScaleTransport.get_arguments(argv)
     pr = FullScaleTransport(f"test_data/cfg_mlmc_{case}.yaml", args)
 
-@pytest.mark.skip
+#@pytest.mark.skip
 def test_plot_cases():
     #run_script(['plot', 'cases', '*', '2'])
-    run_script(['plot', 'cases', 'edz_base edz_lower_tol edz_high_gamma edz_both', '2'])
+    run_script(['plot', 'cases', 'base dg_1 dg_3 dg_30 tol_low tol_high', '2'])
 
-#@pytest.mark.skip
+@pytest.mark.skip
 def test_script_sample():
     #run_script(['run', '*', '2 10'])
     #run_script(['run', '-c', 'edz', '2'])

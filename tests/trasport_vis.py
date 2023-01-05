@@ -19,13 +19,13 @@ materialLibrary1 = GetMaterialLibrary()
 
 # Create a new 'Render View'
 renderView1 = CreateView('RenderView')
-renderView1.ViewSize = [1397, 793]
+renderView1.ViewSize = [1397, 913]
 renderView1.AxesGrid = 'GridAxes3DActor'
 renderView1.CenterOfRotation = [60.91750907897949, 7.466259002685547, -2.624338150024414]
 renderView1.StereoType = 'Crystal Eyes'
-renderView1.CameraPosition = [62.21455319485346, -345.83974954303727, 229.4077591969404]
-renderView1.CameraFocalPoint = [60.91750907897941, 7.466259002685548, -2.624338150024404]
-renderView1.CameraViewUp = [0.11182922274960697, 0.5457893471158854, 0.8304265250544651]
+renderView1.CameraPosition = [-349.9041893933095, 94.31628425595248, 45.83510236511355]
+renderView1.CameraFocalPoint = [60.91750907897937, 7.466259002685587, -2.624338150024396]
+renderView1.CameraViewUp = [0.1759815287831352, 0.31137850723083565, 0.9338489849873195]
 renderView1.CameraFocalDisk = 1.0
 renderView1.CameraParallelScale = 109.39987808307224
 renderView1.BackEnd = 'OSPRay raycaster'
@@ -89,7 +89,7 @@ SetActiveView(None)
 # create new layout object 'Concentration'
 concentration = CreateLayout(name='Concentration')
 concentration.AssignView(0, renderView1)
-concentration.SetSize(1397, 793)
+concentration.SetSize(1397, 913)
 
 # create new layout object 'SÃ­Å¥ - geometrie'
 sgeometrie = CreateLayout(name='SÃ­Å¥ - geometrie')
@@ -113,25 +113,19 @@ SetActiveView(renderView1)
 # ----------------------------------------------------------------
 
 # create a new 'PVD Reader'
-solute_fieldspvd = PVDReader(registrationName='solute_fields.pvd', FileName='/home/jb/workspace/Endorse/tests/sandbox/mlmc_run/edz_base-002/output/L00_S0000001/output/solute_fields.pvd')
+solute_fieldspvd = PVDReader(registrationName='solute_fields.pvd', FileName='solute_fields.pvd')
 solute_fieldspvd.CellArrays = ['U235_conc']
 solute_fieldspvd.PointArrays = ['U235_conc', 'region_id']
-
-# create a new 'PVD Reader'
-flow_fieldspvd = PVDReader(registrationName='flow_fields.pvd', FileName='/home/jb/workspace/Endorse/tests/sandbox/mlmc_run/edz_base-002/output/L00_S0000001/output/flow_fields.pvd')
-flow_fieldspvd.CellArrays = ['region_id', 'piezo_head_p0', 'velocity_p0', 'cross_section', 'conductivity']
-
-# create a new 'Plane'
-botIndicatorPlane = Plane(registrationName='Bot IndicatorPlane')
-botIndicatorPlane.Origin = [-20.0, 50.0, -27.0]
-botIndicatorPlane.Point1 = [100.0, 50.0, -27.0]
-botIndicatorPlane.Point2 = [-20.0, -50.0, -27.0]
 
 # create a new 'Plane'
 topIndicatorPlane = Plane(registrationName='TopIndicatorPlane')
 topIndicatorPlane.Origin = [-20.0, 50.0, 27.0]
 topIndicatorPlane.Point1 = [100.0, 50.0, 27.0]
 topIndicatorPlane.Point2 = [-20.0, -50.0, 27.0]
+
+# create a new 'PVD Reader'
+flow_fieldspvd = PVDReader(registrationName='flow_fields.pvd', FileName='flow_fields.pvd')
+flow_fieldspvd.CellArrays = ['region_id', 'piezo_head_p0', 'velocity_p0', 'cross_section', 'conductivity']
 
 # create a new 'Append Attributes'
 mergedoutputs = AppendAttributes(registrationName='Merged outputs', Input=[solute_fieldspvd, flow_fieldspvd])
@@ -149,29 +143,6 @@ botIndicatorSlice.SliceType.Normal = [0.0, 0.0, 1.0]
 # init the 'Plane' selected for 'HyperTreeGridSlicer'
 botIndicatorSlice.HyperTreeGridSlicer.Origin = [39.99999999999995, -3.552713678800501e-15, 0.0]
 
-# create a new 'Extract Selection'
-fractures = ExtractSelection(registrationName='Fractures', Input=mergedoutputs)
-
-# create a new 'Threshold'
-microFr = Threshold(registrationName='MicroFr', Input=fractures)
-microFr.Scalars = ['CELLS', 'region_id']
-microFr.LowerThreshold = 39.0
-microFr.UpperThreshold = 40.1
-
-# create a new 'Cell Centers'
-cellCenters3 = CellCenters(registrationName='CellCenters3', Input=fractures)
-
-# create a new 'Cell Centers'
-cellCenters2 = CellCenters(registrationName='CellCenters2', Input=mergedoutputs)
-
-# create a new 'Glyph'
-glyph2 = Glyph(registrationName='Glyph2', Input=cellCenters2,
-    GlyphType='Arrow')
-glyph2.OrientationArray = ['POINTS', 'velocity_p0']
-glyph2.ScaleArray = ['POINTS', 'No scale array']
-glyph2.ScaleFactor = 5.188808463148893
-glyph2.GlyphTransform = 'Transform2'
-
 # create a new 'Slice'
 topIndicatorSlice = Slice(registrationName='TopIndicatorSlice', Input=mergedoutputs)
 topIndicatorSlice.SliceType = 'Plane'
@@ -185,11 +156,26 @@ topIndicatorSlice.SliceType.Normal = [0.0, 0.0, 1.0]
 # init the 'Plane' selected for 'HyperTreeGridSlicer'
 topIndicatorSlice.HyperTreeGridSlicer.Origin = [39.99999999999995, -3.552713678800501e-15, 0.0]
 
-# create a new 'Contour'
-contour1 = Contour(registrationName='Contour1', Input=topIndicatorSlice)
-contour1.ContourBy = ['POINTS', 'U235_conc']
-contour1.Isosurfaces = [0.1250914917361491, 0.01, 0.016681005372000592, 0.027825594022071243, 0.046415888336127774, 0.0774263682681127, 0.1291549665014884, 0.21544346900318834, 0.3593813663804626, 0.5994842503189409, 1.0]
-contour1.PointMergeMethod = 'Uniform Binning'
+# create a new 'Group Datasets'
+groupDatasets1 = GroupDatasets(registrationName='GroupDatasets1', Input=[botIndicatorSlice, topIndicatorSlice])
+groupDatasets1.BlockNames = ['BotIndicatorSlice', 'TopIndicatorSlice']
+
+# create a new 'Threshold'
+concplume = Threshold(registrationName='Conc plume', Input=mergedoutputs)
+concplume.Scalars = ['CELLS', 'I_conc']
+concplume.LowerThreshold = 1e-10
+concplume.UpperThreshold = 2.4505797548269794
+
+# create a new 'Cell Centers'
+cellCenters2 = CellCenters(registrationName='CellCenters2', Input=mergedoutputs)
+
+# create a new 'Glyph'
+glyph2 = Glyph(registrationName='Glyph2', Input=cellCenters2,
+    GlyphType='Arrow')
+glyph2.OrientationArray = ['POINTS', 'velocity_p0']
+glyph2.ScaleArray = ['POINTS', 'No scale array']
+glyph2.ScaleFactor = 5.188808463148893
+glyph2.GlyphTransform = 'Transform2'
 
 # create a new 'Slice'
 slice_Z = Slice(registrationName='Slice_Z', Input=mergedoutputs)
@@ -203,6 +189,18 @@ slice_Z.SliceType.Normal = [0.0, 0.0, 1.0]
 
 # init the 'Plane' selected for 'HyperTreeGridSlicer'
 slice_Z.HyperTreeGridSlicer.Origin = [39.99999999999995, -3.552713678800501e-15, 0.0]
+
+# create a new 'Contour'
+contour1 = Contour(registrationName='Contour1', Input=topIndicatorSlice)
+contour1.ContourBy = ['POINTS', 'U235_conc']
+contour1.Isosurfaces = [0.1250914917361491, 0.01, 0.016681005372000592, 0.027825594022071243, 0.046415888336127774, 0.0774263682681127, 0.1291549665014884, 0.21544346900318834, 0.3593813663804626, 0.5994842503189409, 1.0]
+contour1.PointMergeMethod = 'Uniform Binning'
+
+# create a new 'Plane'
+botIndicatorPlane = Plane(registrationName='Bot IndicatorPlane')
+botIndicatorPlane.Origin = [-20.0, 50.0, -27.0]
+botIndicatorPlane.Point1 = [100.0, 50.0, -27.0]
+botIndicatorPlane.Point2 = [-20.0, -50.0, -27.0]
 
 # create a new 'Slice'
 slice_Y = Slice(registrationName='Slice_Y', Input=mergedoutputs)
@@ -228,11 +226,17 @@ glyph1.ScaleArray = ['POINTS', 'No scale array']
 glyph1.ScaleFactor = 2.8981389216363844
 glyph1.GlyphTransform = 'Transform2'
 
+# create a new 'Extract Selection'
+fractures = ExtractSelection(registrationName='Fractures', Input=mergedoutputs)
+
 # create a new 'Threshold'
-concplume = Threshold(registrationName='Conc plume', Input=mergedoutputs)
-concplume.Scalars = ['CELLS', 'I_conc']
-concplume.LowerThreshold = 1e-10
-concplume.UpperThreshold = 2.4505797548269794
+macroFr = Threshold(registrationName='MacroFr', Input=fractures)
+macroFr.Scalars = ['CELLS', 'region_id']
+macroFr.LowerThreshold = 41.0
+macroFr.UpperThreshold = 41.0
+
+# create a new 'Cell Centers'
+cellCenters3 = CellCenters(registrationName='CellCenters3', Input=fractures)
 
 # create a new 'Glyph'
 glyph3 = Glyph(registrationName='Glyph3', Input=cellCenters3,
@@ -244,33 +248,56 @@ glyph3.GlyphTransform = 'Transform2'
 glyph3.MaximumNumberOfSamplePoints = 80000
 
 # create a new 'Threshold'
-macroFr = Threshold(registrationName='MacroFr', Input=fractures)
-macroFr.Scalars = ['CELLS', 'region_id']
-macroFr.LowerThreshold = 41.0
-macroFr.UpperThreshold = 41.0
+microFr = Threshold(registrationName='MicroFr', Input=fractures)
+microFr.Scalars = ['CELLS', 'region_id']
+microFr.LowerThreshold = 39.0
+microFr.UpperThreshold = 40.1
 
 # ----------------------------------------------------------------
 # setup the visualization in view 'renderView1'
 # ----------------------------------------------------------------
 
+# show data from slice_Y
+slice_YDisplay = Show(slice_Y, renderView1, 'GeometryRepresentation')
+
+# get color transfer function/color map for 'I_conc'
+i_concLUT = GetColorTransferFunction('I_conc')
+i_concLUT.RGBPoints = [-3.958074836185957e-06, 0.231373, 0.298039, 0.752941, 9.756248431811133e-05, 0.865003, 0.865003, 0.865003, 0.00019908304347240863, 0.705882, 0.0156863, 0.14902]
+i_concLUT.ScalarRangeInitialized = 1.0
+
+# trace defaults for the display properties.
+slice_YDisplay.Representation = 'Surface'
+slice_YDisplay.ColorArrayName = ['CELLS', 'I_conc']
+slice_YDisplay.LookupTable = i_concLUT
+slice_YDisplay.SelectTCoordArray = 'None'
+slice_YDisplay.SelectNormalArray = 'None'
+slice_YDisplay.SelectTangentArray = 'None'
+slice_YDisplay.OSPRayScaleFunction = 'PiecewiseFunction'
+slice_YDisplay.SelectOrientationVectors = 'None'
+slice_YDisplay.ScaleFactor = 10.0
+slice_YDisplay.SelectScaleArray = 'None'
+slice_YDisplay.GlyphType = 'Arrow'
+slice_YDisplay.GlyphTableIndexArray = 'None'
+slice_YDisplay.GaussianRadius = 0.5
+slice_YDisplay.SetScaleArray = [None, '']
+slice_YDisplay.ScaleTransferFunction = 'PiecewiseFunction'
+slice_YDisplay.OpacityArray = [None, '']
+slice_YDisplay.OpacityTransferFunction = 'PiecewiseFunction'
+slice_YDisplay.DataAxesGrid = 'GridAxesRepresentation'
+slice_YDisplay.PolarAxes = 'PolarAxesRepresentation'
+
 # show data from fractures
 fracturesDisplay = Show(fractures, renderView1, 'UnstructuredGridRepresentation')
 
-# get color transfer function/color map for 'U235_conc'
-u235_concLUT = GetColorTransferFunction('U235_conc')
-u235_concLUT.RGBPoints = [0.0004188947050862785, 0.231373, 0.298039, 0.752941, 0.041889470508627846, 0.865003, 0.865003, 0.865003, 4.188947050862785, 0.705882, 0.0156863, 0.14902]
-u235_concLUT.UseLogScale = 1
-u235_concLUT.ScalarRangeInitialized = 1.0
-
-# get opacity transfer function/opacity map for 'U235_conc'
-u235_concPWF = GetOpacityTransferFunction('U235_conc')
-u235_concPWF.Points = [-0.033120488635322756, 0.0, 0.5, 0.0, 4.188947050862783, 1.0, 0.5, 0.0]
-u235_concPWF.ScalarRangeInitialized = 1
+# get opacity transfer function/opacity map for 'I_conc'
+i_concPWF = GetOpacityTransferFunction('I_conc')
+i_concPWF.Points = [-3.958074836185957e-06, 0.0, 0.5, 0.0, 0.00019908304347240863, 1.0, 0.5, 0.0]
+i_concPWF.ScalarRangeInitialized = 1
 
 # trace defaults for the display properties.
 fracturesDisplay.Representation = 'Surface With Edges'
-fracturesDisplay.ColorArrayName = ['POINTS', 'U235_conc']
-fracturesDisplay.LookupTable = u235_concLUT
+fracturesDisplay.ColorArrayName = ['CELLS', 'I_conc']
+fracturesDisplay.LookupTable = i_concLUT
 fracturesDisplay.SelectTCoordArray = 'None'
 fracturesDisplay.SelectNormalArray = 'None'
 fracturesDisplay.SelectTangentArray = 'None'
@@ -287,12 +314,67 @@ fracturesDisplay.OpacityArray = [None, '']
 fracturesDisplay.OpacityTransferFunction = 'PiecewiseFunction'
 fracturesDisplay.DataAxesGrid = 'GridAxesRepresentation'
 fracturesDisplay.PolarAxes = 'PolarAxesRepresentation'
-fracturesDisplay.ScalarOpacityFunction = u235_concPWF
+fracturesDisplay.ScalarOpacityFunction = i_concPWF
 fracturesDisplay.ScalarOpacityUnitDistance = 10.915121576588454
 fracturesDisplay.OpacityArrayName = ['CELLS', 'conductivity']
 
-# show data from glyph3
-glyph3Display = Show(glyph3, renderView1, 'GeometryRepresentation')
+# show data from groupDatasets1
+groupDatasets1Display = Show(groupDatasets1, renderView1, 'GeometryRepresentation')
+
+# trace defaults for the display properties.
+groupDatasets1Display.Representation = 'Surface'
+groupDatasets1Display.ColorArrayName = ['CELLS', 'I_conc']
+groupDatasets1Display.LookupTable = i_concLUT
+groupDatasets1Display.SelectTCoordArray = 'None'
+groupDatasets1Display.SelectNormalArray = 'None'
+groupDatasets1Display.SelectTangentArray = 'None'
+groupDatasets1Display.OSPRayScaleArray = 'I_conc'
+groupDatasets1Display.OSPRayScaleFunction = 'PiecewiseFunction'
+groupDatasets1Display.SelectOrientationVectors = 'None'
+groupDatasets1Display.ScaleFactor = 10.0
+groupDatasets1Display.SelectScaleArray = 'I_conc'
+groupDatasets1Display.GlyphType = 'Arrow'
+groupDatasets1Display.GlyphTableIndexArray = 'I_conc'
+groupDatasets1Display.GaussianRadius = 0.5
+groupDatasets1Display.SetScaleArray = ['POINTS', 'I_conc']
+groupDatasets1Display.ScaleTransferFunction = 'PiecewiseFunction'
+groupDatasets1Display.OpacityArray = ['POINTS', 'I_conc']
+groupDatasets1Display.OpacityTransferFunction = 'PiecewiseFunction'
+groupDatasets1Display.DataAxesGrid = 'GridAxesRepresentation'
+groupDatasets1Display.PolarAxes = 'PolarAxesRepresentation'
+
+# init the 'PiecewiseFunction' selected for 'ScaleTransferFunction'
+groupDatasets1Display.ScaleTransferFunction.Points = [-2.0795355145365745e-07, 0.0, 0.5, 0.0, 3.0563701098186984e-06, 1.0, 0.5, 0.0]
+
+# init the 'PiecewiseFunction' selected for 'OpacityTransferFunction'
+groupDatasets1Display.OpacityTransferFunction.Points = [-2.0795355145365745e-07, 0.0, 0.5, 0.0, 3.0563701098186984e-06, 1.0, 0.5, 0.0]
+
+# setup the color legend parameters for each legend in this view
+
+# get color legend/bar for i_concLUT in view renderView1
+i_concLUTColorBar = GetScalarBar(i_concLUT, renderView1)
+i_concLUTColorBar.WindowLocation = 'Upper Left Corner'
+i_concLUTColorBar.Title = 'I_conc'
+i_concLUTColorBar.ComponentTitle = ''
+
+# set color bar visibility
+i_concLUTColorBar.Visibility = 1
+
+# show color legend
+slice_YDisplay.SetScalarBarVisibility(renderView1, True)
+
+# show color legend
+fracturesDisplay.SetScalarBarVisibility(renderView1, True)
+
+# show color legend
+groupDatasets1Display.SetScalarBarVisibility(renderView1, True)
+
+# ----------------------------------------------------------------
+# setup the visualization in view 'renderView2'
+# ----------------------------------------------------------------
+
+# show data from slice_Y
+slice_YDisplay_1 = Show(slice_Y, renderView2, 'GeometryRepresentation')
 
 # get color transfer function/color map for 'velocity_p0'
 velocity_p0LUT = GetColorTransferFunction('velocity_p0')
@@ -300,122 +382,62 @@ velocity_p0LUT.RGBPoints = [5.929019716581325e-19, 0.231373, 0.298039, 0.752941,
 velocity_p0LUT.ScalarRangeInitialized = 1.0
 
 # trace defaults for the display properties.
+slice_YDisplay_1.Representation = 'Surface'
+slice_YDisplay_1.ColorArrayName = ['CELLS', 'velocity_p0']
+slice_YDisplay_1.LookupTable = velocity_p0LUT
+slice_YDisplay_1.SelectTCoordArray = 'None'
+slice_YDisplay_1.SelectNormalArray = 'None'
+slice_YDisplay_1.SelectTangentArray = 'None'
+slice_YDisplay_1.OSPRayScaleArray = 'U235_conc'
+slice_YDisplay_1.OSPRayScaleFunction = 'PiecewiseFunction'
+slice_YDisplay_1.SelectOrientationVectors = 'None'
+slice_YDisplay_1.ScaleFactor = 10.0
+slice_YDisplay_1.SelectScaleArray = 'None'
+slice_YDisplay_1.GlyphType = 'Arrow'
+slice_YDisplay_1.GlyphTableIndexArray = 'None'
+slice_YDisplay_1.GaussianRadius = 0.5
+slice_YDisplay_1.SetScaleArray = ['POINTS', 'U235_conc']
+slice_YDisplay_1.ScaleTransferFunction = 'PiecewiseFunction'
+slice_YDisplay_1.OpacityArray = ['POINTS', 'U235_conc']
+slice_YDisplay_1.OpacityTransferFunction = 'PiecewiseFunction'
+slice_YDisplay_1.DataAxesGrid = 'GridAxesRepresentation'
+slice_YDisplay_1.PolarAxes = 'PolarAxesRepresentation'
+
+# init the 'PiecewiseFunction' selected for 'ScaleTransferFunction'
+slice_YDisplay_1.ScaleTransferFunction.Points = [-0.04086492280445489, 0.0, 0.5, 0.0, 0.3861714820282732, 1.0, 0.5, 0.0]
+
+# init the 'PiecewiseFunction' selected for 'OpacityTransferFunction'
+slice_YDisplay_1.OpacityTransferFunction.Points = [-0.04086492280445489, 0.0, 0.5, 0.0, 0.3861714820282732, 1.0, 0.5, 0.0]
+
+# show data from glyph3
+glyph3Display = Show(glyph3, renderView2, 'GeometryRepresentation')
+
+# trace defaults for the display properties.
 glyph3Display.Representation = 'Surface'
-glyph3Display.ColorArrayName = ['POINTS', 'velocity_p0']
-glyph3Display.LookupTable = velocity_p0LUT
+glyph3Display.ColorArrayName = [None, '']
 glyph3Display.SelectTCoordArray = 'None'
 glyph3Display.SelectNormalArray = 'None'
 glyph3Display.SelectTangentArray = 'None'
-glyph3Display.OSPRayScaleArray = 'conductivity'
+glyph3Display.OSPRayScaleArray = 'U235_conc'
 glyph3Display.OSPRayScaleFunction = 'PiecewiseFunction'
 glyph3Display.SelectOrientationVectors = 'None'
-glyph3Display.ScaleFactor = 11.423660850524904
+glyph3Display.ScaleFactor = 10.46499423980713
 glyph3Display.SelectScaleArray = 'None'
 glyph3Display.GlyphType = 'Arrow'
 glyph3Display.GlyphTableIndexArray = 'None'
-glyph3Display.GaussianRadius = 0.5711830425262451
-glyph3Display.SetScaleArray = ['POINTS', 'conductivity']
+glyph3Display.GaussianRadius = 0.5232497119903564
+glyph3Display.SetScaleArray = ['POINTS', 'U235_conc']
 glyph3Display.ScaleTransferFunction = 'PiecewiseFunction'
-glyph3Display.OpacityArray = ['POINTS', 'conductivity']
+glyph3Display.OpacityArray = ['POINTS', 'U235_conc']
 glyph3Display.OpacityTransferFunction = 'PiecewiseFunction'
 glyph3Display.DataAxesGrid = 'GridAxesRepresentation'
 glyph3Display.PolarAxes = 'PolarAxesRepresentation'
 
 # init the 'PiecewiseFunction' selected for 'ScaleTransferFunction'
-glyph3Display.ScaleTransferFunction.Points = [0.02601849341388111, 0.0, 0.5, 0.0, 0.7196462202172521, 1.0, 0.5, 0.0]
+glyph3Display.ScaleTransferFunction.Points = [-8.961266032696405e-14, 0.0, 0.5, 0.0, 1.1391905101940698e-07, 1.0, 0.5, 0.0]
 
 # init the 'PiecewiseFunction' selected for 'OpacityTransferFunction'
-glyph3Display.OpacityTransferFunction.Points = [0.02601849341388111, 0.0, 0.5, 0.0, 0.7196462202172521, 1.0, 0.5, 0.0]
-
-# setup the color legend parameters for each legend in this view
-
-# get color legend/bar for u235_concLUT in view renderView1
-u235_concLUTColorBar = GetScalarBar(u235_concLUT, renderView1)
-u235_concLUTColorBar.Title = 'U235_conc'
-u235_concLUTColorBar.ComponentTitle = ''
-
-# set color bar visibility
-u235_concLUTColorBar.Visibility = 1
-
-# get color legend/bar for velocity_p0LUT in view renderView1
-velocity_p0LUTColorBar = GetScalarBar(velocity_p0LUT, renderView1)
-velocity_p0LUTColorBar.WindowLocation = 'Upper Right Corner'
-velocity_p0LUTColorBar.Title = 'velocity_p0'
-velocity_p0LUTColorBar.ComponentTitle = 'Magnitude'
-
-# set color bar visibility
-velocity_p0LUTColorBar.Visibility = 1
-
-# show color legend
-fracturesDisplay.SetScalarBarVisibility(renderView1, True)
-
-# show color legend
-glyph3Display.SetScalarBarVisibility(renderView1, True)
-
-# ----------------------------------------------------------------
-# setup the visualization in view 'renderView2'
-# ----------------------------------------------------------------
-
-# show data from slice_Y
-slice_YDisplay = Show(slice_Y, renderView2, 'GeometryRepresentation')
-
-# trace defaults for the display properties.
-slice_YDisplay.Representation = 'Surface'
-slice_YDisplay.ColorArrayName = ['CELLS', 'velocity_p0']
-slice_YDisplay.LookupTable = velocity_p0LUT
-slice_YDisplay.SelectTCoordArray = 'None'
-slice_YDisplay.SelectNormalArray = 'None'
-slice_YDisplay.SelectTangentArray = 'None'
-slice_YDisplay.OSPRayScaleArray = 'U235_conc'
-slice_YDisplay.OSPRayScaleFunction = 'PiecewiseFunction'
-slice_YDisplay.SelectOrientationVectors = 'None'
-slice_YDisplay.ScaleFactor = 10.0
-slice_YDisplay.SelectScaleArray = 'None'
-slice_YDisplay.GlyphType = 'Arrow'
-slice_YDisplay.GlyphTableIndexArray = 'None'
-slice_YDisplay.GaussianRadius = 0.5
-slice_YDisplay.SetScaleArray = ['POINTS', 'U235_conc']
-slice_YDisplay.ScaleTransferFunction = 'PiecewiseFunction'
-slice_YDisplay.OpacityArray = ['POINTS', 'U235_conc']
-slice_YDisplay.OpacityTransferFunction = 'PiecewiseFunction'
-slice_YDisplay.DataAxesGrid = 'GridAxesRepresentation'
-slice_YDisplay.PolarAxes = 'PolarAxesRepresentation'
-
-# init the 'PiecewiseFunction' selected for 'ScaleTransferFunction'
-slice_YDisplay.ScaleTransferFunction.Points = [-0.04086492280445489, 0.0, 0.5, 0.0, 0.3861714820282732, 1.0, 0.5, 0.0]
-
-# init the 'PiecewiseFunction' selected for 'OpacityTransferFunction'
-slice_YDisplay.OpacityTransferFunction.Points = [-0.04086492280445489, 0.0, 0.5, 0.0, 0.3861714820282732, 1.0, 0.5, 0.0]
-
-# show data from glyph3
-glyph3Display_1 = Show(glyph3, renderView2, 'GeometryRepresentation')
-
-# trace defaults for the display properties.
-glyph3Display_1.Representation = 'Surface'
-glyph3Display_1.ColorArrayName = [None, '']
-glyph3Display_1.SelectTCoordArray = 'None'
-glyph3Display_1.SelectNormalArray = 'None'
-glyph3Display_1.SelectTangentArray = 'None'
-glyph3Display_1.OSPRayScaleArray = 'U235_conc'
-glyph3Display_1.OSPRayScaleFunction = 'PiecewiseFunction'
-glyph3Display_1.SelectOrientationVectors = 'None'
-glyph3Display_1.ScaleFactor = 10.46499423980713
-glyph3Display_1.SelectScaleArray = 'None'
-glyph3Display_1.GlyphType = 'Arrow'
-glyph3Display_1.GlyphTableIndexArray = 'None'
-glyph3Display_1.GaussianRadius = 0.5232497119903564
-glyph3Display_1.SetScaleArray = ['POINTS', 'U235_conc']
-glyph3Display_1.ScaleTransferFunction = 'PiecewiseFunction'
-glyph3Display_1.OpacityArray = ['POINTS', 'U235_conc']
-glyph3Display_1.OpacityTransferFunction = 'PiecewiseFunction'
-glyph3Display_1.DataAxesGrid = 'GridAxesRepresentation'
-glyph3Display_1.PolarAxes = 'PolarAxesRepresentation'
-
-# init the 'PiecewiseFunction' selected for 'ScaleTransferFunction'
-glyph3Display_1.ScaleTransferFunction.Points = [-8.961266032696405e-14, 0.0, 0.5, 0.0, 1.1391905101940698e-07, 1.0, 0.5, 0.0]
-
-# init the 'PiecewiseFunction' selected for 'OpacityTransferFunction'
-glyph3Display_1.OpacityTransferFunction.Points = [-8.961266032696405e-14, 0.0, 0.5, 0.0, 1.1391905101940698e-07, 1.0, 0.5, 0.0]
+glyph3Display.OpacityTransferFunction.Points = [-8.961266032696405e-14, 0.0, 0.5, 0.0, 1.1391905101940698e-07, 1.0, 0.5, 0.0]
 
 # show data from glyph1
 glyph1Display = Show(glyph1, renderView2, 'GeometryRepresentation')
@@ -450,15 +472,15 @@ glyph1Display.OpacityTransferFunction.Points = [-0.018388965196310236, 0.0, 0.5,
 # setup the color legend parameters for each legend in this view
 
 # get color legend/bar for velocity_p0LUT in view renderView2
-velocity_p0LUTColorBar_1 = GetScalarBar(velocity_p0LUT, renderView2)
-velocity_p0LUTColorBar_1.Title = 'velocity_p0'
-velocity_p0LUTColorBar_1.ComponentTitle = 'Magnitude'
+velocity_p0LUTColorBar = GetScalarBar(velocity_p0LUT, renderView2)
+velocity_p0LUTColorBar.Title = 'velocity_p0'
+velocity_p0LUTColorBar.ComponentTitle = 'Magnitude'
 
 # set color bar visibility
-velocity_p0LUTColorBar_1.Visibility = 1
+velocity_p0LUTColorBar.Visibility = 1
 
 # show color legend
-slice_YDisplay.SetScalarBarVisibility(renderView2, True)
+slice_YDisplay_1.SetScalarBarVisibility(renderView2, True)
 
 # ----------------------------------------------------------------
 # setup the visualization in view 'renderView3'
@@ -466,6 +488,17 @@ slice_YDisplay.SetScalarBarVisibility(renderView2, True)
 
 # show data from macroFr
 macroFrDisplay = Show(macroFr, renderView3, 'UnstructuredGridRepresentation')
+
+# get color transfer function/color map for 'U235_conc'
+u235_concLUT = GetColorTransferFunction('U235_conc')
+u235_concLUT.RGBPoints = [0.0004188947050862785, 0.231373, 0.298039, 0.752941, 0.041889470508627846, 0.865003, 0.865003, 0.865003, 4.188947050862785, 0.705882, 0.0156863, 0.14902]
+u235_concLUT.UseLogScale = 1
+u235_concLUT.ScalarRangeInitialized = 1.0
+
+# get opacity transfer function/opacity map for 'U235_conc'
+u235_concPWF = GetOpacityTransferFunction('U235_conc')
+u235_concPWF.Points = [-0.033120488635322756, 0.0, 0.5, 0.0, 4.188947050862783, 1.0, 0.5, 0.0]
+u235_concPWF.ScalarRangeInitialized = 1
 
 # trace defaults for the display properties.
 macroFrDisplay.Representation = 'Wireframe'
@@ -509,35 +542,35 @@ macroFrDisplay.ScaleTransferFunction.Points = [-0.14187468122059826, 0.0, 0.5, 0
 macroFrDisplay.OpacityTransferFunction.Points = [-0.14187468122059826, 0.0, 0.5, 0.0, 0.8011779554547451, 1.0, 0.5, 0.0]
 
 # show data from slice_Y
-slice_YDisplay_1 = Show(slice_Y, renderView3, 'GeometryRepresentation')
+slice_YDisplay_2 = Show(slice_Y, renderView3, 'GeometryRepresentation')
 
 # trace defaults for the display properties.
-slice_YDisplay_1.Representation = 'Surface'
-slice_YDisplay_1.ColorArrayName = ['CELLS', 'U235_conc']
-slice_YDisplay_1.LookupTable = u235_concLUT
-slice_YDisplay_1.SelectTCoordArray = 'None'
-slice_YDisplay_1.SelectNormalArray = 'None'
-slice_YDisplay_1.SelectTangentArray = 'None'
-slice_YDisplay_1.OSPRayScaleArray = 'U235_conc'
-slice_YDisplay_1.OSPRayScaleFunction = 'PiecewiseFunction'
-slice_YDisplay_1.SelectOrientationVectors = 'None'
-slice_YDisplay_1.ScaleFactor = 10.0
-slice_YDisplay_1.SelectScaleArray = 'None'
-slice_YDisplay_1.GlyphType = 'Arrow'
-slice_YDisplay_1.GlyphTableIndexArray = 'None'
-slice_YDisplay_1.GaussianRadius = 0.5
-slice_YDisplay_1.SetScaleArray = ['POINTS', 'U235_conc']
-slice_YDisplay_1.ScaleTransferFunction = 'PiecewiseFunction'
-slice_YDisplay_1.OpacityArray = ['POINTS', 'U235_conc']
-slice_YDisplay_1.OpacityTransferFunction = 'PiecewiseFunction'
-slice_YDisplay_1.DataAxesGrid = 'GridAxesRepresentation'
-slice_YDisplay_1.PolarAxes = 'PolarAxesRepresentation'
+slice_YDisplay_2.Representation = 'Surface'
+slice_YDisplay_2.ColorArrayName = ['CELLS', 'U235_conc']
+slice_YDisplay_2.LookupTable = u235_concLUT
+slice_YDisplay_2.SelectTCoordArray = 'None'
+slice_YDisplay_2.SelectNormalArray = 'None'
+slice_YDisplay_2.SelectTangentArray = 'None'
+slice_YDisplay_2.OSPRayScaleArray = 'U235_conc'
+slice_YDisplay_2.OSPRayScaleFunction = 'PiecewiseFunction'
+slice_YDisplay_2.SelectOrientationVectors = 'None'
+slice_YDisplay_2.ScaleFactor = 10.0
+slice_YDisplay_2.SelectScaleArray = 'None'
+slice_YDisplay_2.GlyphType = 'Arrow'
+slice_YDisplay_2.GlyphTableIndexArray = 'None'
+slice_YDisplay_2.GaussianRadius = 0.5
+slice_YDisplay_2.SetScaleArray = ['POINTS', 'U235_conc']
+slice_YDisplay_2.ScaleTransferFunction = 'PiecewiseFunction'
+slice_YDisplay_2.OpacityArray = ['POINTS', 'U235_conc']
+slice_YDisplay_2.OpacityTransferFunction = 'PiecewiseFunction'
+slice_YDisplay_2.DataAxesGrid = 'GridAxesRepresentation'
+slice_YDisplay_2.PolarAxes = 'PolarAxesRepresentation'
 
 # init the 'PiecewiseFunction' selected for 'ScaleTransferFunction'
-slice_YDisplay_1.ScaleTransferFunction.Points = [-0.009985746152872028, 0.0, 0.5, 0.0, 4.3217532213886924, 1.0, 0.5, 0.0]
+slice_YDisplay_2.ScaleTransferFunction.Points = [-0.009985746152872028, 0.0, 0.5, 0.0, 4.3217532213886924, 1.0, 0.5, 0.0]
 
 # init the 'PiecewiseFunction' selected for 'OpacityTransferFunction'
-slice_YDisplay_1.OpacityTransferFunction.Points = [-0.009985746152872028, 0.0, 0.5, 0.0, 4.3217532213886924, 1.0, 0.5, 0.0]
+slice_YDisplay_2.OpacityTransferFunction.Points = [-0.009985746152872028, 0.0, 0.5, 0.0, 4.3217532213886924, 1.0, 0.5, 0.0]
 
 # show data from microFr
 microFrDisplay = Show(microFr, renderView3, 'UnstructuredGridRepresentation')
@@ -579,22 +612,22 @@ microFrDisplay.OpacityTransferFunction.Points = [-0.06488931495898873, 0.0, 0.5,
 # setup the color legend parameters for each legend in this view
 
 # get color legend/bar for u235_concLUT in view renderView3
-u235_concLUTColorBar_1 = GetScalarBar(u235_concLUT, renderView3)
-u235_concLUTColorBar_1.Orientation = 'Horizontal'
-u235_concLUTColorBar_1.WindowLocation = 'Any Location'
-u235_concLUTColorBar_1.Position = [0.05323572474377758, 0.8546298733855517]
-u235_concLUTColorBar_1.Title = 'U235_conc'
-u235_concLUTColorBar_1.ComponentTitle = ''
-u235_concLUTColorBar_1.ScalarBarLength = 0.5232650073206437
+u235_concLUTColorBar = GetScalarBar(u235_concLUT, renderView3)
+u235_concLUTColorBar.Orientation = 'Horizontal'
+u235_concLUTColorBar.WindowLocation = 'Any Location'
+u235_concLUTColorBar.Position = [0.05323572474377758, 0.8546298733855517]
+u235_concLUTColorBar.Title = 'U235_conc'
+u235_concLUTColorBar.ComponentTitle = ''
+u235_concLUTColorBar.ScalarBarLength = 0.5232650073206437
 
 # set color bar visibility
-u235_concLUTColorBar_1.Visibility = 1
+u235_concLUTColorBar.Visibility = 1
 
 # show color legend
 macroFrDisplay.SetScalarBarVisibility(renderView3, True)
 
 # show color legend
-slice_YDisplay_1.SetScalarBarVisibility(renderView3, True)
+slice_YDisplay_2.SetScalarBarVisibility(renderView3, True)
 
 # show color legend
 microFrDisplay.SetScalarBarVisibility(renderView3, True)
@@ -797,16 +830,16 @@ botIndicatorSliceDisplay.OpacityTransferFunction.Points = [-0.018342102480340454
 # setup the color legend parameters for each legend in this view
 
 # get color legend/bar for u235_concLUT in view renderView4
-u235_concLUTColorBar_2 = GetScalarBar(u235_concLUT, renderView4)
-u235_concLUTColorBar_2.Orientation = 'Horizontal'
-u235_concLUTColorBar_2.WindowLocation = 'Any Location'
-u235_concLUTColorBar_2.Position = [0.11326500732064429, 0.8591767781892214]
-u235_concLUTColorBar_2.Title = 'U235_conc'
-u235_concLUTColorBar_2.ComponentTitle = ''
-u235_concLUTColorBar_2.ScalarBarLength = 0.4368814055636897
+u235_concLUTColorBar_1 = GetScalarBar(u235_concLUT, renderView4)
+u235_concLUTColorBar_1.Orientation = 'Horizontal'
+u235_concLUTColorBar_1.WindowLocation = 'Any Location'
+u235_concLUTColorBar_1.Position = [0.11326500732064429, 0.8591767781892214]
+u235_concLUTColorBar_1.Title = 'U235_conc'
+u235_concLUTColorBar_1.ComponentTitle = ''
+u235_concLUTColorBar_1.ScalarBarLength = 0.4368814055636897
 
 # set color bar visibility
-u235_concLUTColorBar_2.Visibility = 1
+u235_concLUTColorBar_1.Visibility = 1
 
 # show color legend
 macroFrDisplay_1.SetScalarBarVisibility(renderView4, True)
@@ -832,7 +865,7 @@ velocity_p0PWF.ScalarRangeInitialized = 1
 
 # ----------------------------------------------------------------
 # restore active source
-SetActiveSource(slice_Z)
+SetActiveSource(fractures)
 # ----------------------------------------------------------------
 
 
