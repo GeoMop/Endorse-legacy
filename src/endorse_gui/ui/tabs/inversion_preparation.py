@@ -323,11 +323,16 @@ class InversionPreparation(QtWidgets.QMainWindow):
         # update views
         self._variant_model = VariantModel(self.genie.project_cfg.variants)
         self.variant_view.view.setModel(self._variant_model)
+
+        sel = self.variant_view.view.selectionModel()
+        sel.selectionChanged.connect(self._variant_container_sel_change)
+
         self._container_model = ContainerModel(self.genie.project_cfg.containers)
         self.container_view.view.setModel(self._container_model)
 
         sel = self.container_view.view.selectionModel()
         sel.selectionChanged.connect(self._container_view_sel_change)
+        sel.selectionChanged.connect(self._variant_container_sel_change)
 
 
 
@@ -751,9 +756,17 @@ class InversionPreparation(QtWidgets.QMainWindow):
         sm = self.container_view.view.selectionModel()
         rows = [r.row() for r in sm.selectedRows()]
 
-        print(rows)
-
         self.diagram_view.update_selected_containers({self._container_model._container_list[r] for r in rows}, set(self.genie.project_cfg.containers))
+
+    def _variant_container_sel_change(self, selected, deselected):
+        var_rows = [r.row() for r in self.variant_view.view.selectionModel().selectedRows()]
+        con_rows = [r.row() for r in self.container_view.view.selectionModel().selectedRows()]
+
+        print("variants:", self._variant_model._variant_list)
+        print("containers:", self._container_model._container_list)
+        print("selected variants:", var_rows)
+        print("selected containers:", con_rows)
+        print()
 
     def _init_first_arrivals(self):
         def find_fa(file, channel):
