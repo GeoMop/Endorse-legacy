@@ -1798,6 +1798,65 @@ class DiagramView(QtWidgets.QGraphicsView):
 
         self.side_view.hide_gallery_mesh()
 
+    def show_gallery_mesh2(self, genie):
+        #self.hide_gallery_mesh()
+
+        prj_dir = genie.cfg.current_project_dir
+        cfg = genie.project_cfg
+        file_name = "/home/radek/work/Endorse/tests/meshes/sandbox/one_borehole.msh2"
+
+        #self.modify_mesh(file_name, file_name2)
+        file_name2 = os.path.join(os.path.dirname(__file__), "..", "..", "one_borehole2.msh2")
+
+        if not os.path.isfile(file_name2):
+            return
+
+        mesh = GmshIO(file_name2)
+
+        points = set()
+        all_points = []
+
+        def add_pont(n):
+            if n in points:
+                return
+            else:
+                points.add(n)
+
+            a = mesh.nodes[n]
+
+            all_points.append([a[0], a[1]])
+
+        for data in mesh.elements.values():
+            type_, tags, nodeIDs = data
+            if type_ != 2:
+                continue
+            add_pont(nodeIDs[0])
+            add_pont(nodeIDs[1])
+            add_pont(nodeIDs[2])
+
+        # reduce points
+        point_map = {}
+        reduced_points = []
+        for p in all_points:
+            ind = (int(p[0]), int(p[1]))
+            if ind in point_map:
+                point_map[ind].append(p)
+            else:
+                point_map[ind] = [p]
+        for bundle in point_map.values():
+            count = 25
+            if len(bundle) > count:
+                bundle = random.sample(bundle, count)
+            reduced_points.extend(bundle)
+
+        for p in reduced_points:
+            gpt = GsPointCloud(p[0], p[1], "black")
+            self._scene.addItem(gpt)
+            gpt.setZValue(-90)
+            gpt.setOpacity(0.5)
+            gpt.update()
+            self._scene.point_cloud_item_list.append(gpt)
+
 
 class SideMeshCutTool:
     def __init__(self, scene):

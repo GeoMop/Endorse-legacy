@@ -348,7 +348,7 @@ class InversionPreparation(QtWidgets.QMainWindow):
         # self._update_el_meas()
         # self.diagram_view.show_point_cloud(self.genie)
         # self.diagram_view.show_map(self.genie)
-        self.diagram_view.show_gallery_mesh(self.genie)
+        self.diagram_view.show_gallery_mesh2(self.genie)
 
         self.diagram_view.show_containers(self.genie.project_cfg.endorse_cfg.geometry.containers,
                                           self.genie.project_cfg.endorse_cfg.geometry.borehole.radius)
