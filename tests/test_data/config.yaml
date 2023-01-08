@@ -24,7 +24,12 @@ jb_flow_env: &jb_config
     # debug
     #- /storage/liberec3-tul/home/jan_brezina/workspace/flow-dbg/flow123d/bin/flow123d
 
-flow_env: *jb_config
+singularity_env: &singularity_config 
+    flow_executable:
+    - flow123d
+    
+#flow_env: *jb_config
+flow_env: *singularity_config
 
 cases_file: _cases.yaml
 
@@ -32,7 +37,7 @@ mlmc:
     # flow base image: 4.0.0a_d4c856
     singularity_image: docker://flow123d/geomop-gnu:2.0.0
     #singularity_image: None
-    _pbs:
+    pbs:
         n_cores: 1
         n_nodes: 1
         select_flags: ['cgroups=cpuacct', 'scratch_local=10gb']

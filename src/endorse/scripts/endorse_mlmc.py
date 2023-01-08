@@ -48,19 +48,19 @@ def create_sampling_pool(cfg_mlmc, work_dir, debug, max_n_proc=None):
 
         # Create PBS sampling pool
         sampling_pool = SamplingPoolPBS(work_dir=work_dir, debug=debug)
-        singularity_img = cfg_mlmc.singularity_image
+        singularity_img = os.path.join(_endorse_repository, "tests/endorse_ci.sif")
         pbs_config = dict(
             optional_pbs_requests=[],  # e.g. ['#PBS -m ae', ...]
             #home_dir="Why we need the home dir!! Should not be necessary.",
             #home_dir='/storage/liberec3-tul/home/martin_spetlik/',
-            python=f'singularity exec {singularity_img} venv/bin/python3',
+            python=f'singularity exec {singularity_img} python3',
             #python='singularity exec {} /usr/bin/python3'.format(self.singularity_path),
             env_setting=[#'cd $MLMC_WORKDIR',
                          "export SINGULARITY_TMPDIR=$SCRATCHDIR",
                          "export PIP_IGNORE_INSTALLED=0",
                          'cd {}'.format(_endorse_repository),
-                         'singularity exec {} ./setup.sh'.format(singularity_img),
-                         'singularity exec {} venv/bin/python3 -m pip install scikit-learn'.format(singularity_img)
+                         #'singularity exec {} ./setup.sh'.format(singularity_img),
+                         #'singularity exec {} venv/bin/python3 -m pip install scikit-learn'.format(singularity_img)
                          #'module load python/3.8.0-gcc',
                          #'source env/bin/activate',
                          #'module use /storage/praha1/home/jan-hybs/modules',
@@ -616,5 +616,6 @@ def main():
         command_instance.execute(args)
 
 if __name__ == "__main__":
-    main()
+    #main()
+    print("This is updated version.")
 
