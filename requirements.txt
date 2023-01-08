@@ -9,6 +9,7 @@ scipy
 pytest
 tox
 tox-gh-actions
+importlib-resources
 
 -e ./submodules/bgem
 -e ./submodules/bih

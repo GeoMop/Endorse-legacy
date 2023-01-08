@@ -1,5 +1,5 @@
 
-FROM flow123d/ci-gnu:4.0.0a_d4c856
+FROM flow123d/ci-gnu:4.0.0a_59ab03
 #FROM flow123d/flow123d-gnu:3.9.1
 
 # Build-time metadata as defined at http://label-schema.org
