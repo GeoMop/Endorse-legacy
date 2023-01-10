@@ -6,6 +6,11 @@ import attrs
 import argparse
 import fnmatch
 import shutil
+import time
+import logging
+logging.basicConfig(level=logging.INFO, filename='endorse_mlmc.log')
+logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+
 from concurrent.futures import ThreadPoolExecutor
 
 import yaml
@@ -48,12 +53,15 @@ def create_sampling_pool(cfg_mlmc, work_dir, debug, max_n_proc=None):
 
         # Create PBS sampling pool
         sampling_pool = SamplingPoolPBS(work_dir=work_dir, debug=debug)
-        singularity_img = os.path.join(_endorse_repository, "tests/endorse_ci.sif")
+        sing_image = os.environ['SINGULARITY_CONTAINER']
+        sing_bindings = os.environ['SINGULARITY_BIND']
+        sing_venv = os.environ['SWRAP_SINGULARITY_VENV']
+        #singularity_img = os.path.join(_endorse_repository, "tests/endorse_ci_7d9354.sif")
         pbs_config = dict(
             optional_pbs_requests=[],  # e.g. ['#PBS -m ae', ...]
             #home_dir="Why we need the home dir!! Should not be necessary.",
             #home_dir='/storage/liberec3-tul/home/martin_spetlik/',
-            python=f'singularity exec {singularity_img} python3',
+            python=f'singularity exec  {sing_image} {sing_venv}/bin/python3',
             #python='singularity exec {} /usr/bin/python3'.format(self.singularity_path),
             env_setting=[#'cd $MLMC_WORKDIR',
                          "export SINGULARITY_TMPDIR=$SCRATCHDIR",
@@ -94,7 +102,7 @@ def create_sampling_params(workdir):
     if tail == 'storage' or tail == 'auto':
         # Metacentrum
         return SamplingParams(
-            sample_sleep = 30,
+            sample_sleep = 10,
             #self.init_sample_timeout = 600
             sample_timeout = 60,
             adding_samples_coef = 0.1
@@ -142,7 +150,7 @@ def create_sampler(cfg, work_dir, debug, n_proc):
 
     return sampler
 
-def all_collect(sampling_params, sampler):
+def all_collect(sampling_params, sampler, work_dir):
     """
     Collect samples
     :param sampler: mlmc.Sampler object
@@ -153,7 +161,7 @@ def all_collect(sampling_params, sampler):
         running = sampler.ask_sampling_pool_for_samples(
             sleep=sampling_params.sample_sleep,
             timeout=sampling_params.sample_timeout)
-        print("N running: ", running)
+        logging.info(f"{work_dir}, N running: {running}")
 
 
 def run_fixed(cfg, n_samples, debug, n_proc):
@@ -162,13 +170,15 @@ def run_fixed(cfg, n_samples, debug, n_proc):
     Fixed number of samples.
     :return: None
     """
+    
     work_dir = os.path.abspath(".")
     sampling_params = create_sampling_params(work_dir)
     sampler = create_sampler(cfg, work_dir, debug, n_proc)
     sampler.set_initial_n_samples(n_samples)
     sampler.schedule_samples()
     #sampler.ask_sampling_pool_for_samples(sleep=self.sample_sleep, timeout=self.sample_timeout)
-    all_collect(sampling_params, sampler)
+    all_collect(sampling_params, sampler, work_dir)
+    time.sleep(30) # workaround for the uncompleted HDF5 output
 
 
 
@@ -363,7 +373,9 @@ class SimCase:
 
     @property
     def hdf5_path(self):
-        return os.path.join(self.directory, "mlmc_1.hdf5")
+        abs_hdf = os.path.abspath(os.path.join(self.directory, "mlmc_1.hdf5"))
+        print(abs_hdf)
+        return abs_hdf
 
 
     def mean_std_log(self):
@@ -378,6 +390,7 @@ class SimCase:
         location = time['0']  # locations: ['0']
         values = location  # result shape: (10, 1)
         values = values[i_quantile, 0]  # selected quantile
+        samples = self._get_samples(values, sample_storage)[0]
         values = values.select(values < 1e-1)
         values = np.log(values)
         samples = self._get_samples(values, sample_storage)[0]
@@ -391,10 +404,12 @@ class SimCase:
 
     def _get_samples(self, quantity, sample_storage):
         n_moments = 2
-        estimated_domain = Estimate.estimate_domain(quantity, sample_storage, quantile=0.001)
-        moments_fn = Legendre(n_moments, estimated_domain)
-        estimator = Estimate(quantity=quantity, sample_storage=sample_storage, moments_fn=moments_fn)
+        #estimated_domain = Estimate.estimate_domain(quantity, sample_storage, quantile=0.001)
+        #moments_fn = Legendre(n_moments, estimated_domain)
+        #estimator = Estimate(quantity=quantity, sample_storage=sample_storage, moments_fn=moments_fn)
+        estimator = Estimate(quantity=quantity, sample_storage=sample_storage)
         samples = estimator.get_level_samples(level_id=0)[..., 0]
+        print(samples)
         return samples
 
     def clean(self, all=False):
@@ -407,6 +422,8 @@ class SimCase:
             pass
 
 
+def comma_list(arg_list:str):
+    return arg_list.split(',')
 
 @attrs.define
 class SimCases:
@@ -439,11 +456,11 @@ class SimCases:
         help = """
                Space separated names of cases. Subset of cases defined as keys of `cases.yaml`."
                """
-        parser.add_argument("cases", help=help)
+        parser.add_argument("cases", type=comma_list, help=help)
         help = '''
         Defines basis functions of the linear space of source densities.Space separated index ranges. E.g. "1:10:2 2 6:8"
         '''
-        parser.add_argument("sources", help=help)
+        parser.add_argument("sources", type=comma_list, help=help)
 
     @classmethod
     def initialize(cls, args):
@@ -465,8 +482,7 @@ class SimCases:
         all_cases = list(cfg.keys())
         selected_cases = []
 
-        patterns = arg_cases.split(" ")
-        for case_pattern in patterns:
+        for case_pattern in arg_cases:
             selected_cases.extend(fnmatch.filter(all_cases, case_pattern))
         return {k:cfg[k] for k in selected_cases}
 
@@ -474,7 +490,7 @@ class SimCases:
     def source_basis(arg_sources, n_containers):
         sources = []
         all_containers = list(range(n_containers))
-        for slice_token in arg_sources.split(" "):
+        for slice_token in arg_sources:
             slice_items = [int(x.strip()) if x.strip() else None for x in slice_token.split(':')]
             if len(slice_items) == 1:
                 # single number interpreted as single index contrary to the standard slice
@@ -610,12 +626,13 @@ def get_arguments(arguments):
     return args
 
 def main():
+    print("Endorse script is starting.")
     args = get_arguments(sys.argv[1:])
     with common.workdir(args.workdir):
         command_instance = args.cmd_class()
         command_instance.execute(args)
 
 if __name__ == "__main__":
-    #main()
-    print("This is updated version.")
+    main()
+    
 

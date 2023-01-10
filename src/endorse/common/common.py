@@ -3,6 +3,7 @@ from typing import *
 import shutil
 from pathlib import Path
 import numpy as np
+import logging
 
 from .memoize import File
 
@@ -51,15 +52,22 @@ class workdir:
             dest = ""
         dest = os.path.join(self.work_dir, dest)
         dest_dir, _ = os.path.split(dest)
-        Path(dest_dir).mkdir(parents=True, exist_ok=True)
+        if not os.path.isdir(dest_dir):
+            #print(f"MAKE DIR: {dest_dir}")
+            Path(dest_dir).mkdir(parents=True, exist_ok=True)
         abs_src = os.path.abspath(src)
         if os.path.isdir(src):
+            #print(f"COPY DIR: {abs_src} TO DESTINATION: {dest}")
             shutil.copytree(abs_src, dest, dirs_exist_ok=True)
         else:
-            shutil.copy2(abs_src, dest)
+            try:
+                shutil.copy2(abs_src, dest)
+            except FileNotFoundError:
+                FileNotFoundError(f"COPY FILE: {abs_src} TO DESTINATION: {dest}")
 
     def __enter__(self):
         for item in self._inputs:
+            #print(f"treat workspace item: {item}")
             if isinstance(item, Tuple):
                 self.copy(*item)
             else:
