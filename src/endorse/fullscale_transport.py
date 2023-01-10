@@ -90,7 +90,7 @@ def transport_2d(cfg, seed):
     params.update(new_params)
     params.update(set_source_limits(cfg))
     template = flow123d_inputs_path.joinpath(cfg_fine.input_template)
-    fo = common.call_flow(cfg.flow_env, template, params)
+    fo = common.call_flow(cfg.machine_config, template, params)
     return get_indicator(cfg, fo)
 
 
@@ -151,6 +151,7 @@ def transport_run(cfg, seed):
     params.update(new_params)
     params.update(set_source_limits(cfg))
     template = flow123d_inputs_path.joinpath(cfg_fine.input_template)
+
     fo = common.call_flow(cfg.flow_env, template, params)
     return get_indicator(cfg, fo)
 

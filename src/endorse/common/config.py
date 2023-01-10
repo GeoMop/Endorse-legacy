@@ -4,6 +4,7 @@ from typing import *
 import os
 import yaml
 import re
+from socket import gethostname
 from glob import iglob
 
 from yamlinclude import YamlIncludeConstructor
@@ -166,6 +167,16 @@ class YamlInclude(YamlIncludeConstructor):
             return reader_clz(pathname, encoding=encoding, loader_class=type(loader))()
         return self._read_file(pathname, loader, encoding)
 
+def resolve_machine_configuration(cfg:dotdict) -> dotdict:
+    # resolve machine configuration
+    if 'machine_config' not in cfg:
+        return cfg
+    machine_default = cfg.machine_config.get('__default__', None)
+    machine_cfg = cfg.machine_config.get(gethostname(), machine_default)
+    if machine_cfg is None:
+        raise KeyError(f"Can not resolve the machine configuration for the hostname: {gethostname()} and __default__ is missing.")
+    cfg.machine_config = machine_cfg
+    return cfg
 
 def load_config(path, collect_files=False):
     """
@@ -180,6 +191,7 @@ def load_config(path, collect_files=False):
         cfg = yaml.load(f, Loader=yaml.FullLoader)
     cfg['_config_root_dir'] = os.path.abspath(cfg_dir)
     dd = dotdict.create(cfg)
+    dd = resolve_machine_configuration(dd)
     if collect_files:
         referenced = instance.included_files
         referenced.append(path)

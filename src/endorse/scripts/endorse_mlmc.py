@@ -125,7 +125,7 @@ def create_sampler(cfg, work_dir, debug, n_proc):
     Simulation dependent configuration
     :return: mlmc.sampler instance
     """
-    sampling_pool = create_sampling_pool(cfg.mlmc, work_dir, debug, max_n_proc=n_proc)
+    sampling_pool = create_sampling_pool(cfg.machine_config, work_dir, debug, max_n_proc=n_proc)
     level_parameters = create_level_params(cfg.mlmc)
     # General simulation config
     # conf_file = os.path.join(self.work_dir, "test_data/config_homogenisation.yaml")
@@ -139,6 +139,7 @@ def create_sampler(cfg, work_dir, debug, n_proc):
     simulation_factory = FullScaleTransportSim(cfg, mesh_steps)
 
     # Create HDF sample storage
+    logging.info(f"Creating HDF storage: {work_dir}/mlmc_1.hdf5")
     sample_storage = SampleStorageHDF(file_path=os.path.join(work_dir, "mlmc_{}.hdf5".format(cfg.mlmc.n_levels)))
 
     # Create sampler, it manages sample scheduling and so on
@@ -565,15 +566,17 @@ class RunCmd:
 
     @staticmethod
     def run_case(case : SimCase, model_dim, np):
-        print("running case:", case)
+        #print("running case:", case)
+        logging.info(f"Creating thread: {case.hdf5_path}")
         cfg = common.load_config(MAIN_CONFIG_FILE, collect_files=True)
         cfg_var = common.config.apply_variant(cfg, case.case_patch)
+        cfg_var.transport_fullscale.source_params.source_ipos = case.source.center
         inputs = cfg._file_refs
         with common.workdir(case.directory, inputs=inputs):
             #cfg_file = "cfg_variant.yaml"
             #with open(cfg_file, "w") as f:
             #        yaml.dump(common.dotdict.serialize(cfg_var), f)
-            n_samples = 10
+            n_samples = cfg.mlmc.n_samples
             cfg_var._model_dim = model_dim
             run_fixed(cfg_var, n_samples, debug=True, n_proc=np)
 
