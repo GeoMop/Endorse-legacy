@@ -2,12 +2,14 @@
 # PBS main script
 
 #PBS -S /bin/bash
-#PBS -l select=2:ncpus=20:mem=4gb
+#PBS -l select=1:ncpus=1:mem=4gb
 #PBS -l place=free
-#PBS -l walltime=01:00:00
-#PBS -q charon_2h
-#PBS -N endorse_01
+#PBS -l walltime=10:00:00
+#PBS -q charon
+#PBS -N endorse-main
 #PBS -j oe
+
+
 
 set -x
 
@@ -36,12 +38,12 @@ command=$1
 
 
 # program and its arguments
-endorse_cmd=${SCRIPTPATH}/../../venv/bin/endorse_mlmc
-PARAM_SET="edz,noedz 2,5,10"
+#PARAM_SET="edz,noedz 2,5,10"
+PARAM_SET="edz 2"
 
 if [ "${command}" == "sample" ]
 then
-    SAMPLE_CMD="${endorse_cmd} run -c -np=4 --dim=2 ${PARAM_SET}"
+    SAMPLE_CMD="endorse_mlmc run -c -nt=6 --dim=3 ${PARAM_SET}"
 
     mkdir -p ${WORKDIR}
     cd ${SCRIPTPATH}/../test_data
@@ -56,12 +58,17 @@ then
     #singularity exec $SING_IMG python3 -m pip install --upgrade --user -e ${SCRIPTPATH}/../..
     #singularity exec docker://flow123d/geomop-gnu:2.0.0 venv/bin/python3 -m mlmc.tool.pbs_job /auto/liberec3-tul/home/jan_brezina/workspace/Endorse/tests/sandbox/mlmc_run/edz-002/output 0000 >/auto/liberec3-tul/home/jan_brezina/workspace/Endorse/tests/sandbox/mlmc_run/edz-002/output/jobs/0000_STDOUT 2>&1
     cd "${WORKDIR}"
-    python3 -m sexec -i $image_file $SAMPLE_CMD
+    python3 -m sexec -i $image_file -e ${SCRIPTPATH}/../../venv $SAMPLE_CMD
     # python3 $SING_SCRIPT -i $SING_FLOW -m $IMG_MPIEXEC -- $PROG
 elif [ "${command}" == "plot" ]
 then
-
-    PLOT_CMD="${endorse_cmd} plot cases ${PARAM_SET}"
+    PLOT_CMD="${SCRIPTPATH}/../../venv/bin/endorse_mlmc plot cases ${PARAM_SET}"
     cd "${WORKDIR}"
     singularity exec $image_file $PLOT_CMD
+elif [ "${command}" == "install" ]
+then
+    rm -rf ${SCRIPTPATH}/../../venv
+    cd ${SCRIPTPATH}/../..
+    singularity exec $image_file package/setup_venv.sh
+    cd ${SCRIPTPATH}
 fi

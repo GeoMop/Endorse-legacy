@@ -61,7 +61,7 @@ def create_sampling_pool(cfg_mlmc, work_dir, debug, max_n_proc=None):
             optional_pbs_requests=[],  # e.g. ['#PBS -m ae', ...]
             #home_dir="Why we need the home dir!! Should not be necessary.",
             #home_dir='/storage/liberec3-tul/home/martin_spetlik/',
-            python=f'singularity exec  {sing_image} {sing_venv}/bin/python3',
+            python=f'singularity exec  {sing_image} {sing_venv}/bin/python',
             #python='singularity exec {} /usr/bin/python3'.format(self.singularity_path),
             env_setting=[#'cd $MLMC_WORKDIR',
                          "export SINGULARITY_TMPDIR=$SCRATCHDIR",
@@ -559,13 +559,13 @@ class RunCmd:
                 if args.clean:
                     case.clean()
                 print("submit case:", case)
-                f = pool.submit(self.run_case, case, args.dim, args.n_proc)
+                f = pool.submit(self.run_case, case, args.dim, args.n_proc, args.debug)
                 futures.append((f, case))
         for f, case in futures:
             print(case, "result: ", f.result())
 
     @staticmethod
-    def run_case(case : SimCase, model_dim, np):
+    def run_case(case : SimCase, model_dim, np, debug):
         #print("running case:", case)
         logging.info(f"Creating thread: {case.hdf5_path}")
         cfg = common.load_config(MAIN_CONFIG_FILE, collect_files=True)
@@ -578,7 +578,7 @@ class RunCmd:
             #        yaml.dump(common.dotdict.serialize(cfg_var), f)
             n_samples = cfg.mlmc.n_samples
             cfg_var._model_dim = model_dim
-            run_fixed(cfg_var, n_samples, debug=True, n_proc=np)
+            run_fixed(cfg_var, n_samples, debug, n_proc=np)
 
 class CasesPlot:
 
