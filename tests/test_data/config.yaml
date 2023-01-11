@@ -71,7 +71,7 @@ fractures_repo: &fractures_repo
     population:  !include _fr_Forsmark_repo.yaml
     # upper limit on the number of (small) fractures
     n_frac_limit: 30
-    fixed_seed: 101
+    fixed_seed: 105
     large_min_r: 30
     large_box:  [100, 80, 60]
     # Would be better to have separate domains for known large fractures close to tunnel and

@@ -271,7 +271,10 @@ def fracture_set(cfg, fr_population, seed):
     large_min_r = cfg.fractures.large_min_r
     large_box_dimensions = cfg.fractures.large_box
     fr_limit = cfg.fractures.n_frac_limit
+    logging.info(f"Large fracture seed: {fix_seed}")
     fractures = mesh_tools.generate_fractures(fr_population, (large_min_r, None), fr_limit, large_box_dimensions, fix_seed)
+    with open("large_Fr.txt", "w") as f:
+        print(fix_seed, fractures, file=f)
     n_large = len(fractures)
     # random small scale fractures
     small_fr = mesh_tools.generate_fractures(fr_population, (None, large_min_r), fr_limit, main_box_dimensions, seed)

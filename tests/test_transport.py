@@ -15,7 +15,7 @@ def test_flow123d_templates():
 #@pytest.mark.skip
 def test_macro_transport():
    # with common.workdir("sandbox"):
-    #common.EndorseCache.instance().expire_all()
+    common.EndorseCache.instance().expire_all()
     conf_file = os.path.join(script_dir, "test_data/config.yaml")
     #cfg = common.load_config(conf_file)
     #files = input_files(cfg.transport_fullscale)

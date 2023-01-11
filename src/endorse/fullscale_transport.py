@@ -31,37 +31,9 @@ def fullscale_transport(cfg_path, seed):
     cfg = common.load_config(cfg_path)
     return transport_run(cfg, seed)
 
-def transport_2d(cfg, seed):
-    """
-    1. apply conouctivity to given mesh:
-       - on borehole neighbourhood, select elements
-       - calculate barycenters
-       - apply conductivity
-       - write the field
-    2. substitute source term space distribution
-    3. return necessary files
-    """
-    #files = input_files(cfg.transport_fullscale)
-    cfg_basedir = cfg._config_root_dir
+
+def parametrized_run(cfg, large_model, input_fields_file):
     cfg_fine = cfg.transport_fullscale
-    large_model = File(os.path.join(cfg_basedir, cfg_fine.piezo_head_input_file))
-    #conc_flux = File(os.path.join(cfg_basedir, cfg_fine.conc_flux_file))
-    #plots.plot_source(conc_flux)
-
-    box = cfg.geometry.box_dimensions
-    box = [box[0], box[2], 0]
-    fr_pop = Population.initialize_2d( cfg.fractures.population, box)
-
-    full_mesh_file, fractures, n_large = fullscale_transport_mesh_2d(cfg_fine, fr_pop, seed)
-
-    full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol=1e-4)
-    el_to_ifr = fracture_map(full_mesh, fractures, n_large, dim=2)
-    # mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
-    # mesh_modified = Mesh.load_mesh(mesh_modified_file)
-
-    input_fields_file, est_velocity = compute_fields(cfg, full_mesh, el_to_ifr, fractures, dim=2)
-
-    # input_fields_file = compute_fields(cfg, full_mesh, el_to_fr)
     params = cfg_fine.copy()
 
     # estimate times
@@ -94,7 +66,7 @@ def transport_2d(cfg, seed):
     return get_indicator(cfg, fo)
 
 
-def transport_run(cfg, seed):
+def transport_2d(cfg, seed):
     """
     1. apply conouctivity to given mesh:
        - on borehole neighbourhood, select elements
@@ -111,49 +83,37 @@ def transport_run(cfg, seed):
     #conc_flux = File(os.path.join(cfg_basedir, cfg_fine.conc_flux_file))
     #plots.plot_source(conc_flux)
 
-    fr_pop = Population.initialize_3d( cfg.fractures.population, cfg.geometry.box_dimensions)
+    box = cfg.geometry.box_dimensions
+    box = [box[0], box[2], 0]
+    fr_pop = Population.initialize_2d( cfg.fractures.population, box)
 
+    full_mesh_file, fractures, n_large = fullscale_transport_mesh_2d(cfg_fine, fr_pop, seed)
+
+    full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol=1e-4)
+    el_to_ifr = fracture_map(full_mesh, fractures, n_large, dim=2)
+    # mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
+    # mesh_modified = Mesh.load_mesh(mesh_modified_file)
+
+    input_fields_file, est_velocity = compute_fields(cfg, full_mesh, el_to_ifr, fractures, dim=2)
+    return parametrized_run(cfg, large_model, input_fields_file)
+
+
+
+def transport_run(cfg, seed):
+    cfg_basedir = cfg._config_root_dir
+    cfg_fine = cfg.transport_fullscale
+    large_model = File(os.path.join(cfg_basedir, cfg_fine.piezo_head_input_file))
+    #plots.plot_source(conc_flux)
+
+    fr_pop = Population.initialize_3d( cfg.fractures.population, cfg.geometry.box_dimensions)
     full_mesh_file, fractures, n_large = fullscale_transport_mesh_3d(cfg_fine, fr_pop, seed)
 
     full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol=1e-4)
     el_to_ifr = fracture_map(full_mesh, fractures, n_large, dim=3)
     # mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
     # mesh_modified = Mesh.load_mesh(mesh_modified_file)
-
     input_fields_file, est_velocity = compute_fields(cfg, full_mesh, el_to_ifr, fractures, dim=3)
-
-    # input_fields_file = compute_fields(cfg, full_mesh, el_to_fr)
-    params = cfg_fine.copy()
-
-    # estimate times
-    #bulk_vel_est, fr_vel_est = est_velocity
-    #end_time = (50 / bulk_vel_est + 50 / fr_vel_est)
-    #dt = 0.5 / bulk_vel_est
-    # convert to years
-
-    #end_time = end_time / common.year
-    #dt = dt / common.year
-
-    #end_time = 10 * dt
-    new_params = dict(
-        mesh_file=input_fields_file,
-        piezo_head_input_file=large_model,
-        #conc_flux_file=conc_flux,
-        input_fields_file = input_fields_file,
-        dg_penalty = cfg_fine.dg_penalty,
-        end_time_years = cfg_fine.end_time,
-        trans_solver__a_tol= cfg_fine.trans_solver__a_tol,
-        trans_solver__r_tol= cfg_fine.trans_solver__r_tol
-
-        #max_time_step = dt,
-        #output_step = 10 * dt
-    )
-    params.update(new_params)
-    params.update(set_source_limits(cfg))
-    template = flow123d_inputs_path.joinpath(cfg_fine.input_template)
-
-    fo = common.call_flow(cfg.flow_env, template, params)
-    return get_indicator(cfg, fo)
+    return parametrized_run(cfg, large_model, input_fields_file)
 
 @report
 def get_indicator(cfg, fo):
