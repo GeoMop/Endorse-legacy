@@ -9,7 +9,7 @@ import shutil
 import time
 import logging
 logging.basicConfig(level=logging.INFO, filename='endorse_mlmc.log')
-logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+#logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -568,7 +568,11 @@ class RunCmd:
     def run_case(case : SimCase, model_dim, np, debug):
         #print("running case:", case)
         logging.info(f"Creating thread: {case.hdf5_path}")
-        cfg = common.load_config(MAIN_CONFIG_FILE, collect_files=True)
+        logging.info(f"{os.environ}")
+        hostname = os.environ.get('ENDORSE_HOSTNAME', None)
+        cfg = common.load_config(MAIN_CONFIG_FILE, collect_files=True, hostname=hostname)
+        logging.info(f"walltime: {cfg.machine_config.pbs.walltime}")
+        print("PRINT IN THREAD")
         cfg_var = common.config.apply_variant(cfg, case.case_patch)
         cfg_var.transport_fullscale.source_params.source_ipos = case.source.center
         inputs = cfg._file_refs

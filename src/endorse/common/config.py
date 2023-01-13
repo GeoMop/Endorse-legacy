@@ -167,18 +167,21 @@ class YamlInclude(YamlIncludeConstructor):
             return reader_clz(pathname, encoding=encoding, loader_class=type(loader))()
         return self._read_file(pathname, loader, encoding)
 
-def resolve_machine_configuration(cfg:dotdict) -> dotdict:
+def resolve_machine_configuration(cfg:dotdict, hostname) -> dotdict:
     # resolve machine configuration
     if 'machine_config' not in cfg:
         return cfg
-    machine_default = cfg.machine_config.get('__default__', None)
-    machine_cfg = cfg.machine_config.get(gethostname(), machine_default)
+    if hostname is None:
+        hostname = gethostname()
+    machine_cfg = cfg.machine_config.get(hostname, None)
     if machine_cfg is None:
-        raise KeyError(f"Can not resolve the machine configuration for the hostname: {gethostname()} and __default__ is missing.")
+        machine_cfg = cfg.machine_config.get('__default__', None)
+    if machine_cfg is None:    
+        raise KeyError(f"Missing hostname: {hostname} in 'cfg.machine_config'.")
     cfg.machine_config = machine_cfg
     return cfg
 
-def load_config(path, collect_files=False):
+def load_config(path, collect_files=False, hostname=None):
     """
     Load configuration from given file replace, dictionaries by dotdict
     uses pyyaml-tags namely for:
@@ -191,7 +194,7 @@ def load_config(path, collect_files=False):
         cfg = yaml.load(f, Loader=yaml.FullLoader)
     cfg['_config_root_dir'] = os.path.abspath(cfg_dir)
     dd = dotdict.create(cfg)
-    dd = resolve_machine_configuration(dd)
+    dd = resolve_machine_configuration(dd, hostname)
     if collect_files:
         referenced = instance.included_files
         referenced.append(path)

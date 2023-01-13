@@ -1,6 +1,4 @@
 #!/bin/bash
-# PBS main script
-
 #PBS -S /bin/bash
 #PBS -l select=1:ncpus=1:mem=4gb
 #PBS -l place=free
@@ -10,14 +8,15 @@
 #PBS -j oe
 
 
-
 set -x
 
-SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+SCRIPTPATH="${PBS_O_WORKDIR}"
 WORKDIR="${SCRIPTPATH}/../sandbox/mlmc_run"
 
-which python3
+echo "Queue: ${PBS_O_QUEUE}"
+echo "Job Name: ${PBS_JOBNAME}"
 
+which python3
 
 
 # singularity SIF image path (preferably create in advance)
@@ -31,7 +30,7 @@ then
 fi
 
 
-command=$1
+command=${1:-sample}
 
 # possibly set container mpiexec path
 # IMG_MPIEXEC="/usr/local/mpich_3.4.2/bin/mpiexec"
@@ -39,11 +38,19 @@ command=$1
 
 # program and its arguments
 #PARAM_SET="edz,noedz 2,5,10"
-PARAM_SET="edz 2"
+#PARAM_SET="edz 2"
+#PARAM_SET="edz 3"
+
+# auxiliary hack how to detect we are running with 'charon.nti.tul.cz' configuration
+# TODO: design more general resolution pattern
+if [ ! "${SCRIPTPATH}#/auto/liberec3-tul}" == "${SCRIPTPATH}" ]
+then
+    export ENDORSE_HOSTNAME="charon.nti.tul.cz"
+fi
 
 if [ "${command}" == "sample" ]
 then
-    SAMPLE_CMD="endorse_mlmc run -c -nt=6 --dim=3 ${PARAM_SET}"
+    SAMPLE_CMD="endorse_mlmc run -c -nt=1 --dim=3 ${PARAM_SET}"
 
     mkdir -p ${WORKDIR}
     cd ${SCRIPTPATH}/../test_data

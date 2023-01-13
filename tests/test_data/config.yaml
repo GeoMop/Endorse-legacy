@@ -34,7 +34,7 @@ machine_config:
         - profile
         
         pbs: null
-    charon.nti.tul.cz: # Assums running in singulariy, which gives the hostname of the host system
+    __default__: # Assums running on charon
         flow_executable:
         - flow123d
         pbs:
@@ -44,10 +44,10 @@ machine_config:
             mem: 8Gb
             queue: charon
             pbs_name: endorse-flow123d
-            walltime: 2:00:00
-    __default__:  # assume flow123d available and no pbs
-        flow_executable:
-        - flow123d
+            walltime: "02:00:00"
+    #__default__:  # assume flow123d available and no pbs
+    #    flow_executable:
+    #    - flow123d
         
 mlmc:
     n_samples: 40

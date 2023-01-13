@@ -3,10 +3,13 @@
 set -x
 
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-WORKDIR="${SCRIPTPATH}/../sandbox/mlmc_run"
 
+qsub ${SCRIPTPATH}/mlmc_pbs.sh
 #QSUB=""
-QSUB=qsub -o ${SCRIPTPATH}/endorse-main.OUT --
-${QSUB} ${SCRIPTPATH}/mlmc_pbs.sh sample
+#QSUB="qsub -o ${SCRIPTPATH}/endorse-main.OUT --"
+#QSUB="qsub --"
+#echo ${QSUB}
+#${QSUB} ${SCRIPTPATH}/mlmc_pbs.sh  sample
+
 
 
