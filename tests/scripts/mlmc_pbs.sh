@@ -10,7 +10,8 @@
 
 set -x
 
-SCRIPTPATH="${PBS_O_WORKDIR}"
+SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+SCRIPTPATH="${PBS_O_WORKDIR:-${SCRIPTPATH}}"
 WORKDIR="${SCRIPTPATH}/../sandbox/mlmc_run"
 
 echo "Queue: ${PBS_O_QUEUE}"
@@ -37,9 +38,10 @@ command=${1:-sample}
 
 
 # program and its arguments
-#PARAM_SET="edz,noedz 2,5,10"
-#PARAM_SET="edz 2"
+PARAM_SET="edz,noedz 2,5,10"
+#PARAM_SET="noedz 5"
 #PARAM_SET="edz 3"
+#PARAM_SET="edz 2,5"
 
 # auxiliary hack how to detect we are running with 'charon.nti.tul.cz' configuration
 # TODO: design more general resolution pattern
@@ -50,7 +52,7 @@ fi
 
 if [ "${command}" == "sample" ]
 then
-    SAMPLE_CMD="endorse_mlmc run -c -nt=1 --dim=3 ${PARAM_SET}"
+    SAMPLE_CMD="endorse_mlmc run -c -nt=2 --dim=3 ${PARAM_SET}"
 
     mkdir -p ${WORKDIR}
     cd ${SCRIPTPATH}/../test_data
@@ -69,9 +71,14 @@ then
     # python3 $SING_SCRIPT -i $SING_FLOW -m $IMG_MPIEXEC -- $PROG
 elif [ "${command}" == "plot" ]
 then
-    PLOT_CMD="${SCRIPTPATH}/../../venv/bin/endorse_mlmc plot cases ${PARAM_SET}"
+    export PYTHONPATH=${SCRIPTPATH}/../../submodules/swrap/src/swrap
+    CMD="${SCRIPTPATH}/../../venv/bin/endorse_mlmc plot cases ${PARAM_SET}"
+    #CMD="${SCRIPTPATH}/../../venv/bin/endorse_mlmc pack ${PARAM_SET}"
     cd "${WORKDIR}"
-    singularity exec $image_file $PLOT_CMD
+    
+    #singularity exec $image_file $PLOT_CMD
+    
+    python3 -m sexec -i $image_file -e ${SCRIPTPATH}/../../venv $CMD
 elif [ "${command}" == "install" ]
 then
     rm -rf ${SCRIPTPATH}/../../venv

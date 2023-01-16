@@ -8,12 +8,14 @@ import fnmatch
 import shutil
 import time
 import logging
+
 logging.basicConfig(level=logging.INFO, filename='endorse_mlmc.log')
-#logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
 from concurrent.futures import ThreadPoolExecutor
-
+import subprocess
 import yaml
+from glob import iglob
 
 from endorse.mlmc.fullscale_transport_sim import FullScaleTransportSim
 
@@ -104,14 +106,14 @@ def create_sampling_params(workdir):
         return SamplingParams(
             sample_sleep = 10,
             #self.init_sample_timeout = 600
-            sample_timeout = 60,
+            sample_timeout = 5, # force loop only in all_collect with proper logging
             adding_samples_coef = 0.1
         )
     else:
         return SamplingParams(
             sample_sleep = 1,
             #self.init_sample_timeout = 600
-            sample_timeout = 60,
+            sample_timeout = 0.5,
             adding_samples_coef = 0.1
         )
 
@@ -175,6 +177,12 @@ def run_fixed(cfg, n_samples, debug, n_proc):
     work_dir = os.path.abspath(".")
     sampling_params = create_sampling_params(work_dir)
     sampler = create_sampler(cfg, work_dir, debug, n_proc)
+    
+    running = sampler.ask_sampling_pool_for_samples(
+        sleep=sampling_params.sample_sleep,
+        timeout=sampling_params.sample_timeout)    
+    logging.info(f"{work_dir}, init N running: {running}")
+    
     sampler.set_initial_n_samples(n_samples)
     sampler.schedule_samples()
     #sampler.ask_sampling_pool_for_samples(sleep=self.sample_sleep, timeout=self.sample_timeout)
@@ -380,6 +388,7 @@ class SimCase:
 
 
     def mean_std_log(self):
+        logging.info(f"Getting plot values from: {self.directory}")
         i_quantile = 1
         sample_storage = SampleStorageHDF(file_path=self.hdf5_path)
         sample_storage.chunk_size = 1024
@@ -517,19 +526,46 @@ class SimCases:
 class CleanCmd:
     @staticmethod
     def def_args(parser):
-        help="Remove whole cases directories."
+        help="Remove work directories of given cases."
         parser.add_argument('--all', action='store_true', help=help)
         SimCases.def_args(parser)
 
     # Remove HFD5 file
     def execute(self, args):
-
         cases = SimCases.initialize(args)
         for case in cases.iterate():
             case.clean(args.all)
 
 
+class PackCmd:
+    @staticmethod
+    def def_args(parser):
+        help = \
+        """
+        Pack sampling results important for further processing.
+        Created tar archive can be moved to other system and preserves 
+        correct directory structure after extraction.
+        Contains: config files, hdf5 files, failed and successfull samples without *.vtu, *.msh* files. 
+        """
+        parser.add_argument('--all', action='store_true', help="Include *.vtu and *.msh* files.")
+        SimCases.def_args(parser)
 
+    # Remove HFD5 file
+    def execute(self, args):
+        cwd = os.path.basename(os.getcwd())
+        logging.info(f"Pack in {os.getcwd()}")
+        cases = SimCases.initialize(args)
+        cases_dirs = list({f"{cwd}/{case.directory}" for case in cases.iterate()})
+            
+        # add jobs/collected samples
+        exclude = ['*/large_model_local.msh2', '*/output/jobs/*']
+        if not args.all:
+            exclude.extend(['*.vtu', '*.msh*'])
+        main_wd_files=[f"{cwd}/{f}" for p in ["*.yaml", "*.pdf"] for f in iglob(p)]   
+        exclude_args = [f"--exclude={p}" for p in exclude]    
+        tar_command = ['tar', '-C', '..', '-cvzf', f"../{cwd}.tar.gz", *exclude_args, *main_wd_files, *cases_dirs]
+        subprocess.run(tar_command)
+        
 
 
 @attrs.define
@@ -628,12 +664,11 @@ def get_arguments(arguments):
     parser.add_argument('-w', '--workdir',
                         default=os.getcwd(),
                         type=str, help='Main directory of the whole project. Default is current directory.')
-    add_subparsers(parser, 'cmd', 'cmd_class', [CleanCmd, RunCmd, PlotCmd])
+    add_subparsers(parser, 'cmd', 'cmd_class', [CleanCmd, RunCmd, PlotCmd, PackCmd])
     args = parser.parse_args(arguments)
     return args
 
 def main():
-    print("Endorse script is starting.")
     args = get_arguments(sys.argv[1:])
     with common.workdir(args.workdir):
         command_instance = args.cmd_class()
