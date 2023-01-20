@@ -26,7 +26,7 @@ def test_homogenisation():
 def test_macro_transport():
    # with common.workdir("sandbox"):
     #common.EndorseCache.instance().expire_all()
-    conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
+    conf_file = os.path.join(script_dir, "test_data/config.yaml")
     cfg = common.load_config(conf_file)
     macro_flow_model.macro_transport(cfg)
     macro_flow_model.fine_macro_transport(cfg)

@@ -10,6 +10,7 @@ from .mesh import container_position_mesh
 from .homogenisation import MacroSphere, Subproblems
 from .mesh_class import Mesh
 from . import large_mesh_shift
+from . import flow123d_inputs_path
 
 
 def macro_transport(cfg:dotdict):
@@ -24,21 +25,21 @@ def macro_transport(cfg:dotdict):
         conductivity_file = macro_conductivity(cfg, macro_mesh, macro_model_el_indices)
         # TODO:  run macro model
 
-        template = os.path.join(common.flow123d_inputs_path, macro_cfg.input_template)
+        template = flow123d_inputs_path.joinpath(macro_cfg.input_template)
         params = dict(
             mesh_file = macro_mesh.file.path,
             input_fields_file = conductivity_file.path,
             piezo_head_input_file = os.path.basename(large_model.path)
 
         )
-        macro_model = common.call_flow(cfg.flow_env, template, params)
+        macro_model = common.call_flow(cfg.machine_config, template, params)
 
 
 def fine_macro_transport(cfg):
     cfg_fine = cfg.transport_fine
     micro_mesh = make_micro_mesh(cfg)
-    template = os.path.join(common.flow123d_inputs_path, cfg_fine.input_template)
-    conductivity_file = conductivity_mockup(cfg, micro_mesh)
+    template = flow123d_inputs_path.joinpath(cfg_fine.input_template)
+    conductivity_file = conductivity_mockup(cfg.geometry, cfg_fine.bulk_field_params, micro_mesh)
     large_model = large_model = File(cfg_fine.piezo_head_input_file)
     params = dict(
         mesh_file=micro_mesh.file.path,
@@ -46,7 +47,7 @@ def fine_macro_transport(cfg):
         input_fields_file = conductivity_file.path
     )
     with common.workdir("sandbox/fine_flow", inputs=[micro_mesh.file.path, large_model.path, conductivity_file.path], clean=False):
-        common.call_flow(cfg.flow_env, template, params)
+        common.call_flow(cfg.machine_config, template, params)
 
 @memoize
 def mesh_shift(mesh_file_in: File, shift) -> File:
@@ -138,12 +139,12 @@ def micro_load_response(cfg, subprobs:Subproblems, i_load, load):
     TODO: finish param to Flow, test
     """
     cfg_micro = cfg.transport_microscale
-    cfg_flow = cfg.flow_env
+    cfg_flow = cfg.machine_config
     fine_conductivity_params=cfg
 
     def micro(iprob, subprob):
         tag = f"load_{i_load}_{iprob}"
-        return conductivity_micro_problem(cfg_micro, cfg_flow, tag, subprob, fine_conductivity_params, load)
+        return conductivity_micro_problem(cfg, tag, subprob, fine_conductivity_params, load)
 
     subdomain_response, subdomain_load = zip(*[micro(iprob, subprob) for iprob, subprob in enumerate(subprobs.subproblems)])
 
@@ -151,9 +152,9 @@ def micro_load_response(cfg, subprobs:Subproblems, i_load, load):
 
 @report
 @memoize
-def subproblem_input(subproblem, conductivity_params):
+def subproblem_input(subproblem, cfg_geom, conductivity_params):
     mesh = subproblem.submesh
-    return conductivity_mockup(conductivity_params, mesh)
+    return conductivity_mockup(cfg_geom, conductivity_params, mesh)
 
 @report
 def micro_postprocess(cfg_micro, subproblem, micro_model):
@@ -174,17 +175,17 @@ def micro_postprocess(cfg_micro, subproblem, micro_model):
     return report(avg_r)(), report(avg_l)()
 
 
-def conductivity_micro_problem(cfg_micro, cfg_flow, tag, subproblem, fine_conductivity_params, load):
-
+def conductivity_micro_problem(cfg, tag, subproblem, fine_conductivity_params, load):
+    cfg_micro = cfg.transport_microscale
     with workdir(f"load_{tag}", inputs=[]):
-        fine_conductivity_file = subproblem_input(subproblem, fine_conductivity_params)
+        fine_conductivity_file = subproblem_input(subproblem, cfg.geometry, cfg_micro.bulk_field_params)
         params = dict(
             mesh_file=fine_conductivity_file.path,
             pressure_grad=str(load),
             fine_conductivity=fine_conductivity_file.path
         )
-        template = os.path.join(common.flow123d_inputs_path, cfg_micro.input_template)
-        micro_model = call_flow(cfg_flow, template, params)
+        template = flow123d_inputs_path.joinpath(cfg_micro.input_template)
+        micro_model = call_flow(cfg.machine_config, template, params)
         return micro_postprocess(cfg_micro, subproblem, micro_model)
 
 
