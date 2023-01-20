@@ -141,6 +141,7 @@ def _get_values(hdf5_path):
 
 
 """
+Main plot
 Refactor to plot a table:
 [case, point, mean_log, std_log, samples]
 cases makes main groups
@@ -149,6 +150,16 @@ samples are plotted right now, modified graph needed for reconstructed density
 """
 
 def plot_quantile_errorbar(data_dict, quantiles):
+    """
+    Main plot for compariosn of cases.
+
+    Cases/sources on the X axis, grouped by cases.
+    - violin plot
+    - boxplot/errorbar
+    - IQR/error bar outlayers with sample numbers
+    - return outlayer samples for individual cases indicator plots for outlayers
+    :return:
+    """
     matplotlib.rcParams.update({'font.size': 22})
 
     fig, ax = plt.subplots(figsize=(12, 10))
