@@ -40,11 +40,12 @@ class Extractor:
 @attrs.define
 class Indicator:
     indicator_label:str
+    indicator_label_short: str
     red_op: str
-    _q:float
+    q_exp:float
 
     def reduction(self, x):
-        return getattr(self, self.red_op)(x, self._q)
+        return getattr(self, self.red_op)(x, self.q_exp)
 
     @staticmethod
     def _quantile(x, q):
@@ -63,12 +64,12 @@ class Indicator:
         exp = int(np.floor(np.log10(q)))
         man = int(q / 10 ** exp)
 
-        return cls(f'quantile $1 - {man}\\times 10^{{{exp:1d}}}$', '_quantile', 1.0-q)
+        return cls(f'quantile $1 - {man}\\times 10^{{{exp:1d}}}$', f"Q_1e{exp:3.1f}", '_quantile', 1.0-q)
 
     @classmethod
     def max(cls):
         #q_fn = lambda x: np.max(x)
-        return cls('maximum', '_max', 1.0)
+        return cls('maximum', 'max', '_max',  1.0)
 
 
 
@@ -112,21 +113,26 @@ class IndicatorFn:
         itime = np.argmax(fine_values)
         return times[itime], fine_values[itime]
 
+def indicator_set():
+    return [
+        Indicator.quantile(0.005),
+        Indicator.quantile(0.002),
+        Indicator.quantile(0.001),
+        Indicator.quantile(0.0005),
+        Indicator.max()
+    ]
+
+
 #@memoize
 @report
-def indicators(pvd_in : File, attr_name, z_loc):
+def indicators(pvd_in : File, attr_name, z_loc) -> List[IndicatorFn]:
     #extractor = Extractor.from_point_data(attr_name, z_loc)
     extractor = Extractor.from_cell_data(attr_name, z_loc)
     pvd_content = pv.get_reader(pvd_in.path)
     times = np.asarray(pvd_content.time_values)
     #print(times)
 
-    indicators = [
-        Indicator.quantile(0.005),
-        Indicator.quantile(0.002),
-        Indicator.quantile(0.001),
-        Indicator.quantile(0.0005),
-    ]
+    indicators = indicator_set()
     ind_functions = [IndicatorFn(ind, times) for ind in indicators]
 
     for i, t in enumerate(times):

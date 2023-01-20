@@ -386,15 +386,17 @@ class SimCase:
         print(abs_hdf)
         return abs_hdf
 
-
-    def mean_std_log(self):
+    def root_quantity(self):
         logging.info(f"Getting plot values from: {self.directory}")
-        i_quantile = 1
         sample_storage = SampleStorageHDF(file_path=self.hdf5_path)
         sample_storage.chunk_size = 1024
         result_format = sample_storage.load_result_format()
-        root_quantity = make_root_quantity(sample_storage, result_format)
+        logging.info(f"Result format: {result_format}")
+        return sample_storage, make_root_quantity(sample_storage, result_format)
 
+    def mean_std_log(self):
+        sample_storage, root_quantity = self.root_quantity()
+        i_quantile = 1
         conductivity = root_quantity['indicator_conc']
         time = conductivity[1]  # times: [1]
         location = time['0']  # locations: ['0']
@@ -520,8 +522,11 @@ class SimCases:
             for source in self.source_densities:
                 yield SimCase(self.cfg, case_key, case_patch, source)
 
-
-
+    def mlmc_plots(self):
+        data = [(case.case_name, case.source.plot_label(), *case.mean_std_log()) for case in self.iterate()]
+        #print(data)
+        plots.plot_log_errorbar_groups(data, 'conc ' + r'$[g/m^3]$')
+        #plots.indicator_timefunc(data,
 
 class CleanCmd:
     @staticmethod
@@ -607,8 +612,6 @@ class RunCmd:
         logging.info(f"{os.environ}")
         hostname = os.environ.get('ENDORSE_HOSTNAME', None)
         cfg = common.load_config(MAIN_CONFIG_FILE, collect_files=True, hostname=hostname)
-        logging.info(f"walltime: {cfg.machine_config.pbs.walltime}")
-        print("PRINT IN THREAD")
         cfg_var = common.config.apply_variant(cfg, case.case_patch)
         cfg_var.transport_fullscale.source_params.source_ipos = case.source.center
         inputs = cfg._file_refs
@@ -628,10 +631,7 @@ class CasesPlot:
 
     def execute(self, args):
         cases = SimCases.initialize(args)
-        data = [(case.case_name, case.source.plot_label(), *case.mean_std_log()) for case in cases.iterate()]
-        print(data)
-        plots.plot_log_errorbar_groups(data, 'conc ' + r'$[g/m^3]$')
-
+        cases.mlmc_plots()
 
 @attrs.define
 class PlotCmd:

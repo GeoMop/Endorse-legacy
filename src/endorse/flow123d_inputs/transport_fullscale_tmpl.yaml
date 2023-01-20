@@ -142,18 +142,18 @@ problem: !Coupling_Sequential
     output_stream:
       format: !vtk
         variant: ascii
-      times:
-        - [30, 'y']
-        - [60, 'y']
-        - [120, 'y']
-        - [240, 'y']
-        - [500, 'y']
-        - [1100, 'y']
-        - [2300, 'y']
-        - [5000, 'y']
-        - [10000, 'y']
-        - time: [20000, 'y']
-          step: [20000, 'y']
+      times: <output_times>
+#        - [30, 'y']
+#        - [60, 'y']
+#        - [120, 'y']
+#        - [240, 'y']
+#        - [500, 'y']
+#        - [1100, 'y']
+#        - [2300, 'y']
+#        - [5000, 'y']
+#        - [10000, 'y']
+#        - time: [20000, 'y']
+#          step: [20000, 'y']
 
 
     time:
