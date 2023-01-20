@@ -4,6 +4,7 @@ from typing import *
 import os
 import yaml
 import re
+from collections.abc import Iterable
 from socket import gethostname
 from glob import iglob
 
@@ -11,6 +12,28 @@ from yamlinclude import YamlIncludeConstructor
 from yamlinclude.constructor import WILDCARDS_REGEX, get_reader_class_by_name
 
 
+class YamlLimitedSafeLoader(type):
+    """Meta YAML loader that skips the resolution of the specified YAML tags."""
+    def __new__(
+        cls, name, bases, namespace, do_not_resolve: Iterable[str]
+    ) -> Type[yaml.SafeLoader]:
+        do_not_resolve = set(do_not_resolve)
+        implicit_resolvers = {
+            key: [(tag, regex) for tag, regex in mappings if tag not in do_not_resolve]
+            for key, mappings in yaml.SafeLoader.yaml_implicit_resolvers.items()
+        }
+        return super().__new__(
+            cls,
+            name,
+            (yaml.SafeLoader, *bases),
+            {**namespace, "yaml_implicit_resolvers": implicit_resolvers},
+        )
+
+class YamlNoTimestampSafeLoader(
+    metaclass=YamlLimitedSafeLoader, do_not_resolve={"tag:yaml.org,2002:timestamp"}
+):
+    """A safe YAML loader that leaves timestamps as strings."""
+    pass
 
 class dotdict(dict):
     """
@@ -188,10 +211,10 @@ def load_config(path, collect_files=False, hostname=None):
     include tag:
         geometry: <% include(path="config_geometry.yaml")>
     """
-    instance = YamlInclude.add_to_loader_class(loader_class=yaml.FullLoader, base_dir=os.path.dirname(path))
+    instance = YamlInclude.add_to_loader_class(loader_class=YamlNoTimestampSafeLoader, base_dir=os.path.dirname(path))
     cfg_dir = os.path.dirname(path)
     with open(path) as f:
-        cfg = yaml.load(f, Loader=yaml.FullLoader)
+        cfg = yaml.load(f, Loader=YamlNoTimestampSafeLoader)
     cfg['_config_root_dir'] = os.path.abspath(cfg_dir)
     dd = dotdict.create(cfg)
     dd = resolve_machine_configuration(dd, hostname)
@@ -228,3 +251,7 @@ def collect_referenced_files(cfg:dotdict, search_path:List[str]) -> List[FilePat
         return path_search(cfg, search_path)
     # flatten
     return [i for l in referenced for i in l]
+
+
+
+
