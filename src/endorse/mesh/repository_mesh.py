@@ -264,6 +264,9 @@ def one_borehole(cfg_geom:dotdict, fractures:List['Fracture'], cfg_mesh:dotdict,
 
 
 
+def fr_dict_repr(fr):
+    return dict(r=float(fr.r), normal=fr.normal.tolist(), center=fr.center.tolist(),
+                aspect=float(fr.aspect), shape_angle=float(fr.shape_angle), region=fr.region.name)
 
 
 def fracture_set(cfg, fr_population:Population, seed):
@@ -277,7 +280,8 @@ def fracture_set(cfg, fr_population:Population, seed):
     logging.info(f"Large fracture seed: {fix_seed}")
     max_large_size = max([fam.size.diam_range[1] for fam in fr_population.families])
     fractures = mesh_tools.generate_fractures(fr_population, (large_min_r, max_large_size), fr_limit, large_box_dimensions, fix_seed)
-    large_fr_dict=dict(seed=fix_seed, fr_set=[fr.dict_repr() for fr in fractures])
+
+    large_fr_dict=dict(seed=fix_seed, fr_set=[fr_dict_repr(fr) for fr in fractures])
     with open(f"large_Fr_set.yaml", "w") as f:
         yaml.dump(large_fr_dict, f, sort_keys=False)
     n_large = len(fractures)

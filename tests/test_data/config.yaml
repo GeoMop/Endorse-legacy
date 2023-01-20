@@ -28,11 +28,14 @@ machine_config:
         # release
         - /home/jb/workspace/flow123d/bin/fterm
         - --no-term
-        - rel
+        - own
+        - flow123d/endorse_ci:7d9354
+#        - rel
         - run
-        - --profiler_path 
+        - --profiler_path
         - profile
-        
+
+
         pbs: null
     __default__: # Assums running on charon
         flow_executable:
@@ -73,7 +76,7 @@ fractures_repo: &fractures_repo
     # SKB fracture population for repository domain
     population:  !include _fr_Forsmark_repo.yaml
     # upper limit on the number of (small) fractures
-    n_frac_limit: 1
+    n_frac_limit: 40
     # probability of  50 m fracture near borehole is about,
     #  1 fracture per 1km of borehole
     #  crossing borehole: 3 fracture per 10 km

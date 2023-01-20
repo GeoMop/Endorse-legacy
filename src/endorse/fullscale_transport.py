@@ -99,7 +99,6 @@ def transport_run(cfg, seed):
     #plots.plot_source(conc_flux)
     fr_pop = Population.initialize_3d( cfg_fine.fractures.population, cfg.geometry.box_dimensions)
     full_mesh_file, fractures, n_large = fullscale_transport_mesh_3d(cfg_fine, fr_pop, seed)
-    return
 
     full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol=1e-4)
     el_to_ifr = fracture_map(full_mesh, fractures, n_large, dim=3)

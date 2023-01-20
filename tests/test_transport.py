@@ -20,7 +20,7 @@ def test_macro_transport():
     conf_file = os.path.join(script_dir, "test_data/config.yaml")
     #cfg = common.load_config(conf_file)
     #files = input_files(cfg.transport_fullscale)
-    seed = 19
+    seed = 0
     with common.workdir(f"sandbox/full_transport_{seed}", clean=False):
         # params for single container source
         cfg = common.load_config(conf_file)
@@ -33,7 +33,7 @@ def test_find_large_fractures():
    # with common.workdir("sandbox"):
     common.EndorseCache.instance().expire_all()
     conf_file = os.path.join(script_dir, "test_data/config.yaml")
-    for large_seed in range(967, 1000):
+    for large_seed in range(0, 1000):
         #cfg = common.load_config(conf_file)
         #files = input_files(cfg.transport_fullscale)
         seed = 19

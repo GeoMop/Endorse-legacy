@@ -33,7 +33,8 @@ echo "Job Name: ${PBS_JOBNAME}"
 
 
 # build_image 
-tag=7d9354
+tag=7d95b0
+#tag=7d9354
 source_image="docker://flow123d/endorse_ci:${tag}"
 image_file="$WORKDIR_BASE/endorse_ci_${tag}.sif"
 if [ ! -f ${image_file} ]
