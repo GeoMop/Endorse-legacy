@@ -128,7 +128,7 @@ fine_conductivity_interpolated:
 
 bulk_field_parametric: &bulk_field_parametric
     cond_zero: 1e-16
-    cond_max: 1e-9  #
+    cond_max: 1e-8  # increased edz 10 times higher then for TSX (try to make EDZ significant)
     cond_min: 3e-13  # 3x higher than TSX (1e-13), mean transport time should be about 100 ky   to fracture conductivities,
     por_max: 0.0025
     por_min: 0.002
