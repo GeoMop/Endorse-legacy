@@ -23,7 +23,7 @@ machine_config:
     # automatic resolution according to the socket.gethostname()
     # content of the 'machine_config' dict is filled by the particular
     # machine configuration dict
-    myval: 
+    myval:  #JB
         flow_executable:
         # release
         - /home/jb/workspace/flow123d/bin/fterm
@@ -50,7 +50,8 @@ machine_config:
     #    - flow123d
         
 mlmc:
-    n_samples: 40
+    #n_samples: 40
+    n_samples: 4
     n_levels: 1
     
 indicators: # quantiles to compute
@@ -59,23 +60,47 @@ indicators: # quantiles to compute
 
 
 geometry: &one_borehole_geometry !include _geometry.yaml
-fractures: &fractures
-    # SKB fracture parameters for upper domain
-    population:  !include _fractures.yaml
-    # upper limit on the number of fractures
-    n_frac_limit: 10
+#fractures: &fractures
+#    # SKB fracture parameters for upper domain
+#    population:  !include _fractures.yaml
+#    # upper limit on the number of fractures
+#    n_frac_limit: 10
+#
+#    fixed_large_fractures:
 
 #
 fractures_repo: &fractures_repo
     # SKB fracture population for repository domain
     population:  !include _fr_Forsmark_repo.yaml
     # upper limit on the number of (small) fractures
-    n_frac_limit: 30
-    fixed_seed: 105
-    large_min_r: 30
-    large_box:  [100, 80, 60]
+    n_frac_limit: 1
+    # probability of  50 m fracture near borehole is about,
+    #  1 fracture per 1km of borehole
+    #  crossing borehole: 3 fracture per 10 km
+    #fixed_seed: 202  # in the middle, acute angle , not reaching boundary
+    #fixed_seed: 204 # parallel to borehole
+    #fixed_seed: 315 # 90 deg, middle, reaching boundary
+    #fixed_seed: 431 # parallel to borehole, cutting main tunnel
+    #fixed_seed: 471 # parallel to borehole, about 10m  distance
+    fixed_seed: 545 # 45 degree, from borehole near boundary
+    #fixed_seed: 593 # parallel to borehole, cutting connection to main tunnel, reaching boundary
+    #fixed_seed: 623 # 30 deg, at 3/4 of borhole length, reaching boundary at substantial part
+    #fixed_seed: 632 # 20 deg, at 4/5 of borhole length, reaching boundary at nearly point on oposite side
+    #fixed_seed: 644 # parallel, close to borehole
+    #fixed_seed: 784 # parallel, very close near 0m
+    #fixed_seed: 798 # parallel, distance 10m
+    #fixed_seed: 906 # 10 deg, middle, horizontal, reaching majority of boundary
+    #fixed_seed: 958 # 20 deg, middle,  reaching majority of boundary
+    #fixed_seed: 966 # 10 deg, 0m,  reaching all boundary
+
+
+
+
+    large_min_r: 50
+    large_box:  [20, 20, 20]
     # Would be better to have separate domains for known large fractures close to tunnel and
     # uncertain large fractures, need support in Population
+    # main box : [100, 80, 60]
 
 
 
@@ -117,76 +142,78 @@ bulk_field_parametric: &bulk_field_parametric
 
 
 
-#transport_microscale:
-    ## Template for the main Flow123d input file. In `endorse/flow123d_inputs`.
-    #input_template: transport_micro_static_tmpl.yaml
-    ##mesh_file: "micro_mesh.msh"
-    #mesh_params:
-        ## mesh step on fractures
-        #fracture_mesh_step: 10
-        ## mesh step on outer boundary
-        #boundary_mesh_step: 50
-        ## mesh step on outer boundary of EDZ (just around boreholes right now)
-        #edz_mesh_step: 0.6
-        ## mesh step on inner boreholes
-        #boreholes_mesh_step: 0.2   # haxagon boreholes
-        ##boreholes_mesh_step: 0.3   # EDZ minimal resolution
-        #main_tunnel_mesh_step: 2
+transport_microscale:
+    # Template for the main Flow123d input file. In `endorse/flow123d_inputs`.
+    input_template: transport_micro_static_tmpl.yaml
+    #mesh_file: "micro_mesh.msh"
+    mesh_params:
+        # mesh step on fractures
+        fracture_mesh_step: 10
+        # mesh step on outer boundary
+        boundary_mesh_step: 50
+        # mesh step on outer boundary of EDZ (just around boreholes right now)
+        edz_mesh_step: 0.6
+        # mesh step on inner boreholes
+        boreholes_mesh_step: 0.2   # haxagon boreholes
+        #boreholes_mesh_step: 0.3   # EDZ minimal resolution
+        main_tunnel_mesh_step: 2
 
-    #pressure_loads: [ [1,0,0], [0,1,0], [0,0,1], [0,1,1], [1,0,1], [1,1,0]]
-    ## the mesh regions:
-    ##   outer - outside of the storage borehole
-    ##   borehole - the sealed and filled storage borehole
-    ##output_file: "output/flow_fields.msh"
-    ##load_grad_field_p0: "piezo_head_grad_p0"
-    ##load_field_p1: "piezo_head_grad_p0"
-    #load_field_indirect_conductivity: "conductivity"
+    pressure_loads: [ [1,0,0], [0,1,0], [0,0,1], [0,1,1], [1,0,1], [1,1,0]]
+    # the mesh regions:
+    #   outer - outside of the storage borehole
+    #   borehole - the sealed and filled storage borehole
+    #output_file: "output/flow_fields.msh"
+    #load_grad_field_p0: "piezo_head_grad_p0"
+    #load_field_p1: "piezo_head_grad_p0"
+    load_field_indirect_conductivity: "conductivity"
+    response_field_p0: "velocity_p0"
+    bulk_field_params: *bulk_field_parametric
+
+transport_macroscale:
+    # Template for the main Flow123d input file. In `endorse/flow123d_inputs`.
+    input_template: flow_macro_tmpl.yaml
+    mesh_step: 2.5
+    default_conductivity: 1e-16
+    input_fields_file: "input_fields.msh2"
+    piezo_head_input_file: "test_data/large_model_local.msh2"
+    # the mesh regions:
+    #   outer - outside of the storage borehole
+    #   borehole - the sealed and filled storage borehole
+    #output_file: "output/flow_fields.msh"
+    #load_grad_field_p0: "piezo_head_grad_p0"
+    #load_field_p1: "piezo_head_grad_p0"
     #response_field_p0: "velocity_p0"
+    #bulk_field_params: *bulk_field_parametric
 
-#transport_macroscale:
-    ## Template for the main Flow123d input file. In `endorse/flow123d_inputs`.
-    #input_template: flow_macro_tmpl.yaml
-    #mesh_step: 2.5
-    #default_conductivity: 1e-16
-    #input_fields_file: "input_fields.msh2"
-    #piezo_head_input_file: "test_data/large_model_local.msh2"
-    ## the mesh regions:
-    ##   outer - outside of the storage borehole
-    ##   borehole - the sealed and filled storage borehole
-    ##output_file: "output/flow_fields.msh"
-    ##load_grad_field_p0: "piezo_head_grad_p0"
-    ##load_field_p1: "piezo_head_grad_p0"
-    ##response_field_p0: "velocity_p0"
+transport_fine:
+    geometry: *one_borehole_geometry
+    fractures: *fractures_repo
+    bulk_field_params: *bulk_field_parametric
+    mesh:
+        # mesh step on fractures
+        fracture_mesh_step: 10
+        # mesh step on outer boundary
+        boundary_mesh_step: 50
+        # mesh step on outer boundary of EDZ (just around boreholes right now)
+        edz_mesh_step: 1
+        # mesh step on inner boreholes
+        boreholes_mesh_step: 0.3   # haxagon boreholes
+        #boreholes_mesh_step: 0.3   # EDZ minimal resolution
+        main_tunnel_mesh_step: 2
 
-#transport_fine:
-    #geometry: *one_borehole_geometry
-    #fractures: *fractures_repo
-    #bulk_fields: *bulk_field_parametric
-    #mesh:
-        ## mesh step on fractures
-        #fracture_mesh_step: 10
-        ## mesh step on outer boundary
-        #boundary_mesh_step: 50
-        ## mesh step on outer boundary of EDZ (just around boreholes right now)
-        #edz_mesh_step: 1
-        ## mesh step on inner boreholes
-        #boreholes_mesh_step: 0.3   # haxagon boreholes
-        ##boreholes_mesh_step: 0.3   # EDZ minimal resolution
-        #main_tunnel_mesh_step: 2
-
-    ## Template for the main Flow123d input file. In `endorse/flow123d_inputs`.
-    #input_template: flow_fine_tmpl.yaml
-    ##mesh_file: "micro_mesh.msh"
-    #default_conductivity: 1e-16
-    #input_fields_file: "input_fields.msh2"
-    #piezo_head_input_file: "test_data/large_model_local.msh2"
-    ## the mesh regions:
-    ##   outer - outside of the storage borehole
-    ##   borehole - the sealed and filled storage borehole
-    ##output_file: "output/flow_fields.msh"
-    ##load_grad_field_p0: "piezo_head_grad_p0"
-    ##load_field_p1: "piezo_head_grad_p0"
-    ##response_field_p0: "velocity_p0"
+    # Template for the main Flow123d input file. In `endorse/flow123d_inputs`.
+    input_template: flow_fine_tmpl.yaml
+    #mesh_file: "micro_mesh.msh"
+    default_conductivity: 1e-16
+    input_fields_file: "input_fields.msh2"
+    piezo_head_input_file: "test_data/large_model_local.msh2"
+    # the mesh regions:
+    #   outer - outside of the storage borehole
+    #   borehole - the sealed and filled storage borehole
+    #output_file: "output/flow_fields.msh"
+    #load_grad_field_p0: "piezo_head_grad_p0"
+    #load_field_p1: "piezo_head_grad_p0"
+    #response_field_p0: "velocity_p0"
 
 
   # parameters substituted into the TH model template
@@ -232,7 +259,7 @@ transport_fullscale:
     #dispersivity_T: 0     # [m]
     dg_penalty: 10
     
-    end_time: 400000
+
 
 
     # setup for point source
@@ -241,6 +268,21 @@ transport_fullscale:
         source_ipos: 2 # ith position of the leaking container from beginning of the borehole
         source_length: 4 # length of the container [m]
         source_space: 2
+
+
+    # The total simulation time as well as the output times are ese are quite dependent on the
+    output_times:
+      - 30
+      - 60
+      - 120
+      - 240
+      - 500
+      - 1100
+      - 2300
+      - 5000
+      - 10000
+      - [20000, 20000]
+    end_time: 400000
 
     flow_solver__a_tol: 1e-14
     flow_solver__r_tol: 1e-20
