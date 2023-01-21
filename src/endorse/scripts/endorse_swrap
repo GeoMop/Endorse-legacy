@@ -15,11 +15,7 @@ mkdir -p ${WORKDIR_BASE}
 calculation_name="$1"    
 shift
 
-<<<<<<< HEAD
-if [ -z "${calculation_name}" ]
-=======
 if [ "${calculation_name}" == "--" ]
->>>>>>> master
 then
     # default wokrdir = PWD
     WORKDIR="`pwd`"
@@ -37,11 +33,7 @@ echo "Job Name: ${PBS_JOBNAME}"
 
 
 # build_image 
-<<<<<<< HEAD
-tag=7d95b0
-=======
 tag=a785dd
->>>>>>> master
 #tag=7d9354
 source_image="docker://flow123d/endorse_ci:${tag}"
 image_file="$WORKDIR_BASE/endorse_ci_${tag}.sif"
