@@ -19,14 +19,15 @@ EOF
 
 }
 
-WORKDIR_REL=""
+WORKDIR_REL="--"
 while [ "${1#-}" != "$1" ]      # arg starts with '-'
   do
   key="$1"
   case $key in
     -w|--workdir)
       shift
-      WORKDIR_REL="`pwd`/$1"
+      # TODO: fix pwd, how it is meant to be used?
+      WORKDIR_REL="$1"
       shift
     ;;  
     -q|--queue)
@@ -51,7 +52,9 @@ then
     # without PBS
     ${SCRIPTPATH}/endorse_swrap "$WORKDIR_REL" "$@"
 else
-    stdoe="endorse_main_$(date +'%y/%m/%d_%H:%M:%S').oe"
-    resources="-l select=1:ncpus=1:mem=1gb:walltime=24:00:00"
-    qsub -q ${QUEUE} -S /bin/bash -N endorse-main -j oe -o ${stdoe} ${resources} -- ${SCRIPTPATH}/endorse_swrap "$WORKDIR_REL" "$@" 
+    WORKDIR_BASE="${HOME}/endorse_work"
+    stdoe="${WORKDIR_BASE}/$(date +'%y%m%d_%H%M%S').oe"
+    select="select=1:ncpus=1:mem=1gb"
+    walltime="walltime=24:00:00"
+    qsub -q ${QUEUE} -S /bin/bash -N endorse-main -j oe -o ${stdoe} -l ${select} -l ${walltime} -- ${SCRIPTPATH}/endorse_swrap "$WORKDIR_REL" "$@" 
 fi
