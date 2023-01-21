@@ -45,11 +45,13 @@ fi
 
 # auxiliary hack how to detect we are running with 'charon.nti.tul.cz' configuration
 # TODO: design more general resolution pattern
-if [ ! "${SCRIPTPATH}#/auto/liberec3-tul}" == "${SCRIPTPATH}" ]
+if [ ! "${SCRIPTPATH#/auto/liberec3-tul}" == "${SCRIPTPATH}" ]
 then
     export ENDORSE_HOSTNAME="charon.nti.tul.cz"
+elif [ ! "${SCRIPTPATH#/auto/brno2}" == "${SCRIPTPATH}" ]
+then
+    export ENDORSE_HOSTNAME="skirit.ics.muni.cz"
 fi
-
 
 if [ "${command}" == "setup_venv" ]
 then
