@@ -80,8 +80,7 @@ fractures_repo: &fractures_repo
     # upper limit on the number of (small) fractures
     n_frac_limit: 40
     
-    # Experiments for large fr range [50, 168] and large_box: [20,20,20]
-    # 168m is upper bound of the size distribution in given fracture population
+    # Experiments for large fr range [50, 200] and large_box: [20,20,20]
     # most seeds have no large fracture at all
     # probability of  50 m fracture near borehole is about,
     #  1 fracture per 1km of borehole
