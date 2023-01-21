@@ -6,9 +6,16 @@ import attrs
 import argparse
 import fnmatch
 import shutil
-from concurrent.futures import ThreadPoolExecutor
+import time
+import logging
 
+logging.basicConfig(level=logging.INFO, filename='endorse_mlmc.log')
+logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+
+from concurrent.futures import ThreadPoolExecutor
+import subprocess
 import yaml
+from glob import iglob
 
 from endorse.mlmc.fullscale_transport_sim import FullScaleTransportSim
 
@@ -48,19 +55,22 @@ def create_sampling_pool(cfg_mlmc, work_dir, debug, max_n_proc=None):
 
         # Create PBS sampling pool
         sampling_pool = SamplingPoolPBS(work_dir=work_dir, debug=debug)
-        singularity_img = cfg_mlmc.singularity_image
+        sing_image = os.environ['SINGULARITY_CONTAINER']
+        sing_bindings = os.environ['SINGULARITY_BIND']
+        sing_venv = os.environ['SWRAP_SINGULARITY_VENV']
+        #singularity_img = os.path.join(_endorse_repository, "tests/endorse_ci_7d9354.sif")
         pbs_config = dict(
             optional_pbs_requests=[],  # e.g. ['#PBS -m ae', ...]
             #home_dir="Why we need the home dir!! Should not be necessary.",
             #home_dir='/storage/liberec3-tul/home/martin_spetlik/',
-            python=f'singularity exec {singularity_img} venv/bin/python3',
+            python=f'singularity exec  {sing_image} {sing_venv}/bin/python',
             #python='singularity exec {} /usr/bin/python3'.format(self.singularity_path),
             env_setting=[#'cd $MLMC_WORKDIR',
                          "export SINGULARITY_TMPDIR=$SCRATCHDIR",
                          "export PIP_IGNORE_INSTALLED=0",
                          'cd {}'.format(_endorse_repository),
-                         'singularity exec {} ./setup.sh'.format(singularity_img),
-                         'singularity exec {} venv/bin/python3 -m pip install scikit-learn'.format(singularity_img)
+                         #'singularity exec {} ./setup.sh'.format(singularity_img),
+                         #'singularity exec {} venv/bin/python3 -m pip install scikit-learn'.format(singularity_img)
                          #'module load python/3.8.0-gcc',
                          #'source env/bin/activate',
                          #'module use /storage/praha1/home/jan-hybs/modules',
@@ -94,16 +104,16 @@ def create_sampling_params(workdir):
     if tail == 'storage' or tail == 'auto':
         # Metacentrum
         return SamplingParams(
-            sample_sleep = 30,
+            sample_sleep = 10,
             #self.init_sample_timeout = 600
-            sample_timeout = 60,
+            sample_timeout = 5, # force loop only in all_collect with proper logging
             adding_samples_coef = 0.1
         )
     else:
         return SamplingParams(
             sample_sleep = 1,
             #self.init_sample_timeout = 600
-            sample_timeout = 60,
+            sample_timeout = 0.5,
             adding_samples_coef = 0.1
         )
 
@@ -117,7 +127,7 @@ def create_sampler(cfg, work_dir, debug, n_proc):
     Simulation dependent configuration
     :return: mlmc.sampler instance
     """
-    sampling_pool = create_sampling_pool(cfg.mlmc, work_dir, debug, max_n_proc=n_proc)
+    sampling_pool = create_sampling_pool(cfg.machine_config, work_dir, debug, max_n_proc=n_proc)
     level_parameters = create_level_params(cfg.mlmc)
     # General simulation config
     # conf_file = os.path.join(self.work_dir, "test_data/config_homogenisation.yaml")
@@ -131,6 +141,7 @@ def create_sampler(cfg, work_dir, debug, n_proc):
     simulation_factory = FullScaleTransportSim(cfg, mesh_steps)
 
     # Create HDF sample storage
+    logging.info(f"Creating HDF storage: {work_dir}/mlmc_1.hdf5")
     sample_storage = SampleStorageHDF(file_path=os.path.join(work_dir, "mlmc_{}.hdf5".format(cfg.mlmc.n_levels)))
 
     # Create sampler, it manages sample scheduling and so on
@@ -142,7 +153,7 @@ def create_sampler(cfg, work_dir, debug, n_proc):
 
     return sampler
 
-def all_collect(sampling_params, sampler):
+def all_collect(sampling_params, sampler, work_dir):
     """
     Collect samples
     :param sampler: mlmc.Sampler object
@@ -153,7 +164,7 @@ def all_collect(sampling_params, sampler):
         running = sampler.ask_sampling_pool_for_samples(
             sleep=sampling_params.sample_sleep,
             timeout=sampling_params.sample_timeout)
-        print("N running: ", running)
+        logging.info(f"{work_dir}, N running: {running}")
 
 
 def run_fixed(cfg, n_samples, debug, n_proc):
@@ -162,13 +173,21 @@ def run_fixed(cfg, n_samples, debug, n_proc):
     Fixed number of samples.
     :return: None
     """
+    
     work_dir = os.path.abspath(".")
     sampling_params = create_sampling_params(work_dir)
     sampler = create_sampler(cfg, work_dir, debug, n_proc)
+    
+    running = sampler.ask_sampling_pool_for_samples(
+        sleep=sampling_params.sample_sleep,
+        timeout=sampling_params.sample_timeout)    
+    logging.info(f"{work_dir}, init N running: {running}")
+    
     sampler.set_initial_n_samples(n_samples)
     sampler.schedule_samples()
     #sampler.ask_sampling_pool_for_samples(sleep=self.sample_sleep, timeout=self.sample_timeout)
-    all_collect(sampling_params, sampler)
+    all_collect(sampling_params, sampler, work_dir)
+    time.sleep(30) # workaround for the uncompleted HDF5 output
 
 
 
@@ -363,21 +382,27 @@ class SimCase:
 
     @property
     def hdf5_path(self):
-        return os.path.join(self.directory, "mlmc_1.hdf5")
+        abs_hdf = os.path.abspath(os.path.join(self.directory, "mlmc_1.hdf5"))
+        print(abs_hdf)
+        return abs_hdf
 
-
-    def mean_std_log(self):
-        i_quantile = 1
+    def root_quantity(self):
+        logging.info(f"Getting plot values from: {self.directory}")
         sample_storage = SampleStorageHDF(file_path=self.hdf5_path)
         sample_storage.chunk_size = 1024
         result_format = sample_storage.load_result_format()
-        root_quantity = make_root_quantity(sample_storage, result_format)
+        logging.info(f"Result format: {result_format}")
+        return sample_storage, make_root_quantity(sample_storage, result_format)
 
+    def mean_std_log(self):
+        sample_storage, root_quantity = self.root_quantity()
+        i_quantile = 1
         conductivity = root_quantity['indicator_conc']
         time = conductivity[1]  # times: [1]
         location = time['0']  # locations: ['0']
         values = location  # result shape: (10, 1)
         values = values[i_quantile, 0]  # selected quantile
+        samples = self._get_samples(values, sample_storage)[0]
         values = values.select(values < 1e-1)
         values = np.log(values)
         samples = self._get_samples(values, sample_storage)[0]
@@ -391,10 +416,12 @@ class SimCase:
 
     def _get_samples(self, quantity, sample_storage):
         n_moments = 2
-        estimated_domain = Estimate.estimate_domain(quantity, sample_storage, quantile=0.001)
-        moments_fn = Legendre(n_moments, estimated_domain)
-        estimator = Estimate(quantity=quantity, sample_storage=sample_storage, moments_fn=moments_fn)
+        #estimated_domain = Estimate.estimate_domain(quantity, sample_storage, quantile=0.001)
+        #moments_fn = Legendre(n_moments, estimated_domain)
+        #estimator = Estimate(quantity=quantity, sample_storage=sample_storage, moments_fn=moments_fn)
+        estimator = Estimate(quantity=quantity, sample_storage=sample_storage)
         samples = estimator.get_level_samples(level_id=0)[..., 0]
+        print(samples)
         return samples
 
     def clean(self, all=False):
@@ -407,6 +434,8 @@ class SimCase:
             pass
 
 
+def comma_list(arg_list:str):
+    return arg_list.split(',')
 
 @attrs.define
 class SimCases:
@@ -439,11 +468,11 @@ class SimCases:
         help = """
                Space separated names of cases. Subset of cases defined as keys of `cases.yaml`."
                """
-        parser.add_argument("cases", help=help)
+        parser.add_argument("cases", type=comma_list, help=help)
         help = '''
         Defines basis functions of the linear space of source densities.Space separated index ranges. E.g. "1:10:2 2 6:8"
         '''
-        parser.add_argument("sources", help=help)
+        parser.add_argument("sources", type=comma_list, help=help)
 
     @classmethod
     def initialize(cls, args):
@@ -465,8 +494,7 @@ class SimCases:
         all_cases = list(cfg.keys())
         selected_cases = []
 
-        patterns = arg_cases.split(" ")
-        for case_pattern in patterns:
+        for case_pattern in arg_cases:
             selected_cases.extend(fnmatch.filter(all_cases, case_pattern))
         return {k:cfg[k] for k in selected_cases}
 
@@ -474,7 +502,7 @@ class SimCases:
     def source_basis(arg_sources, n_containers):
         sources = []
         all_containers = list(range(n_containers))
-        for slice_token in arg_sources.split(" "):
+        for slice_token in arg_sources:
             slice_items = [int(x.strip()) if x.strip() else None for x in slice_token.split(':')]
             if len(slice_items) == 1:
                 # single number interpreted as single index contrary to the standard slice
@@ -494,25 +522,55 @@ class SimCases:
             for source in self.source_densities:
                 yield SimCase(self.cfg, case_key, case_patch, source)
 
-
-
+    def mlmc_plots(self):
+        data = [(case.case_name, case.source.plot_label(), *case.mean_std_log()) for case in self.iterate()]
+        #print(data)
+        plots.plot_log_errorbar_groups(data, 'conc ' + r'$[g/m^3]$')
+        #plots.indicator_timefunc(data,
 
 class CleanCmd:
     @staticmethod
     def def_args(parser):
-        help="Remove whole cases directories."
+        help="Remove work directories of given cases."
         parser.add_argument('--all', action='store_true', help=help)
         SimCases.def_args(parser)
 
     # Remove HFD5 file
     def execute(self, args):
-
         cases = SimCases.initialize(args)
         for case in cases.iterate():
             case.clean(args.all)
 
 
+class PackCmd:
+    @staticmethod
+    def def_args(parser):
+        help = \
+        """
+        Pack sampling results important for further processing.
+        Created tar archive can be moved to other system and preserves 
+        correct directory structure after extraction.
+        Contains: config files, hdf5 files, failed and successfull samples without *.vtu, *.msh* files. 
+        """
+        parser.add_argument('--all', action='store_true', help="Include *.vtu and *.msh* files.")
+        SimCases.def_args(parser)
 
+    # Remove HFD5 file
+    def execute(self, args):
+        cwd = os.path.basename(os.getcwd())
+        logging.info(f"Pack in {os.getcwd()}")
+        cases = SimCases.initialize(args)
+        cases_dirs = list({f"{cwd}/{case.directory}" for case in cases.iterate()})
+            
+        # add jobs/collected samples
+        exclude = ['*/large_model_local.msh2', '*/output/jobs/*']
+        if not args.all:
+            exclude.extend(['*.vtu', '*.msh*'])
+        main_wd_files=[f"{cwd}/{f}" for p in ["*.yaml", "*.pdf"] for f in iglob(p)]   
+        exclude_args = [f"--exclude={p}" for p in exclude]    
+        tar_command = ['tar', '-C', '..', '-cvzf', f"../{cwd}.tar.gz", *exclude_args, *main_wd_files, *cases_dirs]
+        subprocess.run(tar_command)
+        
 
 
 @attrs.define
@@ -542,24 +600,28 @@ class RunCmd:
                 if args.clean:
                     case.clean()
                 print("submit case:", case)
-                f = pool.submit(self.run_case, case, args.dim, args.n_proc)
+                f = pool.submit(self.run_case, case, args.dim, args.n_proc, args.debug)
                 futures.append((f, case))
         for f, case in futures:
             print(case, "result: ", f.result())
 
     @staticmethod
-    def run_case(case : SimCase, model_dim, np):
-        print("running case:", case)
-        cfg = common.load_config(MAIN_CONFIG_FILE, collect_files=True)
+    def run_case(case : SimCase, model_dim, np, debug):
+        #print("running case:", case)
+        logging.info(f"Creating thread: {case.hdf5_path}")
+        logging.info(f"{os.environ}")
+        hostname = os.environ.get('ENDORSE_HOSTNAME', None)
+        cfg = common.load_config(MAIN_CONFIG_FILE, collect_files=True, hostname=hostname)
         cfg_var = common.config.apply_variant(cfg, case.case_patch)
+        cfg_var.transport_fullscale.source_params.source_ipos = case.source.center
         inputs = cfg._file_refs
         with common.workdir(case.directory, inputs=inputs):
             #cfg_file = "cfg_variant.yaml"
             #with open(cfg_file, "w") as f:
             #        yaml.dump(common.dotdict.serialize(cfg_var), f)
-            n_samples = 10
+            n_samples = cfg.mlmc.n_samples
             cfg_var._model_dim = model_dim
-            run_fixed(cfg_var, n_samples, debug=True, n_proc=np)
+            run_fixed(cfg_var, n_samples, debug, n_proc=np)
 
 class CasesPlot:
 
@@ -569,10 +631,7 @@ class CasesPlot:
 
     def execute(self, args):
         cases = SimCases.initialize(args)
-        data = [(case.case_name, case.source.plot_label(), *case.mean_std_log()) for case in cases.iterate()]
-        print(data)
-        plots.plot_log_errorbar_groups(data, 'conc ' + r'$[g/m^3]$')
-
+        cases.mlmc_plots()
 
 @attrs.define
 class PlotCmd:
@@ -605,7 +664,7 @@ def get_arguments(arguments):
     parser.add_argument('-w', '--workdir',
                         default=os.getcwd(),
                         type=str, help='Main directory of the whole project. Default is current directory.')
-    add_subparsers(parser, 'cmd', 'cmd_class', [CleanCmd, RunCmd, PlotCmd])
+    add_subparsers(parser, 'cmd', 'cmd_class', [CleanCmd, RunCmd, PlotCmd, PackCmd])
     args = parser.parse_args(arguments)
     return args
 
@@ -617,4 +676,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
 

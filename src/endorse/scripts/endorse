@@ -1,0 +1,60 @@
+#!/bin/bash
+
+set -x
+
+SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+
+function print_usage() {
+cat << EOF
+  
+Usage:  
+    
+    endorse [-q <queue>] <command> <options>
+
+    ? pbs option has to take configuration from somewhere
+    idea is to set most pbs options according to the job and provide only what is necessary
+
+EOF
+
+}
+
+WORKDIR_REL="--"
+while [ "${1#-}" != "$1" ]      # arg starts with '-'
+  do
+  key="$1"
+  case $key in
+    -w|--workdir)
+      shift
+      # TODO: fix pwd, how it is meant to be used?
+      WORKDIR_REL="$1"
+      shift
+    ;;  
+    -q|--queue)
+      shift  
+      QUEUE=$1
+      shift
+    ;;
+    -h|--help)
+    ;;
+    *)
+      echo -e "${bred}ERROR:$reset ${red} Invalid argument '$1'!$reset"
+      print_usage
+      echo -e "${bred}ERROR:$reset ${red} Invalid argument '$1'!$reset"
+      exit 1
+    ;;
+  esac
+done
+
+
+if [ -z "${QUEUE}" ]
+then
+    # without PBS
+    ${SCRIPTPATH}/endorse_swrap "$WORKDIR_REL" "$@"
+else
+    WORKDIR_BASE="${HOME}/endorse_work"
+    stdoe="${WORKDIR_BASE}/$(date +'%y%m%d_%H%M%S').oe"
+    #resources="select=1:ncpus=1:mem=1gb:walltime=24:00:00"
+    resources="select=1:ncpus=1:mem=1gb"
+    qsub -q ${QUEUE} -S /bin/bash -N endorse-main -j oe -o ${stdoe} -l ${resources} -- ${SCRIPTPATH}/endorse_swrap "$WORKDIR_REL" "$@" 
+fi
