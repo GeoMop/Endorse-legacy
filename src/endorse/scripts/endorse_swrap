@@ -15,6 +15,7 @@ mkdir -p ${WORKDIR_BASE}
 calculation_name="$1"    
 shift
 
+
 if [ "${calculation_name}" == "--" ]
 then
     # default wokrdir = PWD
@@ -53,6 +54,7 @@ then
     export ENDORSE_HOSTNAME="skirit.ics.muni.cz"
 fi
 
+command=$1
 if [ "${command}" == "setup_venv" ]
 then
     cd $ENDORSE_BASE

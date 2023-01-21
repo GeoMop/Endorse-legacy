@@ -141,7 +141,7 @@ problem: !Coupling_Sequential
         - peclet_number
     output_stream:
       format: !vtk
-        variant: ascii
+        variant: binary_zlib
       times: <output_times>
 #        - [30, 'y']
 #        - [60, 'y']

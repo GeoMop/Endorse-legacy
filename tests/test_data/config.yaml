@@ -55,12 +55,13 @@ machine_config:
         
 mlmc:
     #n_samples: 40
-    n_samples: 4
+    n_samples: 5
     n_levels: 1
-    
-indicators: # quantiles to compute
-  quantiles: [0.005, 0.002, 0.001, 0.0005]
-  plots: 0, 2
+ 
+# TODO: replace hardwired indicator list. 
+#indicators: # quantiles to compute
+#  quantiles: [0.005, 0.002, 0.001, 0.0005]
+#  plots: 0, 2
 
 
 geometry: &one_borehole_geometry !include _geometry.yaml
@@ -298,7 +299,7 @@ transport_fullscale:
 
 
     trans_solver__a_tol: 1e-15
-    trans_solver__r_tol: 1e-10
+    trans_solver__r_tol: 1e-8
         # -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg
 #        # Boomeramg options:
 #        # -ksp_type richardson              - recomended usage when solving just by multigrid

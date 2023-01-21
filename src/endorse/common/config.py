@@ -4,7 +4,6 @@ from typing import *
 import os
 import yaml
 import re
-from collections.abc import Iterable
 from socket import gethostname
 from glob import iglob
 
@@ -15,7 +14,7 @@ from yamlinclude.constructor import WILDCARDS_REGEX, get_reader_class_by_name
 class YamlLimitedSafeLoader(type):
     """Meta YAML loader that skips the resolution of the specified YAML tags."""
     def __new__(
-        cls, name, bases, namespace, do_not_resolve: Iterable[str]
+        cls, name, bases, namespace, do_not_resolve: List[str]
     ) -> Type[yaml.SafeLoader]:
         do_not_resolve = set(do_not_resolve)
         implicit_resolvers = {
