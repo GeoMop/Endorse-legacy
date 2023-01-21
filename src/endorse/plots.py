@@ -1,12 +1,13 @@
 import logging
 
 import numpy as np
-import pandas as pd
 from typing import *
 import matplotlib
 import matplotlib.pyplot as plt
-import pyvista as pv
 from matplotlib import ticker, cm
+import pandas as pd
+import seaborn as sbn
+import pyvista as pv
 
 from .common import File
 from endorse.indicator import IndicatorFn, Indicator
@@ -210,13 +211,32 @@ def plot_quantile_errorbar(data_dict, quantiles):
     plt.savefig("quantiles.pdf")
     #plt.show()
 
+def plot_indicator_groups(choice: List[str], group: List[str], samples:np.array):
+    choices = ['edz', 'noedz']
+    sources = ['2', '10']
+    indices = np.arange(10)
+    series = np.random.rand(len(indices), len(sources), len(choices)) \
+             + np.array([[1, 2], [4, 5]])[None, :, :]
+    series = series.reshape(len(indices), len(choices) * len(sources))
+    midx = pd.MultiIndex.from_product([choices, sources])
+    df = pd.DataFrame(series, index=indices, columns=midx).reset_index(drop=True)
+    df = df.stack()
+    df = df.stack().reset_index()
+    df.columns = ['sample', 'source', 'choice', 'indicator']
 
+    sbn.violinplot(data=df, x="source", y="indicator", hue="choice",
+                   split=True, inner="quart", linewidth=1)
+    sbn.despine(left=True)
 
 def plot_log_errorbar_groups(group_data, value_label):
     """
     Input for individual bar plots, list of:
-    [group1, group2, mean_log, std_log, samples]
+    [case, source, samples]
     """
+
+    mean = [np.mean()]
+
+
     matplotlib.rcParams.update({'font.size': 22})
     fig, ax = plt.subplots(figsize=(12, 10))
     prop_cycle = plt.rcParams['axes.prop_cycle']
@@ -239,7 +259,8 @@ def plot_log_errorbar_groups(group_data, value_label):
         yerr = np.exp(mean_log + np.array([-std_log, +std_log])) - exp_mean
         Y = np.exp(samples)
         X = np.full_like(Y, x)
-        ax.scatter(X, Y, color=colors[ig2], marker="v")
+        #ax.scatter(X, Y, color=colors[ig2], marker="v")
+        ax.violinplot(Y, x, vert=bool, showmedians=True, quantiles=[0.25, 0.75])
         ax.set_yscale('log')
 
         # add errorbar, not able to pass array of colors for every quantile case
