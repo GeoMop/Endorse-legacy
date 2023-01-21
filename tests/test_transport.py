@@ -24,7 +24,7 @@ def test_macro_transport():
     with common.workdir(f"sandbox/full_transport_{seed}", clean=False):
         # params for single container source
         cfg = common.load_config(conf_file)
-        cfg['transport_fullscale']['end_time'] = 120
+        #cfg['transport_fullscale']['end_time'] = 120
         ind_time_max = transport_run(cfg, seed)
         print("Result:", ind_time_max)
 

@@ -28,9 +28,10 @@ machine_config:
         # release
         - /home/jb/workspace/flow123d/bin/fterm
         - --no-term
-        - own
-        - flow123d/endorse_ci:7d9354
-#        - rel
+#        - own
+#        - flow123d/endorse_ci:a785dd
+#        - flow123d/ci-gnu:4.0.0a_d61969
+        - rel
         - run
         - --profiler_path
         - profile
@@ -77,15 +78,19 @@ fractures_repo: &fractures_repo
     population:  !include _fr_Forsmark_repo.yaml
     # upper limit on the number of (small) fractures
     n_frac_limit: 40
+    
+    # Experiments for large fr range [50, 168] and large_box: [20,20,20]
+    # 168m is upper bound of the size distribution in given fracture population
+    # most seeds have no large fracture at all
     # probability of  50 m fracture near borehole is about,
     #  1 fracture per 1km of borehole
     #  crossing borehole: 3 fracture per 10 km
-    #fixed_seed: 202  # in the middle, acute angle , not reaching boundary
+    fixed_seed: 202  # in the middle, acute angle , not reaching boundary
     #fixed_seed: 204 # parallel to borehole
     #fixed_seed: 315 # 90 deg, middle, reaching boundary
     #fixed_seed: 431 # parallel to borehole, cutting main tunnel
     #fixed_seed: 471 # parallel to borehole, about 10m  distance
-    fixed_seed: 545 # 45 degree, from borehole near boundary
+    #fixed_seed: 545 # 45 degree, from borehole near boundary
     #fixed_seed: 593 # parallel to borehole, cutting connection to main tunnel, reaching boundary
     #fixed_seed: 623 # 30 deg, at 3/4 of borhole length, reaching boundary at substantial part
     #fixed_seed: 632 # 20 deg, at 4/5 of borhole length, reaching boundary at nearly point on oposite side
@@ -99,8 +104,8 @@ fractures_repo: &fractures_repo
 
 
 
-    large_min_r: 50
-    large_box:  [20, 20, 20]
+    large_min_r: 40
+    large_box:  [40, 80, 60]
     # Would be better to have separate domains for known large fractures close to tunnel and
     # uncertain large fractures, need support in Population
     # main box : [100, 80, 60]
@@ -285,15 +290,15 @@ transport_fullscale:
       - 5000
       - 10000
       - [20000, 20000]
-    end_time: 400000
+    end_time: 160000
 
-    flow_solver__a_tol: 1e-14
+    flow_solver__a_tol: 1e-15
     flow_solver__r_tol: 1e-20
     #flow_solver__options:
 
 
-    trans_solver__a_tol: 1e-10
-    trans_solver__r_tol: 1e-20
+    trans_solver__a_tol: 1e-15
+    trans_solver__r_tol: 1e-10
         # -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg
 #        # Boomeramg options:
 #        # -ksp_type richardson              - recomended usage when solving just by multigrid
