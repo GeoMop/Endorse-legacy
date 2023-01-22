@@ -40,7 +40,7 @@ class FullScaleTransportSim(Simulation):
 
         return LevelSimulation(config_dict=config,
                                calculate=FullScaleTransportSim.calculate,
-                               task_size=self._mesh_steps[fine_level_params[0]],  # @TODO: set size
+                               task_size=0.2,  # @TODO: set size
                                need_sample_workspace=True)
 
     @staticmethod
@@ -52,7 +52,7 @@ class FullScaleTransportSim(Simulation):
         :return: np.ndarray, np.ndarray
         """
 
-
+        #return np.zeros(285), np.zeros(285)
         from endorse import common
         from endorse.common import dotdict, memoize, File, call_flow, workdir, report
         from endorse.mesh_class import Mesh

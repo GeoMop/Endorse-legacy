@@ -637,7 +637,7 @@ class RunCmd:
     def run_case(case : SimCase, model_dim, np, debug):
         #print("running case:", case)
         logging.info(f"Creating thread: {case.hdf5_path}")
-        logging.info(f"{os.environ}")
+        #logging.info(f"{os.environ}")
         hostname = os.environ.get('ENDORSE_HOSTNAME', None)
         cfg = common.load_config(MAIN_CONFIG_FILE, collect_files=True, hostname=hostname)
         cfg_var = common.config.apply_variant(cfg, case.case_patch)
