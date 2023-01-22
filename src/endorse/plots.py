@@ -228,6 +228,27 @@ def plot_indicator_groups(choice: List[str], group: List[str], samples:np.array)
                    split=True, inner="quart", linewidth=1)
     sbn.despine(left=True)
 
+def plot_mc_cases(cases_data: List[Tuple[str,str,List[float]]], label):
+    """
+    Plot the MC samples using the violin plot.
+    - plot the box plot
+    - mark outlaiers using IQR
+    """
+    # expand samples
+    tidy_data = [(i, case, source, s) for case, source, samples in cases_data for i, s in enumerate(samples)]
+    df = pd.DataFrame(tidy_data)
+    df.columns = ['sample', 'case', 'source', 'log_conc']
+
+    vplot = sbn.violinplot(data=df, x="source", y="log_conc", hue="case",
+                   split=True, inner="stick", linewidth=1)
+
+
+    sbn.despine(left=True)
+    fig = vplot.get_figure()
+
+    fig.savefig("mc_cases.pdf")
+    sbn.show()
+
 def plot_log_errorbar_groups(group_data, value_label):
     """
     Input for individual bar plots, list of:

@@ -1,5 +1,6 @@
 import os
 import pytest
+import shutil
 from endorse import common
 #from endorse.scripts.endorse_mlmc import FullScaleTransport
 import subprocess
@@ -8,10 +9,11 @@ endorse_dir = os.path.join(script_dir, "../..")
 
 
 
-def run_script(args):
+def run_script(args, workdir=None):
     script_args = ['python', os.path.join(endorse_dir, 'src/endorse/scripts/endorse_mlmc.py')]
     # TODO: run as subprocess
-    workdir = os.path.join(script_dir, '../sandbox/mlmc_run')
+    if workdir is None:
+        workdir = os.path.join(script_dir, '../sandbox/mlmc_run')
 
     cfg = common.load_config('../test_data/config.yaml', collect_files=True)
     inputs = cfg._file_refs
@@ -36,14 +38,17 @@ def test_FullScaleTransport_run():
 def test_plot_cases():
     #run_script(['plot', 'cases', '*', '2'])
     #run_script(['plot', 'cases', 'base dg_1 dg_3 dg_30 tol_low tol_high', '2'])
-    run_script(['plot', 'cases', 'edz', '2,10'])
+    source_dir="../test_data/collected"
+    workdir="../sandbox/mlmc_run_plots"
+    shutil.rmtree(workdir)
+    shutil.copytree(source_dir, workdir)
+
+    run_script(['plot', 'mc_cases', 'edz_0,noedz_0', '2,5,10'], workdir=workdir)
 
 #@pytest.mark.skip
 def test_script_sample():
-    #run_script(['run', '*', '2 10'])
-    #run_script(['run', '-c', 'edz', '2'])
-    #run_script(['run', '-c', 'edz_base edz_lower_tol edz_high_gamma edz_both', '2'])
-    run_script(['run', '-c', '-nt=3', '-np=2', 'edz', '2'])
+    for i in [0,1,2,3,4]:
+        run_script(['run', '-c', '-nt=2', '-np=1', f'edz_{i},noedz_{i}', '2'])
 
 
 @pytest.mark.skip

@@ -374,6 +374,7 @@ class SimCase:
     case_name: str
     case_patch: CasePatch
     source: SourceDensity
+    _storage: Any = None
 
     @property
     def directory(self):
@@ -386,26 +387,44 @@ class SimCase:
         print(abs_hdf)
         return abs_hdf
 
+    @property
+    def storage(self):
+        if self._storage is None:
+            self._storage = SampleStorageHDF(file_path=self.hdf5_path)
+            self._storage.chunk_size = 1024
+
+        return self._storage
+
+
     def root_quantity(self):
-        logging.info(f"Getting plot values from: {self.directory}")
-        sample_storage = SampleStorageHDF(file_path=self.hdf5_path)
-        sample_storage.chunk_size = 1024
-        result_format = sample_storage.load_result_format()
+        logging.info(f"Getting  values from: {self.directory}")
+        result_format = self.storage.load_result_format()
         logging.info(f"Result format: {result_format}")
-        return sample_storage, make_root_quantity(sample_storage, result_format)
+        return make_root_quantity(self.storage, result_format)
+
+    def log_inditator_quantity(self, i_quantile=1):
+        root_quantity = self.root_quantity()
+        ind_conc = root_quantity['indicator_conc']
+        time = ind_conc[1]  # times: [1]
+        location = time['0']  # locations: ['0']
+        values = location[i_quantile, 0]  # selected quantile
+        values = np.log(values)
+        # assert np.shape(values) == (1, 1)
+        return values
+
 
     def mean_std_log(self):
-        sample_storage, root_quantity = self.root_quantity()
+        root_quantity = self.root_quantity()
         i_quantile = 1
-        conductivity = root_quantity['indicator_conc']
-        time = conductivity[1]  # times: [1]
+        ind_conc = root_quantity['indicator_conc']
+        time = ind_conc[1]  # times: [1]
         location = time['0']  # locations: ['0']
-        values = location  # result shape: (10, 1)
-        values = values[i_quantile, 0]  # selected quantile
-        samples = self._get_samples(values, sample_storage)[0]
-        values = values.select(values < 1e-1)
+        values = location[i_quantile, 0]  # selected quantile
         values = np.log(values)
-        samples = self._get_samples(values, sample_storage)[0]
+        assert values.shape[0] == 1
+        values = values[0]
+        #values = values.select(values < 1e-1)
+        samples = self._get_samples(values, self.storage)[0, 0]
 
 
         q_mean = estimate_mean(values)
@@ -414,15 +433,18 @@ class SimCase:
 
         return q_mean.mean[0], std[0], samples
 
-    def _get_samples(self, quantity, sample_storage):
-        n_moments = 2
+    def _get_samples(self, quantity):
+        #n_moments = 2
         #estimated_domain = Estimate.estimate_domain(quantity, sample_storage, quantile=0.001)
         #moments_fn = Legendre(n_moments, estimated_domain)
         #estimator = Estimate(quantity=quantity, sample_storage=sample_storage, moments_fn=moments_fn)
-        estimator = Estimate(quantity=quantity, sample_storage=sample_storage)
-        samples = estimator.get_level_samples(level_id=0)[..., 0]
-        print(samples)
-        return samples
+        estimator = Estimate(quantity=quantity, sample_storage=self.storage)
+        samples = estimator.get_level_samples(level_id=0)
+        return samples[0,:, 0] # not clear why it has still shape (1, N, 1)
+
+    def log_indicator_mc_samples(self, i_quantile=1):
+        quantity = self.log_inditator_quantity(i_quantile)
+        return (self.case_name, self.source.plot_label(), self._get_samples(quantity))
 
     def clean(self, all=False):
         try:
@@ -522,6 +544,12 @@ class SimCases:
             for source in self.source_densities:
                 yield SimCase(self.cfg, case_key, case_patch, source)
 
+    def mc_plots(self):
+        data = [case.log_indicator_mc_samples(i_quantile=1) for case in self.iterate()]
+        #print(data)
+        plots.plot_mc_cases(data, 'conc ' + r'$[g/m^3]$')
+        #plots.indicator_timefunc(data,
+
     def mlmc_plots(self):
         data = [(case.case_name, case.source.plot_label(), *case.mean_std_log()) for case in self.iterate()]
         #print(data)
@@ -616,6 +644,7 @@ class RunCmd:
         cfg_var.transport_fullscale.source_params.source_ipos = case.source.center
         inputs = cfg._file_refs
         with common.workdir(case.directory, inputs=inputs):
+            common.dump_config(cfg_var)
             #cfg_file = "cfg_variant.yaml"
             #with open(cfg_file, "w") as f:
             #        yaml.dump(common.dotdict.serialize(cfg_var), f)
@@ -623,7 +652,7 @@ class RunCmd:
             cfg_var._model_dim = model_dim
             run_fixed(cfg_var, n_samples, debug, n_proc=np)
 
-class CasesPlot:
+class MC_CasesPlot:
 
     @staticmethod
     def def_args(parser):
@@ -631,13 +660,13 @@ class CasesPlot:
 
     def execute(self, args):
         cases = SimCases.initialize(args)
-        cases.mlmc_plots()
+        cases.mc_plots()
 
 @attrs.define
 class PlotCmd:
     @staticmethod
     def def_args(parser):
-        add_subparsers(parser, 'plot', 'plot_class', [CasesPlot])
+        add_subparsers(parser, 'plot', 'plot_class', [MC_CasesPlot])
 
     def execute(self, args):
         plot_instance = args.plot_class()
