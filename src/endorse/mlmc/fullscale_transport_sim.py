@@ -40,7 +40,7 @@ class FullScaleTransportSim(Simulation):
 
         return LevelSimulation(config_dict=config,
                                calculate=FullScaleTransportSim.calculate,
-                               task_size=0.2,  # @TODO: set size
+                               task_size=0.2,
                                need_sample_workspace=True)
 
     @staticmethod

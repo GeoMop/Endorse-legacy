@@ -1,7 +1,7 @@
 edz_0:
     transport_fullscale/bulk_field_params/cond_max: 1e-9
     transport_fullscale/fractures/fixed_seed: 282
-    #transport_fullscale/bulk_field_params/cond_min: 3e-13
+    #transport_fullscale/bulk_field_params/cond_min: 3e-13 
 noedz_0:
     transport_fullscale/bulk_field_params/cond_max: 3e-13
     transport_fullscale/fractures/fixed_seed: 282
@@ -34,4 +34,3 @@ edz_4:
 noedz_4:
     transport_fullscale/bulk_field_params/cond_max: 3e-13
     transport_fullscale/fractures/fixed_seed: 632
-

@@ -35,6 +35,11 @@ while [ "${1#-}" != "$1" ]      # arg starts with '-'
       QUEUE=$1
       shift
     ;;
+    -c|--cluser)
+      shift
+      CLUSTER=$1
+      shift
+    ;;
     -h|--help)
     ;;
     *)
@@ -53,8 +58,18 @@ then
     ${SCRIPTPATH}/endorse_swrap "$WORKDIR_REL" "$@"
 else
     WORKDIR_BASE="${HOME}/endorse_work"
-    stdoe="${WORKDIR_BASE}/$(date +'%y%m%d_%H%M%S').oe"
-    select="select=1:ncpus=1:mem=1gb"
-    walltime="walltime=24:00:00"
-    qsub -q ${QUEUE} -S /bin/bash -N endorse-main -j oe -o ${stdoe} -l ${select} -l ${walltime} -- ${SCRIPTPATH}/endorse_swrap "$WORKDIR_REL" "$@" 
+    stdoe="${WORKDIR_BASE}/"
+    if [ -n "${CLUSTER}" ]
+    then
+        cluster_restrict=":cluster=${CLUSTER}"
+    fi
+    if [ "${QUEUE}" == "q_1d" ]
+    then
+        queue=
+        walltime="-l walltime=3:00:00"
+    else
+        queue="-q ${QUEUE}"
+    fi
+    select="-l select=1:ncpus=1:mem=1gb${cluster_restrict}"
+    qsub ${queue} -S /bin/bash -N endorse-main -j oe -o ${stdoe} ${select} ${walltime} -- ${SCRIPTPATH}/endorse_swrap "$WORKDIR_REL" "$@" 
 fi

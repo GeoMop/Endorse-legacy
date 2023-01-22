@@ -7,10 +7,17 @@ SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 ENDORSE_BASE="$SCRIPTPATH/../../.."
 
 
+if [ -z "$PBS_O_WORKDIR" ]
+then
+        
+    CALC_HOME=${HOME}
+else
+    user=${PBS_O_WORKDIR#**/home/}
+    user=${user%%/*}
+    CALC_HOME="${PBS_O_WORKDIR%%home/*}home/${user}"
+fi
 
-
-
-WORKDIR_BASE="${HOME}/endorse_work"
+WORKDIR_BASE="${CALC_HOME}/endorse_work"
 mkdir -p ${WORKDIR_BASE} 
 calculation_name="$1"    
 shift

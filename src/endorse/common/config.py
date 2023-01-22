@@ -13,9 +13,7 @@ from yamlinclude.constructor import WILDCARDS_REGEX, get_reader_class_by_name
 
 class YamlLimitedSafeLoader(type):
     """Meta YAML loader that skips the resolution of the specified YAML tags."""
-    def __new__(
-        cls, name, bases, namespace, do_not_resolve: List[str]
-    ) -> Type[yaml.SafeLoader]:
+    def __new__(cls, name, bases, namespace, do_not_resolve: List[str]) -> Type[yaml.SafeLoader]:
         do_not_resolve = set(do_not_resolve)
         implicit_resolvers = {
             key: [(tag, regex) for tag, regex in mappings if tag not in do_not_resolve]
