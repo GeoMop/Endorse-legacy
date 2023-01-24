@@ -48,14 +48,13 @@ machine_config:
             mem: 6Gb
             queue: charon
             pbs_name: endorse-flow123d
-            walltime: "02:00:00"
+            walltime: "04:00:00"
     #__default__:  # assume flow123d available and no pbs
     #    flow_executable:
     #    - flow123d
         
 mlmc:
-    #n_samples: 40
-    n_samples: 20
+    n_samples: 100
     n_levels: 1
  
 # TODO: replace hardwired indicator list. 

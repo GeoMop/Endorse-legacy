@@ -12,7 +12,7 @@ import logging
 logging.basicConfig(level=logging.INFO, filename='endorse_mlmc.log')
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 import subprocess
 import yaml
 from glob import iglob
@@ -141,15 +141,17 @@ def create_sampler(cfg, work_dir, debug, n_proc):
     simulation_factory = FullScaleTransportSim(cfg, mesh_steps)
 
     # Create HDF sample storage
-    logging.info(f"Creating HDF storage: {work_dir}/mlmc_1.hdf5")
-    sample_storage = SampleStorageHDF(file_path=os.path.join(work_dir, "mlmc_{}.hdf5".format(cfg.mlmc.n_levels)))
+    logging.info(f"[{work_dir}] Creating HDF storage: {work_dir}/mlmc_1.hdf5")
+    sample_storage = SampleStorageHDF(file_path=os.path.join(work_dir, f"mlmc_{cfg.mlmc.n_levels}.hdf5"))
 
     # Create sampler, it manages sample scheduling and so on
+    logging.info(f"[{work_dir}] Creating sampler ...")    
     sampler = Sampler(
         sample_storage=sample_storage,
         sampling_pool=sampling_pool,
         sim_factory=simulation_factory,
         level_parameters=level_parameters)
+    logging.info(f"[{work_dir}] sampler done.")    
 
     return sampler
 
@@ -164,7 +166,7 @@ def all_collect(sampling_params, sampler, work_dir):
         running = sampler.ask_sampling_pool_for_samples(
             sleep=sampling_params.sample_sleep,
             timeout=sampling_params.sample_timeout)
-        logging.info(f"{work_dir}, N running: {running}")
+        logging.info(f"[{work_dir}] N running: {running}")
 
 
 def run_fixed(cfg, n_samples, debug, n_proc):
@@ -181,7 +183,7 @@ def run_fixed(cfg, n_samples, debug, n_proc):
     running = sampler.ask_sampling_pool_for_samples(
         sleep=sampling_params.sample_sleep,
         timeout=sampling_params.sample_timeout)    
-    logging.info(f"{work_dir}, init N running: {running}")
+    logging.info(f"[{work_dir}] init N running: {running}")
     
     sampler.set_initial_n_samples(n_samples)
     sampler.schedule_samples()
@@ -605,7 +607,7 @@ class PackCmd:
 class RunCmd:
     @staticmethod
     def def_args(parser):
-        parser.add_argument("-nt", "--n_thread", default=4, type=int,
+        parser.add_argument("-nt", "--n_thread", default=6, type=int,
                         help="Number of sampling threads, sampling cases in parallel.")
         parser.add_argument("-np", "--n_proc", default=2, type=int,
                         help="Number of processes per thread.")
@@ -620,30 +622,34 @@ class RunCmd:
     def execute(self, args):
         #if args.clean:
         #    common.EndorseCache.instance().expire_all()
-
+        logging.info(f"Main CWD: {os.getcwd()}")
+        base_dir = os.getcwd()
         futures = []
         cases = SimCases.initialize(args)
-        with ThreadPoolExecutor(max_workers = args.n_thread) as pool:
+        with ProcessPoolExecutor(max_workers = args.n_thread) as pool:
             for case in cases.iterate():
                 if args.clean:
                     case.clean()
-                print("submit case:", case)
-                f = pool.submit(self.run_case, case, args.dim, args.n_proc, args.debug)
+                f = pool.submit(self.run_case, base_dir, case, args.dim, args.n_proc, args.debug)
                 futures.append((f, case))
         for f, case in futures:
             print(case, "result: ", f.result())
 
     @staticmethod
-    def run_case(case : SimCase, model_dim, np, debug):
+    def run_case(base_dir:str, case : SimCase, model_dim, np, debug):
         #print("running case:", case)
-        logging.info(f"Creating thread: {case.hdf5_path}")
+        logging.info(f"[{case.directory}] Creating thread..")
         #logging.info(f"{os.environ}")
         hostname = os.environ.get('ENDORSE_HOSTNAME', None)
         cfg = common.load_config(MAIN_CONFIG_FILE, collect_files=True, hostname=hostname)
         cfg_var = common.config.apply_variant(cfg, case.case_patch)
         cfg_var.transport_fullscale.source_params.source_ipos = case.source.center
         inputs = cfg._file_refs
+        os.chdir(base_dir)
+        logging.info(f"[{case.directory}] CWD: {os.getcwd()}")
         with common.workdir(case.directory, inputs=inputs):
+            time.sleep(30)
+            logging.info(f"[{case.directory}] CWD in the case dir: {os.getcwd()}")
             common.dump_config(cfg_var)
             #cfg_file = "cfg_variant.yaml"
             #with open(cfg_file, "w") as f:
@@ -700,6 +706,7 @@ def get_arguments(arguments):
 def main():
     args = get_arguments(sys.argv[1:])
     with common.workdir(args.workdir):
+        time.sleep(30)
         command_instance = args.cmd_class()
         command_instance.execute(args)
 
