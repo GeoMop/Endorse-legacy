@@ -3,7 +3,7 @@
 # Author: Jan Stebel
 # Source for reference: qualitative
 
-flow123d_version: 3.1.0
+flow123d_version: 4.0.0
 problem: !Coupling_Sequential
   description: |
       Transport problem with Darcy flow driven by the boundary condition from the larger model.
@@ -45,6 +45,7 @@ problem: !Coupling_Sequential
           mesh_data_file: <input_fields_file>
           field_name: cross_section
           #interpolation: P0_intersection
+        sigma: 0.01
     n_schurs: 2
     output:
       fields:
@@ -110,7 +111,7 @@ problem: !Coupling_Sequential
           # dg_penalty: 1       # mass: 80, error: 4.5, default value, solution highly oscilates
           # dg_penalty: 10      # mass: 40, error: 4.0,  high error, hard to converge
           # dg_penalty: 100     # mass: 27, error: 16,  high error, hard to converge
-          dg_penalty: 10
+          dg_penalty: <dg_penalty>
           diff_m: <diffusivity_effective>
           disp_l: <dispersivity_L>
           disp_t: <dispersivity_T>
@@ -138,25 +139,27 @@ problem: !Coupling_Sequential
           interpolation: [P0_value, P1_average, D1_value] #[P0_value, P1_average, D1_value]
         - region_id
         - porosity
+        - peclet_number
     output_stream:
       format: !vtk
-        variant: ascii
-      times:
-        - [30, 'y']
-        - [60, 'y']
-        - [120, 'y']
-        - [240, 'y']
-        - [500, 'y']
-        - [1100, 'y']
-        - [2300, 'y']
-        - [5000, 'y']
-        - [10000, 'y']
-        - time: [20000, 'y']
-          step: [20000, 'y']
+        #variant: ascii
+        variant: binary_zlib
+      times: <output_times>
+#        - [30, 'y']
+#        - [60, 'y']
+#        - [120, 'y']
+#        - [240, 'y']
+#        - [500, 'y']
+#        - [1100, 'y']
+#        - [2300, 'y']
+#        - [5000, 'y']
+#        - [10000, 'y']
+#        - time: [20000, 'y']
+#          step: [20000, 'y']
 
 
     time:
-      end_time: [200000, 'y']
+      end_time: [<end_time_years>, 'y']
       max_dt: [20000, 'y']
       dt_limits:
         - time: [0, 'y']

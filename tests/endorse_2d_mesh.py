@@ -96,7 +96,7 @@ if __name__ == "__main__":
             mesh_file=mesh.path,
             source_x0=0,
             source_x1=1,
-            conc_flux_file=f"{flow123d_inputs_path}/../../../tests/test_data/conc_flux_UOS_kg_y.csv"
+            conc_flux_file=flow123d_inputs_path.joinpath("../../../tests/test_data/conc_flux_UOS_kg_y.csv")
         )
         template = os.path.join(flow123d_inputs_path, "transport_2d_tmpl.yaml")
 

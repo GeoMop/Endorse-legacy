@@ -53,6 +53,7 @@ class Element:
 
 
 
+
 @memoize
 def _load_mesh(mesh_file: File, heal_tol):
 
@@ -61,10 +62,10 @@ def _load_mesh(mesh_file: File, heal_tol):
         return Mesh(gmsh_io, file = mesh_file)
     else:
         hm = heal_mesh.HealMesh.read_mesh(mesh_file.path, node_tol=heal_tol * 0.1)
-        hm.heal_mesh(gamma_tol=heal_tol)
+        report(hm.heal_mesh)(gamma_tol=heal_tol)
             #hm.move_all(geom_dict["shift_vec"])
             #elm_to_orig_reg = hm.map_regions(new_reg_map)
-        hm.stats_to_yaml(mesh_file.path + "_heal_stats.yaml")
+        report(hm.stats_to_yaml)(mesh_file.path + "_heal_stats.yaml")
         #assert hm.healed_mesh_name == mesh_healed
         hm.write()
         return Mesh.load_mesh(File(hm.healed_mesh_name), None)

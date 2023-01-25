@@ -3,9 +3,14 @@
 **config.yaml** 
 Example main config file with commented fields.
 
-**large_model.msh** 
+**_*.yaml**
+Configuration files included from the `confgi.yaml`
 
-result of a hg model of a catchment scale at one test locality for the repository
+**large_model.msh** 
+Result of a HG model of a catchment scale at one test locality for the repository
+
+**large_model_local.msh** 
+`large_model.msh` with nodes in local coordinate system. The local system origin is currently fixed. 
 
 **conc_flux_UOS.csv** 
 Prescribed  concentration flux (kg/rok/m2) at the interface bentonite - rock
@@ -14,6 +19,14 @@ half of max at about 100years, timestep 1year up to 1000 years, after just few t
 negligable conc.
 !! Seems to be very short peak, what is the model for this.
 What will be the time of leak? We should also model random leak times and compare it 
+
+The file is not used as the prescription of the conc. flux is instable. The Robin type condition with prescribed concentration is used instead.
+However, the concentration is not realistic.
+
+
+**conc_flux_UOS_kg_y.csv**
+The same data but with 'comma' separator for simple import to libre office and with time in years instead of seconds.
+
 
 **accepted_parameters.csv**
 Parameters of the forward model for the accepted samples of the Bayes inversion. 

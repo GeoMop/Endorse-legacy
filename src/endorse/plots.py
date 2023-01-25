@@ -1,12 +1,13 @@
 import logging
 
 import numpy as np
-import pandas as pd
 from typing import *
 import matplotlib
 import matplotlib.pyplot as plt
-import pyvista as pv
 from matplotlib import ticker, cm
+import pandas as pd
+import seaborn as sbn
+import pyvista as pv
 
 from .common import File
 from endorse.indicator import IndicatorFn, Indicator
@@ -141,6 +142,7 @@ def _get_values(hdf5_path):
 
 
 """
+Main plot
 Refactor to plot a table:
 [case, point, mean_log, std_log, samples]
 cases makes main groups
@@ -149,6 +151,16 @@ samples are plotted right now, modified graph needed for reconstructed density
 """
 
 def plot_quantile_errorbar(data_dict, quantiles):
+    """
+    Main plot for compariosn of cases.
+
+    Cases/sources on the X axis, grouped by cases.
+    - violin plot
+    - boxplot/errorbar
+    - IQR/error bar outlayers with sample numbers
+    - return outlayer samples for individual cases indicator plots for outlayers
+    :return:
+    """
     matplotlib.rcParams.update({'font.size': 22})
 
     fig, ax = plt.subplots(figsize=(12, 10))
@@ -199,13 +211,101 @@ def plot_quantile_errorbar(data_dict, quantiles):
     plt.savefig("quantiles.pdf")
     #plt.show()
 
+def plot_indicator_groups(choice: List[str], group: List[str], samples:np.array):
+    choices = ['edz', 'noedz']
+    sources = ['2', '10']
+    indices = np.arange(10)
+    series = np.random.rand(len(indices), len(sources), len(choices)) \
+             + np.array([[1, 2], [4, 5]])[None, :, :]
+    series = series.reshape(len(indices), len(choices) * len(sources))
+    midx = pd.MultiIndex.from_product([choices, sources])
+    df = pd.DataFrame(series, index=indices, columns=midx).reset_index(drop=True)
+    df = df.stack()
+    df = df.stack().reset_index()
+    df.columns = ['sample', 'source', 'choice', 'indicator']
+
+    sbn.violinplot(data=df, x="source", y="indicator", hue="choice",
+                   split=True, inner="quart", linewidth=1)
+    sbn.despine(left=True)
+
+def plot_mc_cases(cases_data: List[Tuple[str,str,List[float]]], quantity_label, title):
+    """
+    Plot the MC samples using the violin plot.
+    - plot the box plot
+    - mark outlaiers using IQR
+    """
+    # expand samples
+    variant_map={"0": "variant A", "4": "variant B"}
+    source_tags={"2": "14m", "5": "32m", "10": "62m"}
+    matplotlib.rcParams.update({'font.size': 12})
+    tidy_data = [(i, case.split('_')[0], source_tags[source], t, c)
+                 for case, source, time_samples, conc_samples in cases_data
+                 for i, (t,c) in enumerate(zip(time_samples, conc_samples))]
+    print(f"N samples per case: {len(tidy_data)/6}")
+    df = pd.DataFrame(tidy_data)
+    df.columns = ['sample', 'case', 'source', 'time [y]', quantity_label]
+    #df.stack()
+    vaxes = sbn.violinplot(data=df, x="source", y=quantity_label, hue="case",
+                   split=True, inner="quart", linewidth=1)
+    vaxes.set_axisbelow(True)
+    vaxes.grid(axis='y', which='major', color='grey', linewidth=0.1)
+    vaxes.grid(axis='y', which='minor', color='black', linestyle=(0,(1,10)), linewidth=0.3)
+    ticks = vaxes.get_yticks()
+    ticks = np.arange(min(ticks), max(ticks), 1.0)
+    vaxes.set_yticks(ticks, minor=True)
+    vaxes.legend(loc="lower center", ncols=2)
+    #sbn.despine(left=True)
+    fig = vaxes.get_figure()
+    variant_title = variant_map[title.split('_')[-1]]
+    fig.suptitle(variant_title)
+    fig.savefig("mc_cases.pdf")
+    #fig.show()
+
+    # f_grid=sbn.relplot(
+    #     data=df, x="time [y]", y=quantity_label,
+    #     row=, hue="case",
+    #     kind="scatter"
+    # )
+    plt.figure()
+
+    # Create a subplot
+    fig, axes = plt.subplots(3, 1, figsize=(6, 12))
+    #g = sbn.FacetGrid(df, row="source", margin_titles=True)
+    for (src_id, src_lbl), ax in zip(source_tags.items(), axes):
+        sub_df = df.loc[df['source'] == src_lbl]
+        sbn.scatterplot(sub_df, x="time [y]", y=quantity_label, hue="case", ax=ax)
+        ax.title.set_text("source: " + src_lbl)
+        if src_lbl != "62m":
+            ax.set_xlabel(None)
+        ax.legend(loc="lower center", ncols=2)
+
+        xf = ticker.ScalarFormatter(useMathText=True)
+        xf.set_scientific(True)
+        xf.set_powerlimits((3, 3))
+        ax.xaxis.set_major_formatter(xf)
+        ax.grid(linestyle=(0,(1,10)), linewidth=0.3)
+        handles, labels = ax.get_legend_handles_labels()
+
+    #g.set_axis_labels("Total bill ($)", "Tip ($)")
+    #g.set_titles(row_template="{row_name}")
+    #plt.ticklabel_format(style='scientific', axis='y', useOffset=True)
+    fig.tight_layout()
+    fig.savefig("time_conc.pdf")
+    #fig = saxes.get_figure()
+    #fig.suptitle(variant_title)
+
+
 
 
 def plot_log_errorbar_groups(group_data, value_label):
     """
     Input for individual bar plots, list of:
-    [group1, group2, mean_log, std_log, samples]
+    [case, source, samples]
     """
+
+    mean = [np.mean()]
+
+
     matplotlib.rcParams.update({'font.size': 22})
     fig, ax = plt.subplots(figsize=(12, 10))
     prop_cycle = plt.rcParams['axes.prop_cycle']
@@ -228,7 +328,8 @@ def plot_log_errorbar_groups(group_data, value_label):
         yerr = np.exp(mean_log + np.array([-std_log, +std_log])) - exp_mean
         Y = np.exp(samples)
         X = np.full_like(Y, x)
-        ax.scatter(X, Y, color=colors[ig2], marker="v")
+        #ax.scatter(X, Y, color=colors[ig2], marker="v")
+        ax.violinplot(Y, x, vert=bool, showmedians=True, quantiles=[0.25, 0.75])
         ax.set_yscale('log')
 
         # add errorbar, not able to pass array of colors for every quantile case

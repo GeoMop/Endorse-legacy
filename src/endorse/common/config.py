@@ -4,12 +4,33 @@ from typing import *
 import os
 import yaml
 import re
+from socket import gethostname
 from glob import iglob
 
 from yamlinclude import YamlIncludeConstructor
 from yamlinclude.constructor import WILDCARDS_REGEX, get_reader_class_by_name
 
 
+class YamlLimitedSafeLoader(type):
+    """Meta YAML loader that skips the resolution of the specified YAML tags."""
+    def __new__(cls, name, bases, namespace, do_not_resolve: List[str]) -> Type[yaml.SafeLoader]:
+        do_not_resolve = set(do_not_resolve)
+        implicit_resolvers = {
+            key: [(tag, regex) for tag, regex in mappings if tag not in do_not_resolve]
+            for key, mappings in yaml.SafeLoader.yaml_implicit_resolvers.items()
+        }
+        return super().__new__(
+            cls,
+            name,
+            (yaml.SafeLoader, *bases),
+            {**namespace, "yaml_implicit_resolvers": implicit_resolvers},
+        )
+
+class YamlNoTimestampSafeLoader(
+    metaclass=YamlLimitedSafeLoader, do_not_resolve={"tag:yaml.org,2002:timestamp"}
+):
+    """A safe YAML loader that leaves timestamps as strings."""
+    pass
 
 class dotdict(dict):
     """
@@ -41,8 +62,20 @@ class dotdict(dict):
         else:
             return cfg
 
+    @staticmethod
+    def serialize(cfg):
+        if isinstance(cfg, (dict, dotdict)):
+            return { k:dotdict.serialize(v) for k,v in cfg.items()}
+        elif isinstance(cfg, list):
+            return [dotdict.serialize(i) for i in cfg]
+        elif isinstance(cfg, tuple):
+            return tuple([dotdict.serialize(i) for i in cfg])
+        else:
+            return cfg
+
 Key = Union[str, int]
 Path = Tuple[Key]
+VariantPatch = Dict[str, dotdict]
 
 @dataclass
 class PathIter:
@@ -86,7 +119,7 @@ def _item_update(key:Key, val:dotdict, sub_path:Key, sub:dotdict):
 def deep_update(cfg: dotdict, iter:PathIter, substitute:dotdict):
     if iter.is_leaf():
         return substitute
-    new_cfg = cfg.copy()
+    new_cfg = dotdict(cfg)
     if isinstance(cfg, list):
         key, sub_path = iter.idx()
     elif isinstance(cfg, (dict, dotdict)):
@@ -98,7 +131,7 @@ def deep_update(cfg: dotdict, iter:PathIter, substitute:dotdict):
 
 
 
-def apply_variant(cfg:dotdict, variant:Dict[str, dotdict]) -> dotdict:
+def apply_variant(cfg:dotdict, variant:VariantPatch) -> dotdict:
     """
     In the `variant` dict the keys are interpreted as the address
     in the YAML file. The address is a list of strings and ints separated by '/'
@@ -114,7 +147,7 @@ def apply_variant(cfg:dotdict, variant:Dict[str, dotdict]) -> dotdict:
     """
     new_cfg = cfg
     for path_str, val in variant.items():
-        path = path_str.split('/')
+        path = tuple(path_str.split('/'))
         assert path
         new_cfg = deep_update(new_cfg, PathIter(path), val)
     return new_cfg
@@ -154,19 +187,34 @@ class YamlInclude(YamlIncludeConstructor):
             return reader_clz(pathname, encoding=encoding, loader_class=type(loader))()
         return self._read_file(pathname, loader, encoding)
 
+def resolve_machine_configuration(cfg:dotdict, hostname) -> dotdict:
+    # resolve machine configuration
+    if 'machine_config' not in cfg:
+        return cfg
+    if hostname is None:
+        hostname = gethostname()
+    machine_cfg = cfg.machine_config.get(hostname, None)
+    if machine_cfg is None:
+        machine_cfg = cfg.machine_config.get('__default__', None)
+    if machine_cfg is None:    
+        raise KeyError(f"Missing hostname: {hostname} in 'cfg.machine_config'.")
+    cfg.machine_config = machine_cfg
+    return cfg
 
-def load_config(path, collect_files=False):
+def load_config(path, collect_files=False, hostname=None):
     """
     Load configuration from given file replace, dictionaries by dotdict
     uses pyyaml-tags namely for:
     include tag:
         geometry: <% include(path="config_geometry.yaml")>
     """
-    instance = YamlInclude.add_to_loader_class(loader_class=yaml.FullLoader, base_dir=os.path.dirname(path))
+    instance = YamlInclude.add_to_loader_class(loader_class=YamlNoTimestampSafeLoader, base_dir=os.path.dirname(path))
     cfg_dir = os.path.dirname(path)
     with open(path) as f:
-        cfg = yaml.load(f, Loader=yaml.FullLoader)
+        cfg = yaml.load(f, Loader=YamlNoTimestampSafeLoader)
+    cfg['_config_root_dir'] = os.path.abspath(cfg_dir)
     dd = dotdict.create(cfg)
+    dd = resolve_machine_configuration(dd, hostname)
     if collect_files:
         referenced = instance.included_files
         referenced.append(path)
@@ -174,11 +222,20 @@ def load_config(path, collect_files=False):
         dd['_file_refs'] = referenced
     return dd
 
+def dump_config(config):
+    with open("__config_resolved.yaml", "w") as f:
+        yaml.dump(config, f)
 
 def path_search(filename, path):
+    if not isinstance(filename, str):
+        return []
+    # Abs paths intentionally not included
+    # if os.path.isabs(filename):
+    #     if os.path.isabs(filename) and os.path.isfile(filename):
+    #         return [os.path.abspath(filename)]
+    #     else:
+    #         return []
     for dir in path:
-        if not isinstance(filename, str):
-            continue
         full_name = os.path.join(dir, filename)
         if os.path.isfile(full_name):
             return [os.path.abspath(full_name)]
@@ -186,7 +243,6 @@ def path_search(filename, path):
 
 FilePath = NewType('FilePath', str)
 def collect_referenced_files(cfg:dotdict, search_path:List[str]) -> List[FilePath]:
-    referenced = []
     if isinstance(cfg, (dict, dotdict)):
         referenced = [collect_referenced_files(v, search_path) for v in cfg.values()]
     elif isinstance(cfg, (list, tuple)):
@@ -195,3 +251,7 @@ def collect_referenced_files(cfg:dotdict, search_path:List[str]) -> List[FilePat
         return path_search(cfg, search_path)
     # flatten
     return [i for l in referenced for i in l]
+
+
+
+

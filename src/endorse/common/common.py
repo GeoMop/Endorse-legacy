@@ -3,6 +3,7 @@ from typing import *
 import shutil
 from pathlib import Path
 import numpy as np
+import logging
 
 from .memoize import File
 
@@ -42,24 +43,40 @@ class workdir:
             src = src.path
         if isinstance(dest, File):
             dest = dest.path
-        if dest == ".":
-            if os.path.isabs(src):
-                dest = os.path.basename(src)
-            else:
-                dest = src
-        elif dest is None:
+        #if dest == ".":
+        #    if os.path.isabs(src):
+        #        dest = os.path.basename(src)
+        #    else:
+        #        dest = src
+        if dest is None:
             dest = ""
-        dest = os.path.join(self.work_dir, dest)
+        dest = os.path.join(self.work_dir, dest, os.path.basename(src))
         dest_dir, _ = os.path.split(dest)
-        Path(dest_dir).mkdir(parents=True, exist_ok=True)
+        if not os.path.isdir(dest_dir):
+            #print(f"MAKE DIR: {dest_dir}")
+            Path(dest_dir).mkdir(parents=True, exist_ok=True)
         abs_src = os.path.abspath(src)
+
+        # ensure that we always update the target
+        if os.path.isdir(dest):
+            shutil.rmtree(dest)
+        elif os.path.isfile(dest):
+            os.remove(dest)
+
+        # TODO: perform copy, link or redirectio to src during extraction of the File object from dictionary
+        # assumes custom tag for file, file_link, file_copy etc.
         if os.path.isdir(src):
+            #print(f"COPY DIR: {abs_src} TO DESTINATION: {dest}")
             shutil.copytree(abs_src, dest, dirs_exist_ok=True)
         else:
-            shutil.copy2(abs_src, dest)
+            try:
+                shutil.copy2(abs_src, dest)
+            except FileNotFoundError:
+                FileNotFoundError(f"COPY FILE: {abs_src} TO DESTINATION: {dest}")
 
     def __enter__(self):
         for item in self._inputs:
+            #print(f"treat workspace item: {item}")
             if isinstance(item, Tuple):
                 self.copy(*item)
             else:

@@ -1,35 +1,34 @@
 from typing import *
 import os
+import logging
 import numpy as np
 from bgem.gmsh import field, options, gmsh
 from bgem.stochastic import fracture
 from endorse.common import dotdict
 
 
-def generate_fractures(cfg_frac:dotdict, range, box_dimensions:List[float], seed) -> List[fracture.Fracture]:
+
+def generate_fractures(pop:fracture.Population, range: Tuple[float, float], fr_limit, box,  seed) -> List[fracture.Fracture]:
     """
     Generate set of stochastic fractures.
     """
     np.random.seed(seed)
-    max_fr_size = np.max(box_dimensions)
-
-    volume = np.product(box_dimensions)
-    pop = fracture.Population(volume)
-    pop.initialize(cfg_frac.population)
+    max_fr_size = np.max(box)
     r_min, r_max = range
     if r_max is None:
         r_max = max_fr_size
     if r_min is None:
         # smallest size range
-        n_frac_lim = cfg_frac.n_frac_limit
+        n_frac_lim = fr_limit
     else:
         # prescribed fracture range
         n_frac_lim = None
+    pop.domain = [b if d > 0 else 0.0 for d, b in zip(pop.domain, box)]
     pop.set_sample_range([r_min, r_max], sample_size=n_frac_lim)
+    logging.info(f"fr set range: {[r_min, r_max]}, fr_lim: {n_frac_lim}, mean population size: {pop.mean_size()}")
 
-    print("mean population size: ", pop.mean_size())
 
-    pos_gen = fracture.UniformBoxPosition(box_dimensions)
+    pos_gen = fracture.UniformBoxPosition(pop.domain)
     fractures = pop.sample(pos_distr=pos_gen, keep_nonempty=True)
     for i, fr in enumerate(fractures):
         reg = gmsh.Region.get(f"fr_{i}")

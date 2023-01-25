@@ -20,9 +20,8 @@ def test_run_random_samples():
     # - run 1 sample, HM simulation but with modified geometry, interpolation to other 3D tranport mesh, homogenized transport execution (under 10mins localy)
     #common.EndorseCache.instance().expire_all()
 
-    seed = 101
+    conf_file = os.path.join(script_dir, "test_data/config.yaml")
     np.random.seed(seed)
-    conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
     cfg = common.load_config(conf_file)
 
     files_to_copy = ["test_data/accepted_parameters.csv"]
@@ -30,9 +29,9 @@ def test_run_random_samples():
         hm_simulation.run_random_samples(cfg, 1)
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_tunnel_interpolation():
-    conf_file = os.path.join(script_dir, "test_data/config_homo_tsx.yaml")
+    conf_file = os.path.join(script_dir, "test_data/config.yaml")
     cfg = common.load_config(conf_file)
     flow_msh = mesh_class.Mesh.load_mesh(File(os.path.join(script_dir, "test_data/flow_fields.msh")))
     mech_msh = mesh_class.Mesh.load_mesh(File(os.path.join(script_dir, "test_data/mechanics_fields.msh")))
