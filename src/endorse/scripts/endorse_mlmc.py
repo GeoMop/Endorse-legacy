@@ -357,7 +357,8 @@ class SourceDensity:
     length: int
 
     def plot_label(self):
-        return f"pos: {self.center}, len: {self.length}"
+        #return f"pos: {self.center}, len: {self.length}"
+        return f"{self.center}"
 
     def fs_name_items(self):
         c_str =  f"{self.center:03d}"
@@ -410,7 +411,16 @@ class SimCase:
         time = ind_conc[1]  # times: [1]
         location = time['0']  # locations: ['0']
         values = location[i_quantile, 0]  # selected quantile
-        values = np.log(values)
+        values = np.log10(values)
+        # assert np.shape(values) == (1, 1)
+        return values
+
+    def time_quantity(self, i_quantile=1):
+        root_quantity = self.root_quantity()
+        ind_conc = root_quantity['indicator_time']
+        time = ind_conc[1]  # times: [1]
+        location = time['0']  # locations: ['0']
+        values = location[i_quantile, 0]  # selected quantile
         # assert np.shape(values) == (1, 1)
         return values
 
@@ -441,12 +451,14 @@ class SimCase:
         #moments_fn = Legendre(n_moments, estimated_domain)
         #estimator = Estimate(quantity=quantity, sample_storage=sample_storage, moments_fn=moments_fn)
         estimator = Estimate(quantity=quantity, sample_storage=self.storage)
-        samples = estimator.get_level_samples(level_id=0)
+        samples = estimator.get_level_samples(level_id=0, n_samples=100)
         return samples[0,:, 0] # not clear why it has still shape (1, N, 1)
 
     def log_indicator_mc_samples(self, i_quantile=1):
-        quantity = self.log_inditator_quantity(i_quantile)
-        return (self.case_name, self.source.plot_label(), self._get_samples(quantity))
+        conc_quantity = self.log_inditator_quantity(i_quantile)
+        time_quantity = self.time_quantity(i_quantile)
+
+        return (self.case_name, self.source.plot_label(), self._get_samples(time_quantity), self._get_samples(conc_quantity))
 
     def clean(self, all=False):
         try:
@@ -546,10 +558,10 @@ class SimCases:
             for source in self.source_densities:
                 yield SimCase(self.cfg, case_key, case_patch, source)
 
-    def mc_plots(self):
+    def mc_plots(self, label):
         data = [case.log_indicator_mc_samples(i_quantile=1) for case in self.iterate()]
         #print(data)
-        plots.plot_mc_cases(data, 'conc ' + r'$[g/m^3]$')
+        plots.plot_mc_cases(data, 'log10 conc ' + r'$[g/m^3]$', label)
         #plots.indicator_timefunc(data,
 
     def mlmc_plots(self):
@@ -666,7 +678,8 @@ class MC_CasesPlot:
 
     def execute(self, args):
         cases = SimCases.initialize(args)
-        cases.mc_plots()
+        path, basename = os.path.split(os.getcwd())
+        cases.mc_plots(basename)
 
 @attrs.define
 class PlotCmd:

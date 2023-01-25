@@ -46,6 +46,14 @@ def test_plot_cases():
     run_script(['plot', 'mc_cases', 'edz_0,noedz_0', '2,5,10'], workdir=workdir)
 
 #@pytest.mark.skip
+def test_plot_cases_variants():
+    #run_script(['plot', 'cases', '*', '2'])
+    #run_script(['plot', 'cases', 'base dg_1 dg_3 dg_30 tol_low tol_high', '2'])
+    for i in [0,4]:
+        workdir=f"../test_data/collected_charon_run3/calc_230122_02_{i}"
+        run_script(['plot', 'mc_cases', f'edz_{i},noedz_{i}', '2,5,10'], workdir=workdir)
+
+@pytest.mark.skip
 def test_script_sample():
     for i in [0,1,2,3,4]:
         run_script(['run', '-c', '-nt=2', '-np=1', f'edz_{i},noedz_{i}', '2'])
