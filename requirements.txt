@@ -1,12 +1,9 @@
-#numba
-#scikit-learn
-numpy >=1.20.3
 pyvista
 pyyaml
 pyyaml-include
 matplotlib
-numpy
 scipy
+seaborn
 pytest
 tox
 tox-gh-actions

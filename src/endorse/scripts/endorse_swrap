@@ -7,13 +7,21 @@ SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 ENDORSE_BASE="$SCRIPTPATH/../../.."
 
 
+if [ -z "$PBS_O_WORKDIR" ]
+then
+        
+    CALC_HOME=${HOME}
+else
+    user=${PBS_O_WORKDIR#**/home/}
+    user=${user%%/*}
+    CALC_HOME="${PBS_O_WORKDIR%%home/*}home/${user}"
+fi
 
-
-
-WORKDIR_BASE="${HOME}/endorse_work"
+WORKDIR_BASE="${CALC_HOME}/endorse_work"
 mkdir -p ${WORKDIR_BASE} 
 calculation_name="$1"    
 shift
+
 
 if [ "${calculation_name}" == "--" ]
 then
@@ -45,12 +53,15 @@ fi
 
 # auxiliary hack how to detect we are running with 'charon.nti.tul.cz' configuration
 # TODO: design more general resolution pattern
-if [ ! "${SCRIPTPATH}#/auto/liberec3-tul}" == "${SCRIPTPATH}" ]
+if [ ! "${SCRIPTPATH#/auto/liberec3-tul}" == "${SCRIPTPATH}" ]
 then
     export ENDORSE_HOSTNAME="charon.nti.tul.cz"
+elif [ ! "${SCRIPTPATH#/auto/brno2}" == "${SCRIPTPATH}" ]
+then
+    export ENDORSE_HOSTNAME="skirit.ics.muni.cz"
 fi
 
-
+command=$1
 if [ "${command}" == "setup_venv" ]
 then
     cd $ENDORSE_BASE

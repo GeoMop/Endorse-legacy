@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 cp ../requirements.txt .
 
 git_commit=`git rev-parse --short=6 HEAD`

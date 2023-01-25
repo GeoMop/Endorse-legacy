@@ -1,5 +1,6 @@
 from typing import *
 import os
+import logging
 import numpy as np
 from bgem.gmsh import field, options, gmsh
 from bgem.stochastic import fracture
@@ -24,8 +25,8 @@ def generate_fractures(pop:fracture.Population, range: Tuple[float, float], fr_l
         n_frac_lim = None
     pop.domain = [b if d > 0 else 0.0 for d, b in zip(pop.domain, box)]
     pop.set_sample_range([r_min, r_max], sample_size=n_frac_lim)
+    logging.info(f"fr set range: {[r_min, r_max]}, fr_lim: {n_frac_lim}, mean population size: {pop.mean_size()}")
 
-    print("mean population size: ", pop.mean_size())
 
     pos_gen = fracture.UniformBoxPosition(pop.domain)
     fractures = pop.sample(pos_distr=pos_gen, keep_nonempty=True)

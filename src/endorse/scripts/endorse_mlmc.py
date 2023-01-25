@@ -12,7 +12,7 @@ import logging
 logging.basicConfig(level=logging.INFO, filename='endorse_mlmc.log')
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 import subprocess
 import yaml
 from glob import iglob
@@ -141,15 +141,17 @@ def create_sampler(cfg, work_dir, debug, n_proc):
     simulation_factory = FullScaleTransportSim(cfg, mesh_steps)
 
     # Create HDF sample storage
-    logging.info(f"Creating HDF storage: {work_dir}/mlmc_1.hdf5")
-    sample_storage = SampleStorageHDF(file_path=os.path.join(work_dir, "mlmc_{}.hdf5".format(cfg.mlmc.n_levels)))
+    logging.info(f"[{work_dir}] Creating HDF storage: {work_dir}/mlmc_1.hdf5")
+    sample_storage = SampleStorageHDF(file_path=os.path.join(work_dir, f"mlmc_{cfg.mlmc.n_levels}.hdf5"))
 
     # Create sampler, it manages sample scheduling and so on
+    logging.info(f"[{work_dir}] Creating sampler ...")    
     sampler = Sampler(
         sample_storage=sample_storage,
         sampling_pool=sampling_pool,
         sim_factory=simulation_factory,
         level_parameters=level_parameters)
+    logging.info(f"[{work_dir}] sampler done.")    
 
     return sampler
 
@@ -164,7 +166,7 @@ def all_collect(sampling_params, sampler, work_dir):
         running = sampler.ask_sampling_pool_for_samples(
             sleep=sampling_params.sample_sleep,
             timeout=sampling_params.sample_timeout)
-        logging.info(f"{work_dir}, N running: {running}")
+        logging.info(f"[{work_dir}] N running: {running}")
 
 
 def run_fixed(cfg, n_samples, debug, n_proc):
@@ -181,7 +183,7 @@ def run_fixed(cfg, n_samples, debug, n_proc):
     running = sampler.ask_sampling_pool_for_samples(
         sleep=sampling_params.sample_sleep,
         timeout=sampling_params.sample_timeout)    
-    logging.info(f"{work_dir}, init N running: {running}")
+    logging.info(f"[{work_dir}] init N running: {running}")
     
     sampler.set_initial_n_samples(n_samples)
     sampler.schedule_samples()
@@ -355,7 +357,8 @@ class SourceDensity:
     length: int
 
     def plot_label(self):
-        return f"pos: {self.center}, len: {self.length}"
+        #return f"pos: {self.center}, len: {self.length}"
+        return f"{self.center}"
 
     def fs_name_items(self):
         c_str =  f"{self.center:03d}"
@@ -374,6 +377,7 @@ class SimCase:
     case_name: str
     case_patch: CasePatch
     source: SourceDensity
+    _storage: Any = None
 
     @property
     def directory(self):
@@ -386,26 +390,53 @@ class SimCase:
         print(abs_hdf)
         return abs_hdf
 
+    @property
+    def storage(self):
+        if self._storage is None:
+            self._storage = SampleStorageHDF(file_path=self.hdf5_path)
+            self._storage.chunk_size = 1024
+
+        return self._storage
+
+
     def root_quantity(self):
-        logging.info(f"Getting plot values from: {self.directory}")
-        sample_storage = SampleStorageHDF(file_path=self.hdf5_path)
-        sample_storage.chunk_size = 1024
-        result_format = sample_storage.load_result_format()
+        logging.info(f"Getting  values from: {self.directory}")
+        result_format = self.storage.load_result_format()
         logging.info(f"Result format: {result_format}")
-        return sample_storage, make_root_quantity(sample_storage, result_format)
+        return make_root_quantity(self.storage, result_format)
+
+    def log_inditator_quantity(self, i_quantile=1):
+        root_quantity = self.root_quantity()
+        ind_conc = root_quantity['indicator_conc']
+        time = ind_conc[1]  # times: [1]
+        location = time['0']  # locations: ['0']
+        values = location[i_quantile, 0]  # selected quantile
+        values = np.log10(values)
+        # assert np.shape(values) == (1, 1)
+        return values
+
+    def time_quantity(self, i_quantile=1):
+        root_quantity = self.root_quantity()
+        ind_conc = root_quantity['indicator_time']
+        time = ind_conc[1]  # times: [1]
+        location = time['0']  # locations: ['0']
+        values = location[i_quantile, 0]  # selected quantile
+        # assert np.shape(values) == (1, 1)
+        return values
+
 
     def mean_std_log(self):
-        sample_storage, root_quantity = self.root_quantity()
+        root_quantity = self.root_quantity()
         i_quantile = 1
-        conductivity = root_quantity['indicator_conc']
-        time = conductivity[1]  # times: [1]
+        ind_conc = root_quantity['indicator_conc']
+        time = ind_conc[1]  # times: [1]
         location = time['0']  # locations: ['0']
-        values = location  # result shape: (10, 1)
-        values = values[i_quantile, 0]  # selected quantile
-        samples = self._get_samples(values, sample_storage)[0]
-        values = values.select(values < 1e-1)
+        values = location[i_quantile, 0]  # selected quantile
         values = np.log(values)
-        samples = self._get_samples(values, sample_storage)[0]
+        assert values.shape[0] == 1
+        values = values[0]
+        #values = values.select(values < 1e-1)
+        samples = self._get_samples(values, self.storage)[0, 0]
 
 
         q_mean = estimate_mean(values)
@@ -414,15 +445,20 @@ class SimCase:
 
         return q_mean.mean[0], std[0], samples
 
-    def _get_samples(self, quantity, sample_storage):
-        n_moments = 2
+    def _get_samples(self, quantity):
+        #n_moments = 2
         #estimated_domain = Estimate.estimate_domain(quantity, sample_storage, quantile=0.001)
         #moments_fn = Legendre(n_moments, estimated_domain)
         #estimator = Estimate(quantity=quantity, sample_storage=sample_storage, moments_fn=moments_fn)
-        estimator = Estimate(quantity=quantity, sample_storage=sample_storage)
-        samples = estimator.get_level_samples(level_id=0)[..., 0]
-        print(samples)
-        return samples
+        estimator = Estimate(quantity=quantity, sample_storage=self.storage)
+        samples = estimator.get_level_samples(level_id=0, n_samples=100)
+        return samples[0,:, 0] # not clear why it has still shape (1, N, 1)
+
+    def log_indicator_mc_samples(self, i_quantile=1):
+        conc_quantity = self.log_inditator_quantity(i_quantile)
+        time_quantity = self.time_quantity(i_quantile)
+
+        return (self.case_name, self.source.plot_label(), self._get_samples(time_quantity), self._get_samples(conc_quantity))
 
     def clean(self, all=False):
         try:
@@ -522,6 +558,12 @@ class SimCases:
             for source in self.source_densities:
                 yield SimCase(self.cfg, case_key, case_patch, source)
 
+    def mc_plots(self, label):
+        data = [case.log_indicator_mc_samples(i_quantile=1) for case in self.iterate()]
+        #print(data)
+        plots.plot_mc_cases(data, 'log10 conc ' + r'$[g/m^3]$', label)
+        #plots.indicator_timefunc(data,
+
     def mlmc_plots(self):
         data = [(case.case_name, case.source.plot_label(), *case.mean_std_log()) for case in self.iterate()]
         #print(data)
@@ -577,7 +619,7 @@ class PackCmd:
 class RunCmd:
     @staticmethod
     def def_args(parser):
-        parser.add_argument("-nt", "--n_thread", default=4, type=int,
+        parser.add_argument("-nt", "--n_thread", default=6, type=int,
                         help="Number of sampling threads, sampling cases in parallel.")
         parser.add_argument("-np", "--n_proc", default=2, type=int,
                         help="Number of processes per thread.")
@@ -592,30 +634,35 @@ class RunCmd:
     def execute(self, args):
         #if args.clean:
         #    common.EndorseCache.instance().expire_all()
-
+        logging.info(f"Main CWD: {os.getcwd()}")
+        base_dir = os.getcwd()
         futures = []
         cases = SimCases.initialize(args)
-        with ThreadPoolExecutor(max_workers = args.n_thread) as pool:
+        with ProcessPoolExecutor(max_workers = args.n_thread) as pool:
             for case in cases.iterate():
                 if args.clean:
                     case.clean()
-                print("submit case:", case)
-                f = pool.submit(self.run_case, case, args.dim, args.n_proc, args.debug)
+                f = pool.submit(self.run_case, base_dir, case, args.dim, args.n_proc, args.debug)
                 futures.append((f, case))
         for f, case in futures:
             print(case, "result: ", f.result())
 
     @staticmethod
-    def run_case(case : SimCase, model_dim, np, debug):
+    def run_case(base_dir:str, case : SimCase, model_dim, np, debug):
         #print("running case:", case)
-        logging.info(f"Creating thread: {case.hdf5_path}")
-        logging.info(f"{os.environ}")
+        logging.info(f"[{case.directory}] Creating thread..")
+        #logging.info(f"{os.environ}")
         hostname = os.environ.get('ENDORSE_HOSTNAME', None)
         cfg = common.load_config(MAIN_CONFIG_FILE, collect_files=True, hostname=hostname)
         cfg_var = common.config.apply_variant(cfg, case.case_patch)
         cfg_var.transport_fullscale.source_params.source_ipos = case.source.center
         inputs = cfg._file_refs
+        os.chdir(base_dir)
+        logging.info(f"[{case.directory}] CWD: {os.getcwd()}")
         with common.workdir(case.directory, inputs=inputs):
+            time.sleep(30)
+            logging.info(f"[{case.directory}] CWD in the case dir: {os.getcwd()}")
+            common.dump_config(cfg_var)
             #cfg_file = "cfg_variant.yaml"
             #with open(cfg_file, "w") as f:
             #        yaml.dump(common.dotdict.serialize(cfg_var), f)
@@ -623,7 +670,7 @@ class RunCmd:
             cfg_var._model_dim = model_dim
             run_fixed(cfg_var, n_samples, debug, n_proc=np)
 
-class CasesPlot:
+class MC_CasesPlot:
 
     @staticmethod
     def def_args(parser):
@@ -631,13 +678,14 @@ class CasesPlot:
 
     def execute(self, args):
         cases = SimCases.initialize(args)
-        cases.mlmc_plots()
+        path, basename = os.path.split(os.getcwd())
+        cases.mc_plots(basename)
 
 @attrs.define
 class PlotCmd:
     @staticmethod
     def def_args(parser):
-        add_subparsers(parser, 'plot', 'plot_class', [CasesPlot])
+        add_subparsers(parser, 'plot', 'plot_class', [MC_CasesPlot])
 
     def execute(self, args):
         plot_instance = args.plot_class()
@@ -671,6 +719,7 @@ def get_arguments(arguments):
 def main():
     args = get_arguments(sys.argv[1:])
     with common.workdir(args.workdir):
+        time.sleep(30)
         command_instance = args.cmd_class()
         command_instance.execute(args)
 

@@ -7,14 +7,6 @@ pe_flow_env: &pe_config
     - run
 
 jb_flow_env: &jb_config
-    flow_executable:
-    # release
-    - /home/jb/workspace/flow123d/bin/fterm
-    - --no-term
-    - rel
-    - run
-    - --profiler_path 
-    - profile
   #   - /storage/liberec3-tul/home/jan_brezina/workspace/flow123d/bin/flow123d
   #    - cmd
   #    - c:/Users/peta/AppData/Local/Flow123d/v3.0.3/bin/flow123d.bat
@@ -24,67 +16,108 @@ jb_flow_env: &jb_config
     # debug
     #- /storage/liberec3-tul/home/jan_brezina/workspace/flow-dbg/flow123d/bin/flow123d
 
-flow_env: *jb_config
 
 cases_file: _cases.yaml
 
+machine_config:
+    # automatic resolution according to the socket.gethostname()
+    # content of the 'machine_config' dict is filled by the particular
+    # machine configuration dict
+    myval:  #JB
+        flow_executable:
+        # release
+        - /home/jb/workspace/flow123d/bin/fterm
+        - --no-term
+#        - own
+#        - flow123d/endorse_ci:a785dd
+#        - flow123d/ci-gnu:4.0.0a_d61969
+        - rel
+        - run
+        - --profiler_path
+        - profile
+
+
+        pbs: null
+    __default__: # Assums running on charon
+        flow_executable:
+        - flow123d
+        pbs:
+            n_cores: 1
+            n_nodes: 1
+            #select_flags: ['cgroups=cpuacct', 'scratch_local=10gb']
+            mem: 6Gb
+            queue: charon
+            pbs_name: endorse-flow123d
+            walltime: "04:00:00"
+    #__default__:  # assume flow123d available and no pbs
+    #    flow_executable:
+    #    - flow123d
+        
 mlmc:
-    # flow base image: 4.0.0a_d4c856
-    singularity_image: docker://flow123d/geomop-gnu:2.0.0
-    #singularity_image: None
-    _pbs:
-        n_cores: 1
-        n_nodes: 1
-        select_flags: ['cgroups=cpuacct', 'scratch_local=10gb']
-        mem: 8Gb
-        queue: charon
-        pbs_name: endorse-flow123d
-        walltime: 2:00:00
+    n_samples: 100
     n_levels: 1
-    
-indicators: # quantiles to compute
-  quantiles: [0.005, 0.002, 0.001, 0.0005]
-  plots: 0, 2
+ 
+# TODO: replace hardwired indicator list. 
+#indicators: # quantiles to compute
+#  quantiles: [0.005, 0.002, 0.001, 0.0005]
+#  plots: 0, 2
 
-
-metacentrum: false
-
-mc_samples: 10
-
-#copy_files: [transport_2022_5_tmpl.yaml,  conc_flux_UOS.csv, large_model.msh]
 
 geometry: &one_borehole_geometry !include _geometry.yaml
-fractures: &fractures
-    # SKB fracture parameters for upper domain
-    population:  !include _fractures.yaml
-    # upper limit on the number of fractures
-    n_frac_limit: 10
+#fractures: &fractures
+#    # SKB fracture parameters for upper domain
+#    population:  !include _fractures.yaml
+#    # upper limit on the number of fractures
+#    n_frac_limit: 10
+#
+#    fixed_large_fractures:
 
 #
 fractures_repo: &fractures_repo
     # SKB fracture population for repository domain
     population:  !include _fr_Forsmark_repo.yaml
     # upper limit on the number of (small) fractures
-    n_frac_limit: 30
-    fixed_seed: 101
-    large_min_r: 30
-    large_box:  [100, 80, 60]
+    n_frac_limit: 40
+    
+    # Experiments for large fr range [50, 200] and large_box: [20,20,20]
+    # most seeds have no large fracture at all
+    # probability of  50 m fracture near borehole is about,
+    #  1 fracture per 1km of borehole
+    #  crossing borehole: 3 fracture per 10 km
+    fixed_seed: 202  # in the middle, acute angle , not reaching boundary
+    #fixed_seed: 204 # parallel to borehole
+    #fixed_seed: 315 # 90 deg, middle, reaching boundary
+    #fixed_seed: 431 # parallel to borehole, cutting main tunnel
+    #fixed_seed: 471 # parallel to borehole, about 10m  distance
+    #fixed_seed: 545 # 45 degree, from borehole near boundary
+    #fixed_seed: 593 # parallel to borehole, cutting connection to main tunnel, reaching boundary
+    #fixed_seed: 623 # 30 deg, at 3/4 of borhole length, reaching boundary at substantial part
+    #fixed_seed: 632 # 20 deg, at 4/5 of borhole length, reaching boundary at nearly point on oposite side
+    #fixed_seed: 644 # parallel, close to borehole
+    #fixed_seed: 784 # parallel, very close near 0m
+    #fixed_seed: 798 # parallel, distance 10m
+    #fixed_seed: 906 # 10 deg, middle, horizontal, reaching majority of boundary
+    #fixed_seed: 958 # 20 deg, middle,  reaching majority of boundary
+    #fixed_seed: 966 # 10 deg, 0m,  reaching all boundary
+
+
+
+
+    large_min_r: 40
+    large_box:  [40, 80, 60]
     # Would be better to have separate domains for known large fractures close to tunnel and
     # uncertain large fractures, need support in Population
+    # main box : [100, 80, 60]
 
 
-# Set to None to generate new meshes. ABSOLUTE PATH
-#mesh_repository:
-#mesh_repository: /storage/liberec3-tul/home/jan_brezina/workspace/wgc/mlmc_random_frac/fr200_unif_s100/mesh_repository/
-#mesh_repository: /home/pavel_exner/WGC2020-THM-MC/mlmc_random_frac/mesh_repository
 
-sample_dir: samples
-mesh_files:
-  input: random_fractures_healed.msh
-  output: random_fractures_healed_2.msh
+#sample_dir: samples
+#mesh_files:
+#  input: random_fractures_healed.msh
+#  output: random_fractures_healed_2.msh
 
 # base of the mesh file name
-mesh_name: random_fractures
+#mesh_name: random_fractures
 
 fine_conductivity_interpolated:
     # Description of the EDZ conductivity field
@@ -102,8 +135,8 @@ fine_conductivity_interpolated:
 
 bulk_field_parametric: &bulk_field_parametric
     cond_zero: 1e-16
-    cond_max: 1e-10  #
-    cond_min: 1e-12  # set one order higher then at TSX (1e-13) to get it closer to fracture conductivities,
+    cond_max: 1e-8  # increased edz 10 times higher then for TSX (try to make EDZ significant)
+    cond_min: 3e-13  # 3x higher than TSX (1e-13), mean transport time should be about 100 ky   to fracture conductivities,
     por_max: 0.0025
     por_min: 0.002
 
@@ -141,6 +174,7 @@ transport_microscale:
     #load_field_p1: "piezo_head_grad_p0"
     load_field_indirect_conductivity: "conductivity"
     response_field_p0: "velocity_p0"
+    bulk_field_params: *bulk_field_parametric
 
 transport_macroscale:
     # Template for the main Flow123d input file. In `endorse/flow123d_inputs`.
@@ -156,11 +190,12 @@ transport_macroscale:
     #load_grad_field_p0: "piezo_head_grad_p0"
     #load_field_p1: "piezo_head_grad_p0"
     #response_field_p0: "velocity_p0"
+    #bulk_field_params: *bulk_field_parametric
 
 transport_fine:
     geometry: *one_borehole_geometry
     fractures: *fractures_repo
-    bulk_fields: *bulk_field_parametric
+    bulk_field_params: *bulk_field_parametric
     mesh:
         # mesh step on fractures
         fracture_mesh_step: 10
@@ -231,7 +266,7 @@ transport_fullscale:
     #dispersivity_T: 0     # [m]
     dg_penalty: 10
     
-    end_time: 400000
+
 
 
     # setup for point source
@@ -241,13 +276,28 @@ transport_fullscale:
         source_length: 4 # length of the container [m]
         source_space: 2
 
-    flow_solver__a_tol: 1e-14
+
+    # The total simulation time as well as the output times are ese are quite dependent on the
+    output_times:
+      - 30
+      - 60
+      - 120
+      - 240
+      - 500
+      - 1100
+      - 2300
+      - 5000
+      - 10000
+      - [20000, 20000]
+    end_time: 160000
+
+    flow_solver__a_tol: 1e-15
     flow_solver__r_tol: 1e-20
     #flow_solver__options:
 
 
-    trans_solver__a_tol: 1e-10
-    trans_solver__r_tol: 1e-20
+    trans_solver__a_tol: 1e-15
+    trans_solver__r_tol: 1e-8
         # -ksp_type cg -pc_type hypre -pc_hypre_type boomeramg
 #        # Boomeramg options:
 #        # -ksp_type richardson              - recomended usage when solving just by multigrid

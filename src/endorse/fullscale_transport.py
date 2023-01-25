@@ -3,33 +3,61 @@ import os
 from typing import *
 
 import numpy as np
-from endorse.mesh.repository_mesh import fullscale_transport_mesh_3d, fullscale_transport_mesh_2d
+import attrs
 
+from endorse.mesh.repository_mesh import fullscale_transport_mesh_3d, fullscale_transport_mesh_2d
 from . import common
 from .common import dotdict, File, report, memoize
 from .mesh_class import Mesh
 from . import apply_fields
 from . import plots
 from . import flow123d_inputs_path
-from .indicator import indicators, IndicatorFn
+from .indicator import indicator_set, indicators, IndicatorFn
 from bgem.stochastic.fracture import Fracture, Population
 
 
-# def input_files(cfg):
-#     return [
-#         cfg_tr_full.piezo_head_input_file,
-#         cfg_tr_full.conc_flux_file
-#     ]
 
-#
-# def find_nearest(array, value):
-#     array = np.asarray(array)
-#     idx = (np.abs(array - value)).argmin()
-#     return idx, array[idx]
+@attrs.define
+class ResultSpec:
+    name: str
+    # Quantile name
+    quantile_exp: float
+    # Quantile parameter, quantile_prob = 1 - quantile_param; 0 = maximum
+    times: List[float]
+    # Output times (years)
+    unit: str
+    # Unit of quantity
+
+
+def transport_result_format(cfg:dotdict) -> List[ResultSpec]:
+    q_times = quantity_times(output_times(cfg.transport_fullscale))
+    unit = "g/m3"
+    results = [ResultSpec(ind.indicator_label_short, ind.q_exp, q_times, unit) for ind in indicator_set()]
+    return results
+
 
 def fullscale_transport(cfg_path, seed):
     cfg = common.load_config(cfg_path)
     return transport_run(cfg, seed)
+
+def time_tuple(item : Union[float, Tuple[float, float]]):
+    if isinstance(item, (tuple,list)):
+        return item
+    else:
+        return (item, np.inf)
+
+def output_times(cfg_fine):
+    cfg_times, end_time = cfg_fine.output_times, cfg_fine.end_time
+    cfg_times.append(end_time)
+    times = []
+    for item, next in zip(cfg_times[:-1], cfg_times[1:]):
+        start, step = time_tuple(item)
+        end, _ = time_tuple(next)
+        times.extend((t for t in np.arange(start, end, step)))
+    times.append(end_time)
+    return times
+
+
 
 def transport_2d(cfg, seed):
     """
@@ -60,69 +88,27 @@ def transport_2d(cfg, seed):
     # mesh_modified = Mesh.load_mesh(mesh_modified_file)
 
     input_fields_file, est_velocity = compute_fields(cfg, full_mesh, el_to_ifr, fractures, dim=2)
+    return parametrized_run(cfg, large_model, input_fields_file)
 
-    # input_fields_file = compute_fields(cfg, full_mesh, el_to_fr)
-    params = cfg_fine.copy()
-
-    # estimate times
-    #bulk_vel_est, fr_vel_est = est_velocity
-    #end_time = (50 / bulk_vel_est + 50 / fr_vel_est)
-    #dt = 0.5 / bulk_vel_est
-    # convert to years
-
-    #end_time = end_time / common.year
-    #dt = dt / common.year
-
-    #end_time = 10 * dt
-    new_params = dict(
-        mesh_file=input_fields_file,
-        piezo_head_input_file=large_model,
-        #conc_flux_file=conc_flux,
-        input_fields_file = input_fields_file,
-        dg_penalty = cfg_fine.dg_penalty,
-        end_time_years = cfg_fine.end_time,
-        trans_solver__a_tol= cfg_fine.trans_solver__a_tol,
-        trans_solver__r_tol= cfg_fine.trans_solver__r_tol
-
-        #max_time_step = dt,
-        #output_step = 10 * dt
-    )
-    params.update(new_params)
-    params.update(set_source_limits(cfg))
-    template = flow123d_inputs_path.joinpath(cfg_fine.input_template)
-    fo = common.call_flow(cfg.flow_env, template, params)
-    return get_indicator(cfg, fo)
 
 
 def transport_run(cfg, seed):
-    """
-    1. apply conouctivity to given mesh:
-       - on borehole neighbourhood, select elements
-       - calculate barycenters
-       - apply conductivity
-       - write the field
-    2. substitute source term space distribution
-    3. return necessary files
-    """
-    #files = input_files(cfg.transport_fullscale)
     cfg_basedir = cfg._config_root_dir
     cfg_fine = cfg.transport_fullscale
     large_model = File(os.path.join(cfg_basedir, cfg_fine.piezo_head_input_file))
-    #conc_flux = File(os.path.join(cfg_basedir, cfg_fine.conc_flux_file))
     #plots.plot_source(conc_flux)
-
-    fr_pop = Population.initialize_3d( cfg.fractures.population, cfg.geometry.box_dimensions)
-
+    fr_pop = Population.initialize_3d( cfg_fine.fractures.population, cfg.geometry.box_dimensions)
     full_mesh_file, fractures, n_large = fullscale_transport_mesh_3d(cfg_fine, fr_pop, seed)
 
     full_mesh = Mesh.load_mesh(full_mesh_file, heal_tol=1e-4)
     el_to_ifr = fracture_map(full_mesh, fractures, n_large, dim=3)
     # mesh_modified_file = full_mesh.write_fields("mesh_modified.msh2")
     # mesh_modified = Mesh.load_mesh(mesh_modified_file)
-
     input_fields_file, est_velocity = compute_fields(cfg, full_mesh, el_to_ifr, fractures, dim=3)
+    return parametrized_run(cfg, large_model, input_fields_file)
 
-    # input_fields_file = compute_fields(cfg, full_mesh, el_to_fr)
+def parametrized_run(cfg, large_model, input_fields_file):
+    cfg_fine = cfg.transport_fullscale
     params = cfg_fine.copy()
 
     # estimate times
@@ -143,16 +129,27 @@ def transport_run(cfg, seed):
         dg_penalty = cfg_fine.dg_penalty,
         end_time_years = cfg_fine.end_time,
         trans_solver__a_tol= cfg_fine.trans_solver__a_tol,
-        trans_solver__r_tol= cfg_fine.trans_solver__r_tol
-
+        trans_solver__r_tol= cfg_fine.trans_solver__r_tol,
+        output_times = [[t, 'y'] for t in output_times(cfg_fine)]
         #max_time_step = dt,
         #output_step = 10 * dt
     )
     params.update(new_params)
     params.update(set_source_limits(cfg))
     template = flow123d_inputs_path.joinpath(cfg_fine.input_template)
-    fo = common.call_flow(cfg.flow_env, template, params)
+    fo = common.call_flow(cfg.machine_config, template, params)
     return get_indicator(cfg, fo)
+
+
+def quantity_times(o_times):
+    """
+    Denser times set.
+    """
+    times = []
+    for a, b in zip(o_times[:-1], o_times[1:]):
+        step = max((b - a) / 5.0 ,  1000)
+        times.extend(np.arange(a, b, step))
+    return times
 
 @report
 def get_indicator(cfg, fo):
@@ -162,10 +159,14 @@ def get_indicator(cfg, fo):
     z_cuts = (z_shift - z_dim, z_shift + z_dim)
     inds = indicators(fo.solute.spatial_file, f"{cfg_fine.conc_name}_conc", z_cuts)
     plots.plot_indicators(inds)
-    itime = IndicatorFn.common_max_time(inds)  # not splined version, need slice data
+    #itime = IndicatorFn.common_max_time(inds)  # not splined version, need slice data
     #plots.plot_slices(fo.solute.spatial_file, f"{cfg_fine.conc_name}_conc", z_cuts, [itime-1, itime, itime+1])
-    ind_time_max = [ind.time_max()[1] for ind in inds]
-    return ind_time_max
+    q_times = quantity_times(output_times(cfg_fine))
+
+    ind_value = [ind.time_max()[1] for ind in inds]
+    ind_time = [ind.time_max()[0] for ind in inds]
+    ind_series = np.array([ind.spline(q_times) for ind in inds])
+    return np.concatenate((ind_time, ind_value, ind_series.flatten()))
 
 @report
 def fracture_map(mesh, fractures, n_large, dim) -> Dict[int, Fracture]:
