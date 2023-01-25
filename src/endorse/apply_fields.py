@@ -2,7 +2,7 @@ import numpy as np
 
 from .common import File
 from .mesh_class import Mesh
-
+from endorse import hm_simulation
 
 def conductivity_mockup(cfg_geom, cfg_fields, output_mesh:Mesh):
     X, Y, Z = output_mesh.el_barycenters().T
@@ -30,11 +30,42 @@ def conductivity_mockup(cfg_geom, cfg_fields, output_mesh:Mesh):
     return File(cond_file)
 
 
+def bulk_fields_mockup_from_hm(cfg, interp: hm_simulation.TunnelInterpolator, XYZ):
+    # use Tunnel Interpolator
+    # in X axis it is constant
+    # X, Y, Z = XYZ.T
+    points = XYZ.T
+    cfg_hm = cfg.tsx_hm_model.hm_params
+    cfg_geom = cfg.geometry
+    selected_time = cfg_hm.end_time * 3600 * 24  # end_time of hm simulation
+
+    cond_field = interp.interpolate_field("conductivity", points, time=selected_time)
+    init_por, por_field = interp.compute_porosity(cfg_hm, points, time=selected_time)
+
+    # x_scaling = np.where(np.logical_and(points[0, :] > 0, points[0, :] < cfg_geom.borehole.length), 1.0, 0.0)
+    # cond_min = float(cfg.transport_fullscale.bulk_field_params.cond_min)
+    # cond_field = np.where(np.logical_and(points[0, :] > 0, points[0, :] < cfg_geom.borehole.length), 500*cond_field, cond_min)
+    # TODO: remove HACK
+    cond_min = 10*np.min(cond_field)
+    cond_max = np.max(cond_field)
+    print(f"conductivity (min,max): ({cond_min},{cond_max})")
+    bulk_cond, bulk_por = bulk_fields_mockup(cfg_geom, cfg.transport_fullscale.bulk_field_params, XYZ,
+                                             cond = (cond_min, cond_max))
+    cond_field = bulk_cond
+
+    por_field = np.where(np.logical_and(points[0, :] > 0, points[0, :] < cfg_geom.borehole.length), por_field, init_por)
+
+    return cond_field, por_field
 
 
+def clip_along_xaxis(cfg_geom, field_vals, XYZ):
+    X, Y, Z = XYZ.T
+    x_scaling = np.where(np.logical_and(X > 0, X < cfg_geom.borehole.length), 1.0, 0.0)
+    field_vals = field_vals * x_scaling
+    return field_vals
 
 
-def bulk_fields_mockup(cfg_geom, cfg_bulk_fields,  XYZ):
+def bulk_fields_mockup(cfg_geom, cfg_bulk_fields, XYZ, cond=None):
     X, Y, Z = XYZ.T
 
     edz_r = cfg_geom.edz_radius # 2.5
@@ -49,8 +80,12 @@ def bulk_fields_mockup(cfg_geom, cfg_bulk_fields,  XYZ):
     theta = distance / (edz_r - in_r)
     x_scaling = np.where(np.logical_and(X > 0, X < cfg_geom.borehole.length), 1.0, 0.0)
 
-    cond_max = float(cfg_bulk_fields.cond_max)
-    cond_min = float(cfg_bulk_fields.cond_min)
+    if cond is None:
+        cond_max = float(cfg_bulk_fields.cond_max)
+        cond_min = float(cfg_bulk_fields.cond_min)
+    else:
+        cond_min, cond_max = cond
+
     cond_field = np.exp((1-theta) * np.log(cond_max) + theta * np.log(cond_min)) * x_scaling
     cond_field = np.clip(cond_field, cond_min, cond_max)
     #abs_dist = np.sqrt(Y * Y + Z * Z)

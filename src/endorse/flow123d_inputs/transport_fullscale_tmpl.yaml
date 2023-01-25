@@ -138,6 +138,7 @@ problem: !Coupling_Sequential
         - field: conc
           interpolation: [P0_value, P1_average, D1_value] #[P0_value, P1_average, D1_value]
         - region_id
+        - porosity
         - peclet_number
     output_stream:
       format: !vtk

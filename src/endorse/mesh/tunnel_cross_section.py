@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-from endorse.common.common import dotdict
+from endorse.common.config import dotdict
 
 from bgem.gmsh import gmsh
 from bgem.gmsh import options as gmsh_options

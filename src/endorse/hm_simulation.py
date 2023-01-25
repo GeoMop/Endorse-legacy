@@ -5,21 +5,28 @@ import numpy as np
 import scipy as sp
 
 import endorse.mesh_class
-from .common import File, sample_from_population, workdir, dotdict
-from .flow123d_simulation import endorse_2Dtest
+from .common import File, sample_from_population, workdir, dotdict, FlowOutput
+from .flow123d_simulation import Edz_HM_TSX_2D
 from .plots import plot_field
+
 
 # 2D cross-section mesh is in xy plane with center in zero
 # target mesh cross-section is in yz plane
 class TunnelInterpolator:
-    def __init__(self, cfg_geom: dotdict, flow_msh: endorse.mesh_class.Mesh, mech_msh: endorse.mesh_class.Mesh):
-        self._flow_msh = flow_msh
-        self._mech_msh = mech_msh
+    def __init__(self, cfg_geom: dotdict, flow123d_output: FlowOutput = None,
+                 flow_msh: endorse.mesh_class.Mesh = None, mech_msh: endorse.mesh_class.Mesh = None):
+        if flow123d_output is not None:
+            self._flow_msh = endorse.mesh_class.Mesh.load_mesh(flow123d_output.hydro.spatial_file)
+            self._mech_msh = endorse.mesh_class.Mesh.load_mesh(flow123d_output.mechanic.spatial_file)
+        else:
+            self._flow_msh = flow_msh
+            self._mech_msh = mech_msh
+
         self._cfg_geom = cfg_geom
 
         # precompute barycenter once
-        bars = flow_msh.el_barycenters()
-        self._barycenters = (bars[0,:], bars[1,:])
+        bars = self._flow_msh.el_barycenters()
+        self._barycenters = (bars[:,0], bars[:,1])
 
     # Maps 'target_point' from the 3D tunnel to 'point' in 2D tunnel cross-section.
     def map_points(self, target_points):
@@ -80,7 +87,7 @@ class TunnelInterpolator:
         strain_diff = interp_vol_strain  # Flow123d actually computes the difference to initial state
         exponent = -(1-biot)/bulk_modulus * pressure_diff - strain_diff
         porosity = biot + (init_porosity-biot) * np.exp(exponent)
-        return porosity
+        return init_porosity, porosity
 
     def test_conductivity(self):
         field_values = self._flow_msh.get_p0_values("conductivity", time=365 * 24 * 3600)
@@ -123,61 +130,48 @@ class TunnelInterpolator:
         interp_vol_strain = sp.interpolate.griddata(self._barycenters, field_vol_strain, points, method='linear')
         porosity = self.compute_porosity(hm_params, points, time, data=(interp_pressure, interp_vol_strain))
         porosity = np.squeeze(porosity)
-        plots.plot_field(points, porosity, cut=(0,1))
+        # plot_field(np.array([X, Y]), porosity, cut=(0,1))
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        ax.set_ylim(-50, 50)
+        ax.set_xlim(-50, 50)
+        ax.set_xlabel(r"$x$", fontsize=20)
+        ax.set_ylabel(r"$y$", fontsize=20)
+
+        # levels = np.array([])
+        c = ax.contourf(X, Y, porosity, cmap=plt.cm.viridis)
+        cb = fig.colorbar(c, ax=ax)
+
+        plt.show()
 
 
-
-def run_hm_simulation(config_dict: dotdict, i_sim: int, parameters: Dict[str,Union[int, float]]):
-    # RUN THE MCMC SIMULATION
-    # default parameters
-    # output_dir = None
-    # csv_data = None
-    #
-    # len_argv = len(sys.argv)
-    # assert len_argv > 2, "Specify output dir and parameters in csv file!"
-    # if len_argv > 1:
-    #     output_dir = os.path.abspath(sys.argv[1])
-    # if len_argv > 2:
-    #     file = sys.argv[2]
-    #     if os.path.exists(file):
-    #         csv_data = os.path.abspath(sys.argv[2])
-    #     else:
-    #         raise Exception("Missing parameters file '" + file + "'.")
-
-    # setup paths and directories
-    # create and cd workdir
-    work_dir_name = f"sample_{i_sim:00d}"
-    #files_to_copy["common_files/config.yaml"] = "rep_dir/config.yaml"
-    # TODO: seems that we need to copy the config.yaml just for reference, rather write out cfg just before simulation call ?
-    rep_dir = os.path.dirname(os.path.abspath(__file__))
-
-
-
-    work_dir = os.path.abspath(work_dir_name)
-    config_dict["work_dir"] = work_dir
-    config_dict["script_dir"] = rep_dir
-    config_dict["common_files_dir"] = os.path.join(work_dir, "common_files")
-    # TODO: make simulation independent of these three variables,
-    # first two should not be necessary, the last one should be hardwired
-
-    #config_dict["_aux_flow_path"] = config_dict["local"]["flow_executable"].copy()
-    #config_dict["_aux_gmsh_path"] = config_dict["local"]["gmsh_executable"].copy()
-
-    # copy common files
-    files_to_copy = [
-        (src, os.path.join("common_files", os.path.basename(src))) for src in config_dict.tsx_hm_model.copy_files
-    ]
-
-    with workdir(work_dir_name, files_to_copy):
-        config_dict["solver_id"] = 0
-        sim = endorse_2Dtest(config_dict)
+def run_hm_simulation(cfg: dotdict, i_sim: int, parameters: Dict[str,Union[int, float]]):
+    work_dir_name = f"hm_sample_{i_sim:00d}"
+    with workdir(work_dir_name):
+        sim = Edz_HM_TSX_2D(cfg)
         sim.set_parameters(parameters)
         res, obs_data = sim.get_observations()
         print("Flow123d res: ", res)
 
+        return sim.flow_output
+
 
 def read_bayes_sample_parameteres(parameter_file:File) -> pandas.DataFrame:
     return pandas.read_csv(parameter_file.path, dtype={'N': 'int'})
+
+
+def run_single_sample(cfg, cfg_basedir=None):
+    parameter_filepath = cfg.tsx_hm_model.bayes_samples_input_file
+    if cfg_basedir is None:
+        parameter_file = File(parameter_filepath)
+    else:
+        parameter_file = File(os.path.join(cfg_basedir, parameter_filepath))
+    df = read_bayes_sample_parameteres(parameter_file)
+    i_samples = sample_from_population(1, df['N'])
+    sample_param_dict = df[1: 2].to_dict('records')[0]
+    fo = run_hm_simulation(cfg, 1, sample_param_dict)
+    return fo
 
 
 def run_random_samples(cfg, n_samples):

@@ -14,6 +14,7 @@ from . import plots
 from . import flow123d_inputs_path
 from .indicator import indicator_set, indicators, IndicatorFn
 from bgem.stochastic.fracture import Fracture, Population
+from endorse import hm_simulation
 
 
 
@@ -236,6 +237,8 @@ def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, int], fractures:Li
     porosity = np.full((len(mesh.elements),), 1.0)
     # Bulk fields
     el_slice_bulk = mesh.el_dim_slice(dim)
+    # Bulk fields
+    #bulk_cond, bulk_por = compute_hm_bulk_fields(cfg, cfg_basedir, mesh.el_barycenters()[el_slice_3d])
     bulk_cond, bulk_por = apply_fields.bulk_fields_mockup(cfg_geom, cfg_bulk_fields, mesh.el_barycenters()[el_slice_bulk])
     conductivity[el_slice_bulk] = bulk_cond
     porosity[el_slice_bulk] = bulk_por
@@ -272,6 +275,21 @@ def compute_fields(cfg:dotdict, mesh:Mesh,  fr_map: Dict[int, int], fractures:Li
     pos_fr = fr_cond > 0
     est_velocity = (np.quantile(bulk_cond, 0.4)/10, np.quantile(fr_cond[pos_fr],  0.4))
     return cond_file, est_velocity
+
+def compute_hm_bulk_fields(cfg, cfg_basedir, points):
+    cfg_geom = cfg.geometry
+
+    # TEST
+    # bulk_cond, bulk_por = apply_fields.bulk_fields_mockup(cfg_geom, cfg.transport_fullscale.bulk_field_params, points)
+
+    # RUN HM model
+    fo = hm_simulation.run_single_sample(cfg, cfg_basedir)
+    mesh_interp = hm_simulation.TunnelInterpolator(cfg_geom, flow123d_output=fo)
+    bulk_cond, bulk_por = apply_fields.bulk_fields_mockup_from_hm(cfg, mesh_interp, points)
+
+    # bulk_cond = apply_fields.rescale_along_xaxis(cfg_geom, bulk_cond, points)
+    # bulk_por = apply_fields.rescale_along_xaxis(cfg_geom, bulk_por, points)
+    return bulk_cond, bulk_por
 
 # def transport_observe_points(cfg):
 #     cfg_geom = cfg.geometry
